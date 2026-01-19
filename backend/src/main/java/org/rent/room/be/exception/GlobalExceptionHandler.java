@@ -1,7 +1,7 @@
 package org.rent.room.be.exception;
 
 
-import org.rent.room.be.base.ApiResponse;
+import org.rent.room.be.base.StandardResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -18,10 +18,10 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = AppException.class)
-    ResponseEntity<ApiResponse<?>> handleRuntimeException(AppException e) {
+    ResponseEntity<StandardResponse<?>> handleRuntimeException(AppException e) {
 
         ErrorCode errorCode = e.getErrorCode();
-        ApiResponse<?> apiResponse = new ApiResponse<>();
+        StandardResponse<?> apiResponse = new StandardResponse<>();
 
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
@@ -45,14 +45,14 @@ public class GlobalExceptionHandler {
 //    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException
+    public ResponseEntity<StandardResponse<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException
                                                                                            ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(err ->
                 errors.put(err.getField(), err.getDefaultMessage())
         );
 
-        ApiResponse<Map<String, String>> response = new ApiResponse<>(
+        StandardResponse<Map<String, String>> response = new StandardResponse<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Data validation failed",
                 errors

@@ -22,3 +22,5 @@ server:
   port: ${SERVER_PORT}
   servlet:
     context-path: ${SERVER_SERVLET_CONTEXT_PATH}
+cors:
+  urls: ${CORS_URL}

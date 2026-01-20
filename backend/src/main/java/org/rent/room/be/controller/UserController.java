@@ -9,6 +9,7 @@ import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +46,7 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<?>> getAllUsers() {
         return ResponseEntity.ok(
@@ -56,6 +58,7 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/username")
     public ResponseEntity<ApiResponse<?>> getUserByUsername(@RequestParam String username) {
         return ResponseEntity.ok(

@@ -25,5 +25,6 @@ public class UserResponse {
     int age;
     Role role;
     LocalDateTime createdAt;
-    boolean isActive;
+    LocalDateTime updatedAt;
+    boolean active;
 }

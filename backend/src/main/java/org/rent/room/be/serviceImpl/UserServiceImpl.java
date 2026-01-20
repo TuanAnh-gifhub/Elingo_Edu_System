@@ -41,11 +41,6 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        Role role = Role.RENTER;
-        if (createUser.getRole() != null) {
-            role = Role.valueOf(createUser.getRole());
-        }
-
         User user = User.builder()
                 .userName(createUser.getUserName())
                 .fullName(createUser.getFullName())
@@ -54,8 +49,8 @@ public class UserServiceImpl implements UserService {
                 .passwordHash(passwordEncoder.encode(createUser.getPassword()))
                 .phone(createUser.getPhone())
                 .dateOfBirth(createUser.getDateOfBirth())
-                .role(role)
-                .isActive(true)
+                .role(Role.valueOf(createUser.getRole()))
+                .active(true)
                 .build();
 
         return userMapper.toUserResponse(userRepository.save(user));

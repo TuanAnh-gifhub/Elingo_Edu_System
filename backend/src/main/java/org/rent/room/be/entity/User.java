@@ -48,7 +48,7 @@ public class User extends BaseEntity {
     private Role role;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    private boolean active;
 
     @OneToMany(mappedBy = "recipient", fetch = FetchType.LAZY)
     private List<Notification> notifications;

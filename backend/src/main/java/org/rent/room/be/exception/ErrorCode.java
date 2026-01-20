@@ -6,10 +6,23 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
+
+    //AUTHENTICATION
+    LOGIN_FAILED(1000, "Email or Password is invalid!", HttpStatus.BAD_REQUEST),
+    UNAUTHENTICATED(1001, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1002, "You do not have permission", HttpStatus.FORBIDDEN),
+    REFRESH_TOKEN_NOT_FOUND(1003, "Refresh token not found", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_REVOKED(1004, "Refresh token has been revoked", HttpStatus.FORBIDDEN),
+    INVALID_TOKEN_TYPE(1005, "Invalid token type", HttpStatus.BAD_REQUEST),
+    LOGOUT_FAILED(1006, "Logout failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
     //User
-    USER_EXISTED(6001,"Email existed", HttpStatus.BAD_REQUEST),
+    USER_EXISTED(2001,"Email existed", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND(2002,"User not found", HttpStatus.NOT_FOUND),
+    USER_NOT_AUTHENTICATED(2003,"User not authenticated", HttpStatus.UNAUTHORIZED),
+
     // Page Errors
-    INVALID_PAGINATION(7001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST);
+    INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;

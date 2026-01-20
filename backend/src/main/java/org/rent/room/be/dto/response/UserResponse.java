@@ -1,12 +1,10 @@
 package org.rent.room.be.dto.response;
 
 import lombok.*;
-import org.rent.room.be.entity.Role;
+import org.rent.room.be.constant.Role;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -16,16 +14,14 @@ import java.util.UUID;
 @Builder
 public class UserResponse {
     private UUID userId;
-    private String username;
-    private String email;
-    private String phoneNumber;
+    private String userName;
     private String fullName;
+    private String email;
     private String gender;
+    private String phone;
+    private LocalDate dateOfBirth;
     private int age;
-    private String address;
-    private Date dateOfBirth;
-    private String password;
     private Role role;
     private LocalDateTime createdAt;
-    private boolean isLocked;
+    private boolean isActive;
 }

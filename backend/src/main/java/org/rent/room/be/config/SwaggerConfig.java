@@ -1,6 +1,5 @@
 package org.rent.room.be.config;
 
-
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -11,7 +10,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.util.List;
-
+import io.swagger.v3.oas.models.tags.Tag;
 
 // truy cập http://localhost:8080/api/v1/rent-room/swagger-ui/index.html để xem tài liệu API
 @Configuration
@@ -37,6 +36,8 @@ public class SwaggerConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")))
+                .addTagsItem(new Tag().name("1. Authentication"))
+                .addTagsItem(new Tag().name("2. User"))
                 ;
     }
 }

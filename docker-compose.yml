@@ -1,7 +1,20 @@
-#version: "3.8"
-# Đã gửi cấu trúc file cho Sơn để làm nhớ fix lại docker compose de deloy
-#services:
-#  # ===== DATABASE =====
+version: "3.9"
+
+services:
+ # ===== DATABASE =====
+  mongodb:
+    image: mongo:7
+    container_name: rent-room-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: rent_room_db
+    volumes:
+      - mongo_data:/data/db
+ 
 #  sqlserver:
 #    image: mcr.microsoft.com/mssql/server:2022-latest
 #    container_name: sqlserver
@@ -12,7 +25,7 @@
 #      - "1433:1433"
 #    volumes:
 #      - sqlserver_data:/var/opt/mssql
-#
+
 #  # ===== BACKEND =====
 #  backend:
 #    build: ./backend
@@ -23,7 +36,7 @@
 #      - "8080:8080"
 #    depends_on:
 #      - sqlserver
-#
+
 #  # ===== FRONTEND =====
 #  frontend:
 #    build: ./frontend -- Chưa rõ Tuấn ANh ghi name file sao fix sau
@@ -32,6 +45,7 @@
 #      - "3000:80"
 #    depends_on:
 #      - backend
-#
-#volumes:
+
+volumes:
+    mongo_data:
 #  sqlserver_data:

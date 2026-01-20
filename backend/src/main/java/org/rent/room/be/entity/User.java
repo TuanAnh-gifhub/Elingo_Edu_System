@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.Role;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,9 +44,11 @@ public class User extends BaseEntity {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id")
+    @Column(name = "role")
     private Role role;
+
+    @Column(name = "is_active")
+    private boolean isActive;
 
     @OneToMany(mappedBy = "recipient", fetch = FetchType.LAZY)
     private List<Notification> notifications;
@@ -64,7 +67,6 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Payment> payments;
-
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Wallet wallet;

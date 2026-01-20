@@ -24,7 +24,7 @@ import java.time.Duration;
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @Tag(name = "1. Authentication", description = "API quản lý xác thực")
 public class AuthController {
 
@@ -53,8 +53,7 @@ public class AuthController {
 
         LoginResponse tokens = authService.loginWithGoogle(
                 googleInfo.getEmail(),
-                googleInfo.getName(),
-                googleInfo.getPicture()
+                googleInfo.getName()
         );
 
         setCookies(response, tokens);

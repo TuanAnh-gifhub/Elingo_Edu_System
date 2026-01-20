@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @FieldDefaults(level = AccessLevel.PACKAGE, makeFinal = true)
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @Tag(name = "2. User", description = "API quản lý người dùng")
 public class UserController {
 

@@ -32,7 +32,7 @@ public class AuthGoogleServiceImpl implements AuthGoogleService {
         formData.add("code", code);
         formData.add("client_id", clientProperties.getId());
         formData.add("client_secret", clientProperties.getSecret());
-        formData.add("redirect_uri", clientProperties.getUri());
+        formData.add("redirect_uri", "postmessage");
         formData.add("grant_type", "authorization_code");
 
         // Log xem mình gửi cái gì lên Google

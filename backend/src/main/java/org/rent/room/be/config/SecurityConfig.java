@@ -33,12 +33,11 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api/auth/login",
-            "/api/auth/google",
-            "/api/auth/refresh",
-            "/api/auth/logout",
-            "/api/users/create",
-            "/api/chat/create",
+            "/auth/login",
+            "/auth/google",
+            "/auth/refresh",
+            "/auth/logout",
+            "/users/create",
             "/ws/**",
     };
 

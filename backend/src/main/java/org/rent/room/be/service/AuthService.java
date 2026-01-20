@@ -12,5 +12,5 @@ public interface AuthService {
 
     void logout(HttpServletRequest request);
 
-    LoginResponse loginWithGoogle(String email, String name, String avatar);
+    LoginResponse loginWithGoogle(String email, String name);
 }

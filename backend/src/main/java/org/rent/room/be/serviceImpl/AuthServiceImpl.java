@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public LoginResponse loginWithGoogle(String email, String name, String avatar) {
+    public LoginResponse loginWithGoogle(String email, String name) {
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {

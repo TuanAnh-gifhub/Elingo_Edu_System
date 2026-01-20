@@ -1,6 +1,7 @@
 package org.rent.room.be.dto.response;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.rent.room.be.constant.Role;
 
 import java.time.LocalDate;
@@ -12,16 +13,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    private UUID userId;
-    private String userName;
-    private String fullName;
-    private String email;
-    private String gender;
-    private String phone;
-    private LocalDate dateOfBirth;
-    private int age;
-    private Role role;
-    private LocalDateTime createdAt;
-    private boolean isActive;
+    UUID userId;
+    String userName;
+    String fullName;
+    String email;
+    String gender;
+    String phone;
+    LocalDate dateOfBirth;
+    int age;
+    Role role;
+    LocalDateTime createdAt;
+    boolean isActive;
 }

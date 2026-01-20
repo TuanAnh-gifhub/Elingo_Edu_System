@@ -13,7 +13,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(source = "userName", target = "userName")
     @Mapping(source = "dateOfBirth", target = "age", qualifiedByName = "calculateAge")
     UserResponse toUserResponse(User user);
 

@@ -75,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
             try {
                 userRepository.save(user);
             } catch (DataIntegrityViolationException e) {
-                user = userRepository.findByEmail(email)
+                userRepository.findByEmail(email)
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
             }
         } else {

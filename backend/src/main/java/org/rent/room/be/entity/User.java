@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-
 @Entity
 @Table(name = "users")
 @Getter @Setter
@@ -26,9 +25,6 @@ public class User extends BaseEntity {
     @Column(name = "user_name", nullable = false, length = 100)
     private String userName;
 
-    @Column(name = "full_name", nullable = false, length = 100)
-    private String fullName;
-
     @Column(name = "gender")
     private String gender;
 
@@ -38,7 +34,7 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "phone_number", nullable = false, length = 20)
+    @Column(name = "phone_number", length = 20)
     private String phone;
 
     @Column(name = "date_of_birth")

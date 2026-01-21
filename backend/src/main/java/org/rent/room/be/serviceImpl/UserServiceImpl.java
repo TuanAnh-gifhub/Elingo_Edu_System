@@ -43,7 +43,6 @@ public class UserServiceImpl implements UserService {
 
         User user = User.builder()
                 .userName(createUser.getUserName())
-                .fullName(createUser.getFullName())
                 .email(createUser.getEmail())
                 .gender(createUser.getGender())
                 .passwordHash(passwordEncoder.encode(createUser.getPassword()))

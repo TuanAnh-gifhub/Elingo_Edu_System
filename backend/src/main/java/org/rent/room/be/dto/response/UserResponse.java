@@ -1,12 +1,11 @@
 package org.rent.room.be.dto.response;
 
 import lombok.*;
-import org.rent.room.be.entity.Role;
+import lombok.experimental.FieldDefaults;
+import org.rent.room.be.constant.Role;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -14,18 +13,18 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    private UUID userId;
-    private String username;
-    private String email;
-    private String phoneNumber;
-    private String fullName;
-    private String gender;
-    private int age;
-    private String address;
-    private Date dateOfBirth;
-    private String password;
-    private Role role;
-    private LocalDateTime createdAt;
-    private boolean isLocked;
+    UUID userId;
+    String userName;
+    String fullName;
+    String email;
+    String gender;
+    String phone;
+    LocalDate dateOfBirth;
+    int age;
+    Role role;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
+    boolean active;
 }

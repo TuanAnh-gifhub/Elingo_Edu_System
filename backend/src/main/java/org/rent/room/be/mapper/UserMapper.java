@@ -1,38 +1,28 @@
 package org.rent.room.be.mapper;
 
-
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.entity.User;
-import org.springframework.stereotype.Component;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
+    @Mapping(source = "dateOfBirth", target = "age", qualifiedByName = "calculateAge")
+    UserResponse toUserResponse(User user);
 
-    public UserResponse toUserResponse(User user) {
-        if (user == null) return null;
+    List<UserResponse> toUserResponseList(List<User> users);
 
-
-
-        return UserResponse.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhone())
-                .fullName(user.getFullName())
-                .gender(user.getGender() != null  ? user.getGender() : "khác")
-                .age(calculateAge(user.getDateOfBirth()))
-//                .dateOfBirth(user.getDateOfBirth() != null ? user.getDateOfBirth().withDayOfMonth() : null)
-//                .role(user.getRole() != null ? user.getRole().getName() : null)
-                .createdAt(user.getCreated_at())
-                .build();
-    }
-
-    private int calculateAge(LocalDate dob) {
-        if (dob == null) return 0;
-        return Period.between(dob, LocalDate.now()).getYears();
+    @Named("calculateAge")
+    default int calculateAge(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) {
+            return 0;
+        }
+        return Period.between(dateOfBirth, LocalDate.now()).getYears();
     }
 }

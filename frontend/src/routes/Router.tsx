@@ -59,6 +59,11 @@ export const router = createBrowserRouter([
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
       },
+      {
+        path: "admin",
+        element: <NotFound />,
+        handle: { breadcrumb: "Không tìm thấy" },
+      },
     ],
   },
 ]);

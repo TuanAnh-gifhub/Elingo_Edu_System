@@ -1,5 +1,6 @@
 package org.rent.room.be.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -44,20 +45,29 @@ public class SecurityConfig {
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> {
-                })
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                                .anyRequest()
-                                .authenticated())
+                .cors(cors -> {})
+
+                // 🔥 CỰC KỲ QUAN TRỌNG
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                        })
+                )
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                        .anyRequest().authenticated()
+                )
+
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

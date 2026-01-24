@@ -1,43 +1,39 @@
-import axios from "axios"; // Import code logic (biến axios)
-import type { 
-  AxiosInstance, 
-  AxiosError, 
-  InternalAxiosRequestConfig, 
-  AxiosResponse 
-} from "axios";
+import axios from 'axios';
 
-// 1. Định nghĩa lại Interface để TypeScript hiểu được thuộc tính "_retry"
-// Axios mặc định không có _retry, nên ta phải mở rộng (extend) nó.
-interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean;
-}
+// Tạo event để lắng nghe ở phía React Component
+export const AXIOS_AUTH_ERROR_EVENT = 'axios-auth-error';
 
-const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // Đảm bảo vite-env.d.ts đã được config
-  headers: {
-    "Content-Type": "application/json",
-  },
+const api = axios.create({
+  baseURL: 'http://localhost:8080/api/v1/rent-room',
   withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// --- RESPONSE INTERCEPTOR ---
-api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: AxiosError) => {
-    // Ép kiểu (Cast) error.config sang Interface chúng ta vừa tạo ở trên
-    const originalRequest = error.config as ExtendedAxiosRequestConfig;
+// ... imports
 
-    // Kiểm tra: Lỗi 401, config tồn tại, và chưa từng retry
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (originalRequest.url && (originalRequest.url.includes("/auth/login") || originalRequest.url.includes("/auth/logout"))) {
+        return Promise.reject(error);
+    }
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      
+      if (originalRequest.url.includes("/auth/refresh")) {
+          window.dispatchEvent(new CustomEvent(AXIOS_AUTH_ERROR_EVENT));
+          return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {
         await api.post("/auth/refresh");
-        
-        // Gọi lại request cũ sau khi refresh thành công
         return api(originalRequest);
       } catch (refreshError) {
-        // Xử lý logout hoặc throw lỗi
+        window.dispatchEvent(new CustomEvent(AXIOS_AUTH_ERROR_EVENT));
         return Promise.reject(refreshError);
       }
     }

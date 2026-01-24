@@ -10,10 +10,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "users")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @SuperBuilder
 public class User extends BaseEntity {
 
@@ -40,6 +42,7 @@ public class User extends BaseEntity {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Role role;
 
@@ -49,14 +52,8 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "recipient", fetch = FetchType.LAZY)
     private List<Notification> notifications;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Conservation> conversations;
-
-//    @OneToMany(mappedBy = "sender")
-//    private List<Message> sentMessages;
-//
-//    @OneToMany(mappedBy = "recipient")
-//    private List<Message> receivedMessages;
+    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Conversation> conversation;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Subscription> subscriptions;
@@ -70,4 +67,3 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Report> reports;
 }
-

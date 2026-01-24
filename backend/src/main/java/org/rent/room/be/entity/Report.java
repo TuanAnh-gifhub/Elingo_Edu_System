@@ -9,31 +9,32 @@ import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 @Entity
-@Table(name = "report")
+@Table(name = "reports")
 public class Report extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "report_id")
     private UUID reportId;
 
-    @Column(name = "reaso", columnDefinition = "TEXT")
+    @Column(name = "reason", columnDefinition = "TEXT", nullable = false)
     private String reason;
 
-    @Column(length = 20)
+    @Column(name = "status", length = 20)
     private String status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
-    private Room roomReport;
+    private Room room;
 }
-

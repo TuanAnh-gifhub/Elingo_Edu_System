@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
- # ===== DATABASE =====
   mongodb:
     image: mongo:7
     container_name: rent-room-mongo
@@ -14,38 +13,20 @@ services:
       MONGO_INITDB_DATABASE: rent_room_db
     volumes:
       - mongo_data:/data/db
- 
-#  sqlserver:
-#    image: mcr.microsoft.com/mssql/server:2022-latest
-#    container_name: sqlserver
-#    environment:
-#      SA_PASSWORD: "12345"
-#      ACCEPT_EULA: "Y"
-#    ports:
-#      - "1433:1433"
-#    volumes:
-#      - sqlserver_data:/var/opt/mssql
 
-#  # ===== BACKEND =====
-#  backend:
-#    build: ./backend
-#    container_name: rent-room-backend
-#    env_file:
-#      - .env
-#    ports:
-#      - "8080:8080"
-#    depends_on:
-#      - sqlserver
-
-#  # ===== FRONTEND =====
-#  frontend:
-#    build: ./frontend -- Chưa rõ Tuấn ANh ghi name file sao fix sau
-#    container_name: rent-room-frontend
-#    ports:
-#      - "3000:80"
-#    depends_on:
-#      - backend
+  postgres:
+    image: postgres:16-alpine
+    container_name: rent-room-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: room_booking_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-    mongo_data:
-#  sqlserver_data:
+  mongo_data:
+  postgres_data:

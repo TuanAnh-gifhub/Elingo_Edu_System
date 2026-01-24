@@ -16,20 +16,21 @@ import java.util.List;
 @Getter
 @Setter
 @SuperBuilder
-@Table(name = "category")
-public class Category extends BaseEntity{
+@Table(name = "categories")
+public class Category extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private int categoryId;
+    private Integer categoryId;
 
-    @Column(name = "category_name", length = 50, nullable = false)
+    @Column(name = "category_name", length = 50, nullable = false, unique = true)
     private String categoryName;
 
     @Column(name = "description", length = 255)
     private String description;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Room> rooms;
 
 }

@@ -43,3 +43,8 @@ google:
     id: ${GOOGLE_ID}
     secret: ${GOOGLE_SECRET}
     uri: ${GOOGLE_URI}
+sepay:
+  base-url: https://pgapi-sandbox.sepay.vn
+  merchant-id: your_merchant_id
+  secret-key: your_secret_key
+  webhook-path: /api/sepay/webhook

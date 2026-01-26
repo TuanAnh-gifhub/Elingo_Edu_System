@@ -43,6 +43,6 @@ public class Report extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
-    private Room roomReport;
+    private Room room;
 }
 

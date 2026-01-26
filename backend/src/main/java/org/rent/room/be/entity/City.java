@@ -1,6 +1,5 @@
 package org.rent.room.be.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @SuperBuilder
-@Table(name = "city")
+@Table(name = "cities")
 public class City {
 
     @Id
@@ -24,9 +23,9 @@ public class City {
     @Column(name = "city_id")
     private Long cityId;
 
-    @Column(name = "city_name",nullable = false)
+    @Column(name = "city_name", nullable = false, unique = true)
     private String cityName;
 
-    @OneToMany(mappedBy = "city", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "city", fetch = FetchType.LAZY)
     private List<RentalArea> rentalAreas;
 }

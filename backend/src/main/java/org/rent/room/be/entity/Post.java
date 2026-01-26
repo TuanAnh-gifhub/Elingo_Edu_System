@@ -8,16 +8,16 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
-
 import java.util.List;
 import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 @Entity
-@Table(name = "post")
+@Table(name = "posts")
 public class Post extends BaseEntity {
 
     @Id
@@ -25,34 +25,34 @@ public class Post extends BaseEntity {
     @Column(name = "post_id")
     private UUID postId;
 
+    @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-
-    @Column(name = "post_status")
+    @Column(name = "post_status", length = 20)
     private String postStatus;
 
     @Column(name = "post_user_name")
     private String postUserName;
 
-    @Column(name = "comment_on_post")
+    @Column(name = "comment_on_post", columnDefinition = "TEXT")
     private String commentOnPost;
 
+    @Column(name = "emotion", length = 50)
     private String emotion;
 
     @Column(name = "total_vote")
-    private Integer totalVote;
-
-    @Column(name = "area_id")
-    private Integer areaId;
-
+    private Integer totalVote = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "rental_area_id")
+    private RentalArea rentalArea;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @OneToMany(
             mappedBy = "post",
@@ -62,4 +62,3 @@ public class Post extends BaseEntity {
     )
     private List<Media> mediaList;
 }
-

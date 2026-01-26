@@ -1,6 +1,5 @@
 package org.rent.room.be.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.math.BigDecimal;
-
 import java.util.UUID;
 
 @Getter
@@ -18,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "`order`") // Dùng dấu ` để tránh trùng keyword SQL ORDER
+@Table(name = "orders")
 @Entity
 public class Order extends BaseEntity {
 
@@ -27,7 +25,7 @@ public class Order extends BaseEntity {
     @Column(name = "order_id")
     private UUID orderId;
 
-    @Column(name = "total_amount")
+    @Column(name = "total_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
 
     @Column(name = "order_status", length = 20)
@@ -39,6 +37,5 @@ public class Order extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id")
-    private Package servicePackage;
+    private ServicePackage servicePackage;
 }
-

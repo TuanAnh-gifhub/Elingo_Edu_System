@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.auth.LoginGoogleRequest;
 import org.rent.room.be.dto.request.auth.LoginRequest;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -66,9 +68,20 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<?>> refresh(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<?>> refresh(
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        log.info("REFRESH endpoint called");
+
         LoginResponse newTokens = authService.refresh(request);
+
+        log.info("REFRESH new tokens generated");
+
         setCookies(response, newTokens);
+
+        log.info("REFRESH cookies set");
+
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Refresh successfully").build());
     }
 

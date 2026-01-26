@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
-import org.springframework.data.domain.Auditable;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
@@ -18,31 +16,31 @@ import java.util.UUID;
 @Getter
 @Setter
 @SuperBuilder
-@Table(name = "notification")
-
+@Table(name = "notifications")
 public class Notification extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "notification_id")
-    private UUID notification_id;
+    private UUID notificationId;
 
-    @Column(name = "notification_title",length = 100)
-    private String notification_title;
+    @Column(name = "notification_title", length = 100, nullable = false)
+    private String notificationTitle;
 
-    @Column(name = "notification_body", length = 255)
-    private String notification_body;
-
-    @ManyToOne(fetch  = FetchType.LAZY)
-    private User sender_id;
+    @Column(name = "notification_body", length = 500)
+    private String notificationBody;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id")
+    @JoinColumn(name = "sender_id")
+    private User sender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
     @Column(name = "is_read")
-    private boolean is_read;
+    private boolean read;
 
     @Column(name = "is_deleted")
-    private boolean is_deleted;
-
+    private boolean deleted;
 }

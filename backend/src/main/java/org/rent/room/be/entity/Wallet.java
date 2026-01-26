@@ -7,16 +7,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.WalletStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 @Entity
-@Table(name = "wallet")
+@Table(name = "wallets")
 public class Wallet extends BaseEntity {
 
     @Id
@@ -24,20 +27,19 @@ public class Wallet extends BaseEntity {
     @Column(name = "wallet_id")
     private UUID walletId;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Column(name = "balance", precision = 19, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    private List<Payment> paymentWallets;
+    @Column(name = "wallet_status", length = 20)
+    private WalletStatus walletStatus;
 
-    private double price;
-
-    @Column(name = "payment_status", length = 20)
-    private String paymentStatus;
+    @OneToMany(mappedBy = "wallet", fetch = FetchType.LAZY)
+    private List<Payment> payments;
 
     @OneToMany(mappedBy = "wallet", fetch = FetchType.LAZY)
     private List<Order> orders;
 }
-

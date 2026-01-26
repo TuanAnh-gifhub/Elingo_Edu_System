@@ -1,4 +1,4 @@
-package org.rent.room.be.Utils;
+package org.rent.room.be.utils;
 
 import org.apache.commons.codec.digest.DigestUtils;
 

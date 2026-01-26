@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "rental_area")
+@Table(name = "rental_areas")
 @Entity
 public class RentalArea extends BaseEntity {
 
@@ -21,11 +21,11 @@ public class RentalArea extends BaseEntity {
     @Column(name = "rental_area_id")
     private UUID rentalAreaId;
 
-    @Column(name = "rental_area_name", length = 100)
-    private  String rentalAreaName;
+    @Column(name = "rental_area_name", length = 100, nullable = false)
+    private String rentalAreaName;
 
-    @Column(name = "address_detail", length = 255)
-    private  String addressDetail;
+    @Column(name = "address_detail", length = 255, nullable = false)
+    private String addressDetail;
 
     @Column(name = "ward", length = 100)
     private String ward;
@@ -33,14 +33,15 @@ public class RentalArea extends BaseEntity {
     @Column(name = "district", length = 100)
     private String district;
 
-    @Column(name = "type_rental_area", length = 50)
-    private  String type_rental_area;
+    @Column(name = "rental_area_type", length = 50)
+    private String rentalAreaType;
 
-    @ManyToOne
-    @JoinColumn(name = "city_id", referencedColumnName = "city_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false)
     private City city;
 
     @Builder.Default
+    @Column(name = "country", length = 50)
     private String country = "Việt Nam";
 
 }

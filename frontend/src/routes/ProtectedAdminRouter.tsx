@@ -9,7 +9,8 @@ export const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ childr
   const adminUserStr = localStorage.getItem("adminUser");
   const adminUser = adminUserStr ? JSON.parse(adminUserStr) : null;
   
-  if (!adminUser?.token || adminUser?.role === "CUSTOMER") {
+  // Kiểm tra: không có token hoặc role là "User" (không phải Admin/Staff)
+  if (!adminUser?.token || adminUser?.role === "User") {
     return <Navigate to="/admin/login" replace />;
   }
   

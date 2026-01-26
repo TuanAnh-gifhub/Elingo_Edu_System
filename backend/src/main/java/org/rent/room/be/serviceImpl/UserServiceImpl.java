@@ -12,6 +12,9 @@ import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.UserMapper;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,23 +60,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse getMe() {
+    public UserResponse getProfileUser() {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+       if(authentication == null || !authentication.isAuthenticated()){
+           throw new AppException(ErrorCode.USER_NOT_AUTHENTICATED);
+       }
+       User user = userRepository.findByEmail(authentication.getName())
+               .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AppException(ErrorCode.USER_NOT_AUTHENTICATED);
-        }
-
-        User users = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        return userMapper.toUserResponse(users);
+       return userMapper.toUserResponse(user);
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-        return userMapper.toUserResponseList(userRepository.findAll());
+    public List<UserResponse> getAllUsers(int page,int size) {
+        Pageable pageable  = PageRequest.of(page,size);
+        Page<User> userList = userRepository.findAll(pageable);
+
+        return userMapper.toUserResponseList(userList.getContent());
     }
 
     @Override

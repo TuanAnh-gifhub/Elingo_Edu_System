@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.ReportStatus;
 
 import java.util.UUID;
 @AllArgsConstructor
@@ -22,11 +23,19 @@ public class Report extends BaseEntity {
     @Column(name = "report_id")
     private UUID reportId;
 
-    @Column(name = "reaso", columnDefinition = "TEXT")
-    private String reason;
+    @Column(name = "title", length = 100)
+    private String title;
 
-    @Column(length = 20)
-    private String status;
+    @Column(name = "reason", length = 150)
+    private String content;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20,nullable = false)
+    private ReportStatus status ;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

@@ -7,6 +7,9 @@ import WalletPage from "../pages/Customer/WalletPage/WalletPage";
 import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
 import WalletPromotion from "../pages/Customer/WalletPage/WalletPromotion";
 import NotFound from "../components/Error/NotFound";
+import AdminPage from "../pages/Admin/AdminPage";
+import LoginAdmin from "../pages/Admin/LoginAdmin/LoginAdmin";
+import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 
 export const router = createBrowserRouter([
@@ -56,7 +59,7 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Khuyến mãi" },
       },
       {
-        path: "reset-password", 
+        path: "reset-password",
         element: <ResetPassword />,
         handle: { breadcrumb: "Đặt lại mật khẩu" },
       },
@@ -64,6 +67,37 @@ export const router = createBrowserRouter([
         path: "*",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
+      },
+      {
+        path: "admin",
+        element: <NotFound />,
+        handle: { breadcrumb: "Không tìm thấy" },
+      },
+    ],
+  },
+  // Admin routes
+  {
+    path: "/admin/login",
+    element: <LoginAdmin />,
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedAdminRoute>
+        <AdminPage />
+      </ProtectedAdminRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4" style={{ color: "inherit" }}>
+              Dashboard
+            </h1>
+            <p style={{ color: "inherit" }}>Chào mừng đến với trang quản trị!</p>
+          </div>
+        ),
       },
     ],
   },

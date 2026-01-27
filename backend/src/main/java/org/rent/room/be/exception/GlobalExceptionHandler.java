@@ -2,9 +2,10 @@ package org.rent.room.be.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rent.room.be.base.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException; // Chú ý import đúng gói này
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,7 +19,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = AppException.class)
-    ResponseEntity<ApiResponse<?>> handleAppException(AppException e) {
+    ResponseEntity<ApiResponse<?>> handleRuntimeException(AppException e) {
+
         ErrorCode errorCode = e.getErrorCode();
 
         return ResponseEntity
@@ -95,5 +97,18 @@ public class GlobalExceptionHandler {
                         .code(errorCode.getCode())
                         .message(errorCode.getMessage())
                         .build());
+    }
+
+    @ExceptionHandler(ValidationErrorsException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationErrors(ValidationErrorsException ex) {
+        ApiResponse<Map<String, String>> apiResponse = new ApiResponse<>();
+
+        apiResponse.setCode(HttpStatus.BAD_REQUEST.value());
+        apiResponse.setMessage("Data is not invalid!");
+        apiResponse.setResult(ex.getErrors());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(apiResponse);
     }
 }

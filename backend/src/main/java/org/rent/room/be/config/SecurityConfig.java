@@ -49,7 +49,7 @@ public class SecurityConfig {
     JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
-    public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -67,7 +67,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -8,7 +8,7 @@ export default defineConfig({
     {
       name: 'exclude-node-modules-css',
       enforce: 'pre',
-      transform(code, id) {
+      transform(_code, id) {
         // Bỏ qua các file CSS từ node_modules khỏi PostCSS processing
         if (id.includes('node_modules') && id.endsWith('.css')) {
           return null;
@@ -16,7 +16,13 @@ export default defineConfig({
       },
     },
   ],
+  resolve: {
+    alias: {},
+  },
   css: {
     postcss: './postcss.config.js',
+  },
+  optimizeDeps: {
+    include: ['antd', '@ant-design/icons'],
   },
 })

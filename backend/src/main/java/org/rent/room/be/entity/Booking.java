@@ -2,9 +2,9 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.BookingStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,9 +25,6 @@ public class Booking extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "booking_id")
     UUID bookingId;
-
-    @Column(name = "booking_at", nullable = false)
-    LocalDateTime bookingAt;
 
     @Column(name = "booking_status", length = 20)
     BookingStatus bookingStatus;

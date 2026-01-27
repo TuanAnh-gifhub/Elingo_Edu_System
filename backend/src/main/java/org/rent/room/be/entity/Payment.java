@@ -2,8 +2,7 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.PaymentMethod;
 import org.rent.room.be.constant.PaymentStatus;

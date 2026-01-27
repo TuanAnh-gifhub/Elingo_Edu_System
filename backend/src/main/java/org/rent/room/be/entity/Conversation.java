@@ -2,8 +2,7 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.List;
@@ -21,7 +20,6 @@ public class Conversation extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "conversation_id")
     UUID conversationId;
 
     @Column(name = "conversation_title", length = 200)

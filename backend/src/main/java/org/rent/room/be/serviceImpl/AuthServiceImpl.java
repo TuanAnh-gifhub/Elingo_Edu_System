@@ -5,7 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.rent.room.be.Utils.Hash;
+import lombok.extern.slf4j.Slf4j;
+import org.rent.room.be.utils.Hash;
 import org.rent.room.be.constant.Role;
 import org.rent.room.be.dto.request.auth.LoginRequest;
 import org.rent.room.be.dto.response.auth.LoginResponse;
@@ -27,12 +28,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -92,7 +96,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginResponse refresh(HttpServletRequest request) {
 
+        log.info("REFRESH_SERVICE start");
+
         String refreshToken = extractCookie(request, "refresh_token");
+
+        log.info("REFRESH_SERVICE refresh_token present={}", refreshToken != null);
 
         if (refreshToken == null) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
@@ -102,15 +110,29 @@ public class AuthServiceImpl implements AuthService {
                 .findByTokenHashAndRevokedFalse(hash)
                 .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_REVOKED));
 
-        Jwt jwt = jwtDecoder.decode(refreshToken);
+        Jwt jwt;
+        try {
+            jwt = jwtDecoder.decode(refreshToken);
+        } catch (JwtException e) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        log.info("REFRESH_SERVICE token type={}", Optional.ofNullable(jwt.getClaim("type")));
+        log.info("REFRESH_SERVICE email={}", Optional.ofNullable(jwt.getClaim("email")));
+
         if (!"refresh".equals(jwt.getClaim("type"))) {
             throw new AppException(ErrorCode.INVALID_TOKEN_TYPE);
         }
 
         String email = jwt.getClaim("email");
 
-        stored.setRevoked(true);
-        refreshTokenRepository.save(stored);
+        log.info("REFRESH_SERVICE revoke old refresh");
+
+        if (stored.getExpiresAt().isBefore(Instant.now())) {
+            stored.setRevoked(true);
+            refreshTokenRepository.save(stored);
+            throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
 
         CustomUserDetails user = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
         return generateAndSaveTokens(user);
@@ -129,6 +151,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private LoginResponse generateAndSaveTokens(CustomUserDetails user) {
+
+        log.info("TOKEN_GENERATOR generating access & refresh for {}", user.getUsername());
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 

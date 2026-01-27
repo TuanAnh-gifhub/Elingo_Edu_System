@@ -40,25 +40,26 @@ public class UserController {
         );
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<?>> getCurrentUser() {
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<?>> getProfileUser() {
         return ResponseEntity.ok(
                 ApiResponse.<UserResponse>builder()
                         .code(200)
                         .message("Get my info successfully")
-                        .result(userService.getMe())
+                        .result(userService.getProfileUser())
                         .build()
         );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<?>> getAllUsers() {
+    public ResponseEntity<ApiResponse<?>> getAllUsers(@RequestParam(defaultValue = "1",required = false )int page,
+                                                      @RequestParam(defaultValue = "10", required = false) int size) {
         return ResponseEntity.ok(
                 ApiResponse.<List<UserResponse>>builder()
                         .code(200)
                         .message("Get all user successfully")
-                        .result(userService.getAllUsers())
+                        .result(userService.getAllUsers(page,size))
                         .build()
         );
     }

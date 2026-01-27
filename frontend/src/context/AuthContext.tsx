@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Chạy 1 lần khi App vừa load (F5 trang)
   useEffect(() => {
-    fetchCurrentUser();
+    setIsLoading(false);
   }, []);
 
   // Hàm Login: Chỉ đơn giản là cập nhật state (vì API login đã được gọi ở LoginPage rồi)

@@ -2,12 +2,11 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 
 import java.math.BigDecimal;
-import java.time.LocalTime; // Dùng LocalTime thay vì LocalDateTime
+import java.time.LocalTime;
 import java.util.UUID;
 
 @AllArgsConstructor

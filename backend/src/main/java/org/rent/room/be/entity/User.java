@@ -2,7 +2,7 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.Role;
 
@@ -17,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User extends BaseEntity {
 
     @Id

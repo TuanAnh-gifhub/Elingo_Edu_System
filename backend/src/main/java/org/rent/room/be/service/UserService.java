@@ -13,9 +13,9 @@ public interface UserService {
 
     UserResponse createUser(CreateUsersRequest users);
 
-    UserResponse getMe();
+    UserResponse getProfileUser();
 
-    List<UserResponse> getAllUsers();
+    List<UserResponse> getAllUsers(int page,int size);
 
     List<UserResponse> getAllUsersByName(String username);
 

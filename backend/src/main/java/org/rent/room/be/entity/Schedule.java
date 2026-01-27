@@ -2,8 +2,7 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 
 import java.time.LocalDate;
@@ -25,17 +24,17 @@ public class Schedule extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "schedule_id")
-     UUID scheduleId;
+    UUID scheduleId;
 
     @Column(name = "specific_date", nullable = false)
-     LocalDate specificDate;
+    LocalDate specificDate;
 
     @Column(name = "availability_status", length = 20)
-     String availabilityStatus;
+    String availabilityStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
-     Room room;
+    Room room;
 
     @OneToMany(
             mappedBy = "schedule",
@@ -43,8 +42,8 @@ public class Schedule extends BaseEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-     List<Slot> slots;
+    List<Slot> slots;
 
     @OneToMany(mappedBy = "schedule", fetch = FetchType.LAZY)
-     List<ScheduleBooking> scheduleBookings;
+    List<ScheduleBooking> scheduleBookings;
 }

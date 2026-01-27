@@ -2,6 +2,7 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
@@ -12,35 +13,37 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "rental_area")
+@Table(name = "rental_areas")
 @Entity
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalArea extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "rental_area_id")
-    private UUID rentalAreaId;
+    UUID rentalAreaId;
 
-    @Column(name = "rental_area_name", length = 100)
-    private  String rentalAreaName;
+    @Column(name = "rental_area_name", length = 100, nullable = false)
+    String rentalAreaName;
 
-    @Column(name = "address_detail", length = 255)
-    private  String addressDetail;
+    @Column(name = "address_detail", length = 255, nullable = false)
+    String addressDetail;
 
     @Column(name = "ward", length = 100)
-    private String ward;
+    String ward;
 
     @Column(name = "district", length = 100)
-    private String district;
+    String district;
 
-    @Column(name = "type_rental_area", length = 50)
-    private  String type_rental_area;
+    @Column(name = "rental_area_type", length = 50)
+    String rentalAreaType;
 
-    @ManyToOne
-    @JoinColumn(name = "city_id", referencedColumnName = "city_id")
-    private City city;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false)
+    City city;
 
     @Builder.Default
-    private String country = "Việt Nam";
+    @Column(name = "country", length = 50)
+    String country = "Việt Nam";
 
 }

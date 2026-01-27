@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -29,19 +33,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     CustomUserDetailsService userDetailsService;
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return path.startsWith("/api/auth/")
-                || path.equals("/api/users/create")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui");
-    }
-
-    @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
@@ -50,6 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = extractTokenFromCookie(request);
+        log.info("JWT_FILTER access_token present={}", token != null);
         if (token == null) {
             filterChain.doFilter(request, response);
             return;
@@ -57,6 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             Jwt jwt = jwtDecoder.decode(token);
+            log.info("JWT_FILTER decoded token type={}", Optional.ofNullable(jwt.getClaim("type")));
 
             if (!"access".equals(jwt.getClaim("type"))) {
                 filterChain.doFilter(request, response);
@@ -84,10 +81,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .setAuthentication(authentication);
 
         } catch (JwtException e) {
+            log.error("JWT_FILTER jwt error: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
+        log.info("JWT_FILTER start path={}", request.getServletPath());
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {

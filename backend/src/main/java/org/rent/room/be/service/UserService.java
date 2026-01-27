@@ -1,8 +1,10 @@
 package org.rent.room.be.service;
 
+import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.entity.User;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,4 +22,8 @@ public interface UserService {
     User findByEmail(String name);
 
     User findByUserId(UUID id);
+
+    void processForgotPassword(String email);
+
+    void processResetPassword(ResetPasswordRequest request);
 }

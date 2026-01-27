@@ -1,14 +1,14 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+import org.rent.room.be.base.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -16,32 +16,28 @@ import java.util.UUID;
 @SuperBuilder
 @Entity
 @Table(name = "subscriptions")
-public class Subscription {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Subscription extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "subscription_id")
-    private UUID subscriptionId;
+    UUID subscriptionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "package_id")
-    private Package servicePackage;
+    @JoinColumn(name = "package_id", nullable = false)
+    ServicePackage servicePackage;
 
-    @Column(name = "start_date")
-    private LocalDateTime startDate;
+    @Column(name = "start_date", nullable = false)
+    LocalDateTime startDate;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "end_date", nullable = false)
+    LocalDateTime endDate;
 
-    @Column(name = "end_date")
-    private LocalDateTime endDate;
-
-    private boolean status;
-
-
+    @Column(name = "status")
+    boolean active;
 }
-

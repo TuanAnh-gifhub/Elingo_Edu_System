@@ -1,58 +1,57 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
-
 import java.util.List;
 import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 @Entity
-@Table(name = "post")
+@Table(name = "posts")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Post extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "post_id")
-    private UUID postId;
+    UUID postId;
 
-    private String title;
+    @Column(name = "title", nullable = false)
+    String title;
 
-    @Column(columnDefinition = "TEXT")
-    private String content;
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+    String content;
 
-
-    @Column(name = "post_status")
-    private String postStatus;
+    @Column(name = "post_status", length = 20)
+    String postStatus;
 
     @Column(name = "post_user_name")
-    private String postUserName;
+    String postUserName;
 
-    @Column(name = "comment_on_post")
-    private String commentOnPost;
+    @Column(name = "comment_on_post", columnDefinition = "TEXT")
+    String commentOnPost;
 
-    private String emotion;
+    @Column(name = "emotion", length = 50)
+    String emotion;
 
     @Column(name = "total_vote")
-    private Integer totalVote;
-
-    @Column(name = "area_id")
-    private Integer areaId;
-
+    Integer totalVote = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "rental_area_id")
+    RentalArea rentalArea;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
     @OneToMany(
             mappedBy = "post",
@@ -60,6 +59,5 @@ public class Post extends BaseEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    private List<Media> mediaList;
+    List<Media> mediaList;
 }
-

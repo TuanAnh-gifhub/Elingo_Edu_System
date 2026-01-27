@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.constant.Role;
+import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.entity.User;
@@ -11,6 +12,8 @@ import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.UserMapper;
 import org.rent.room.be.repository.UserRepository;
+import org.rent.room.be.service.EmailService;
+import org.rent.room.be.service.PasswordResetService;
 import org.rent.room.be.service.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,8 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,9 +30,9 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
-
+    PasswordResetService passwordResetService;
+    EmailService emailService;
     UserMapper userMapper;
-
     PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -89,5 +90,32 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findByUserId(UUID id) {
         return userRepository.findByUserId(id);
+    }
+
+    @Override
+    public void processForgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
+        String token = passwordResetService.createToken(email);
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        emailService.sendResetPasswordEmail(user.getEmail(), resetLink);
+    }
+
+    @Transactional
+    @Override
+    public void processResetPassword(ResetPasswordRequest request) {
+        // 1. Validate token bên Mongo -> Lấy ra email
+        String email = passwordResetService.validateToken(request.getToken());
+
+        // 2. Tìm user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Mã hóa và cập nhật mật khẩu mới
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // 4. Xóa token để không dùng lại được nữa
+        passwordResetService.deleteToken(request.getToken());
     }
 }

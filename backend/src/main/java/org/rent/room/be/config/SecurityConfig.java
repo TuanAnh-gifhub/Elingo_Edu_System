@@ -1,8 +1,10 @@
 package org.rent.room.be.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.rent.room.be.security.JwtAuthenticationEntryPoint;
 import org.rent.room.be.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,10 +40,13 @@ public class SecurityConfig {
             "/auth/refresh",
             "/auth/logout",
             "/users/create",
+            "/users/forgot-password/**",
+            "/users/reset-password/**",
             "/ws/**",
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;
+    JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) {
@@ -50,14 +55,19 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {
                 })
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                                .anyRequest()
-                                .authenticated())
+
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                        .anyRequest().authenticated()
+                )
+
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

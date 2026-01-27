@@ -7,6 +7,7 @@ import WalletPage from "../pages/Customer/WalletPage/WalletPage";
 import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
 import WalletPromotion from "../pages/Customer/WalletPage/WalletPromotion";
 import NotFound from "../components/Error/NotFound";
+import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +54,11 @@ export const router = createBrowserRouter([
         path: "wallet/promotion",
         element: <WalletPromotion />,
         handle: { breadcrumb: "Khuyến mãi" },
+      },
+      {
+        path: "reset-password", 
+        element: <ResetPassword />,
+        handle: { breadcrumb: "Đặt lại mật khẩu" },
       },
       {
         path: "*",

@@ -20,9 +20,15 @@ public enum ErrorCode {
     USER_EXISTED(2001,"Email existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(2002,"User not found", HttpStatus.NOT_FOUND),
     USER_NOT_AUTHENTICATED(2003,"User not authenticated", HttpStatus.UNAUTHORIZED),
+    EMAIL_NOT_FOUND(2004,"Email not found", HttpStatus.NOT_FOUND),
 
     // Page Errors
-    INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST);
+    INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
+
+
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
+    INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung
+    ;
 
     private int code;
     private String message;

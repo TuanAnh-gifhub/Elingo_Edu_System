@@ -1,12 +1,12 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+import org.rent.room.be.base.BaseEntity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,50 +16,49 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "booking")
+@Table(name = "bookings")
 @Entity
-
-public class Booking {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Booking extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "booking_id")
-    private UUID bookingId;
+    UUID bookingId;
 
-    @Column(name = "booking_at")
-    private LocalDateTime bookingAt;
+    @Column(name = "booking_at", nullable = false)
+    LocalDateTime bookingAt;
 
     @Column(name = "booking_status", length = 20)
-    private String bookingStatus;
+    BookingStatus bookingStatus;
 
-    @Column(name = "total_price")
-    private double totalPrice;
+    @Column(name = "total_price", precision = 19, scale = 2)
+    BigDecimal totalPrice;
 
-    @Column(length = 50)
-    private String note;
+    @Column(length = 500)
+    String note;
 
     @Column(name = "check_in")
-    private LocalDateTime checkIn;
+    LocalDateTime checkIn;
 
     @Column(name = "check_out")
-    private LocalDateTime checkOut;
+    LocalDateTime checkOut;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "renter_id")
-    private User renter;
+    User renter;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id")
-    private Wallet wallet;
+    Wallet wallet;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id")
-    private Review review;
+    Review review;
 
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
-    private List<Slot> slots;
+    List<Slot> slots;
 
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
-    private List<ScheduleBooking> scheduleBookings;
+    List<ScheduleBooking> scheduleBookings;
 }
-

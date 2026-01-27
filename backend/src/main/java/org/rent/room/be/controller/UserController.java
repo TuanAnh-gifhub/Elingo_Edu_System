@@ -5,8 +5,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
+import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
+import org.rent.room.be.service.EmailService;
+import org.rent.room.be.service.PasswordResetService;
 import org.rent.room.be.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +25,8 @@ import java.util.List;
 public class UserController {
 
     UserService userService;
+    PasswordResetService passwordResetService;
+    EmailService emailService;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<?>> createUser(@RequestBody CreateUsersRequest user) {
@@ -69,4 +74,27 @@ public class UserController {
                         .build()
         );
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<?>> forgotPassword(@RequestParam String email) {
+        userService.processForgotPassword(email);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .code(200)
+                        .message("Vui lòng kiểm tra email để lấy lại mật khẩu.")
+                        .build()
+        );
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        userService.processResetPassword(request);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .code(200)
+                        .message("Đổi mật khẩu thành công.")
+                        .build()
+        );
+    }
+
 }

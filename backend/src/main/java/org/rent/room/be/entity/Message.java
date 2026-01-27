@@ -1,12 +1,10 @@
 package org.rent.room.be.entity;
 
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+import org.rent.room.be.base.BaseEntity;
 
 import java.util.UUID;
 
@@ -15,28 +13,28 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "message")
+@Table(name = "messages")
 @Entity
-public class Message {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Message extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "message_id")
-    private UUID message_id;
+    UUID messageId;
 
-    @Column( name = "message_body",columnDefinition = "TEXT")
-    private String message_body;
+    @Column(name = "message_body", columnDefinition = "TEXT", nullable = false)
+    String messageBody;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
+    User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
-    private User recipient;
-
+    @JoinColumn(name = "recipient_id")
+    User recipient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conservation_id", referencedColumnName = "conservation_id")
-    private Conservation conservation;
+    @JoinColumn(name = "conversation_id")
+    Conversation conversation;
 }

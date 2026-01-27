@@ -1,10 +1,8 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
@@ -16,22 +14,24 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "conservation")
+@Table(name = "conversations")
 @Entity
-public class Conservation extends BaseEntity {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Conversation extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "conservation_id")
-    private UUID conservationId;
+    @Column(name = "conversation_id")
+    UUID conversationId;
 
-    @Column(name = "conservation_title", nullable = false, length = 200)
-    private String conservationTitle;
+    @Column(name = "conversation_title", length = 200)
+    String conversationTitle;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    private User user;
+    @JoinColumn(name = "creator_id", referencedColumnName = "user_id")
+    User creator;
 
-    @OneToMany(mappedBy = "conservation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Message> message;
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    List<Message> messages;
 
 }

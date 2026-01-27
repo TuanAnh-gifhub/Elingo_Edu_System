@@ -1,15 +1,12 @@
 package org.rent.room.be.entity;
 
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+import org.rent.room.be.base.BaseEntity;
 
 import java.time.LocalDate;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -18,20 +15,27 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
-@Table(name = "schedule")
 @SuperBuilder
-public class Schedule {
+@Table(name = "schedules", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"room_id", "specific_date"})
+})
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Schedule extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "schedule_id")
-    private UUID scheduleId;
+     UUID scheduleId;
 
-    @Column(name = "specific_date")
-    private LocalDate specificDate;
+    @Column(name = "specific_date", nullable = false)
+     LocalDate specificDate;
 
     @Column(name = "availability_status", length = 20)
-    private String availabilityStatus;
+     String availabilityStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
+     Room room;
 
     @OneToMany(
             mappedBy = "schedule",
@@ -39,9 +43,8 @@ public class Schedule {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    private List<Slot> slots;
+     List<Slot> slots;
 
     @OneToMany(mappedBy = "schedule", fetch = FetchType.LAZY)
-    private List<ScheduleBooking> scheduleBookings;
+     List<ScheduleBooking> scheduleBookings;
 }
-

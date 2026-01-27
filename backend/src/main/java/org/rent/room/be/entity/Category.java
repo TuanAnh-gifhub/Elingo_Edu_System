@@ -1,10 +1,8 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
@@ -16,20 +14,22 @@ import java.util.List;
 @Getter
 @Setter
 @SuperBuilder
-@Table(name = "category")
-public class Category extends BaseEntity{
+@Table(name = "categories")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Category extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private int categoryId;
+    Integer categoryId;
 
-    @Column(name = "category_name", length = 50, nullable = false)
-    private String categoryName;
+    @Column(name = "category_name", length = 50, nullable = false, unique = true)
+    String categoryName;
 
     @Column(name = "description", length = 255)
-    private String description;
+    String description;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Room> rooms;
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    List<Room> rooms;
 
 }

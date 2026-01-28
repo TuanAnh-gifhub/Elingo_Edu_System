@@ -3,27 +3,31 @@ package org.rent.room.be.serviceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.constant.Role;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
+import org.rent.room.be.entity.PasswordResetToken;
 import org.rent.room.be.entity.User;
 import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.UserMapper;
 import org.rent.room.be.repository.UserRepository;
+import org.rent.room.be.repository.mongo.PasswordResetTokenRepository;
 import org.rent.room.be.service.EmailService;
-import org.rent.room.be.service.PasswordResetService;
 import org.rent.room.be.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,10 +37,12 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
-    PasswordResetService passwordResetService;
+    PasswordResetTokenRepository passwordResetTokenRepository;
     EmailService emailService;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+
+    private static final long EXPIRATION_SEC = 900;
 
     @Transactional
     public UserResponse createUser(CreateUsersRequest createUser) {
@@ -63,22 +69,38 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse getProfileUser() {
 
-       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-       if(authentication == null || !authentication.isAuthenticated()){
-           throw new AppException(ErrorCode.USER_NOT_AUTHENTICATED);
-       }
-       User user = userRepository.findByEmail(authentication.getName())
-               .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-       return userMapper.toUserResponse(user);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
-    public List<UserResponse> getAllUsers(int page,int size) {
-        Pageable pageable  = PageRequest.of(page,size);
-        Page<User> userList = userRepository.findAll(pageable);
+    public PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        return userMapper.toUserResponseList(userList.getContent());
+        Role roleEnum = null;
+        if (role != null && !role.isEmpty()) {
+            try {
+                roleEnum = Role.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                roleEnum = null;
+            }
+        }
+
+        Page<User> pageData = userRepository.searchUsers(roleEnum, active, pageable);
+
+        return PageResponse.<UserResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(pageData.getTotalPages())
+                .totalElements(pageData.getTotalElements())
+                .data(userMapper.toUserResponseList(pageData.getContent()))
+                .build();
     }
 
     @Override
@@ -100,7 +122,7 @@ public class UserServiceImpl implements UserService {
     public void processForgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
-        String token = passwordResetService.createToken(email);
+        String token = createToken(email);
         String resetLink = "http://localhost:5173/reset-password?token=" + token;
         emailService.sendResetPasswordEmail(user.getEmail(), resetLink);
     }
@@ -109,7 +131,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void processResetPassword(ResetPasswordRequest request) {
         // 1. Validate token bên Mongo -> Lấy ra email
-        String email = passwordResetService.validateToken(request.getToken());
+        String email = validateToken(request.getToken());
 
         // 2. Tìm user
         User user = userRepository.findByEmail(email)
@@ -120,6 +142,43 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         // 4. Xóa token để không dùng lại được nữa
-        passwordResetService.deleteToken(request.getToken());
+        deleteToken(request.getToken());
+    }
+
+    private String createToken(String email) {
+        passwordResetTokenRepository.deleteByEmail(email);
+
+        String tokenString = UUID.randomUUID().toString();
+
+        // 3. Tính thời gian hết hạn
+        Instant expiryDate = Instant.now().plusSeconds(EXPIRATION_SEC);
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .email(email)
+                .token(tokenString)
+                .expiryDate(expiryDate)
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        return tokenString;
+    }
+
+    private String validateToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Token không hợp lệ hoặc không tồn tại"));
+
+        // Kiểm tra hết hạn thủ công (đề phòng MongoDB chưa kịp xóa background)
+        if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new RuntimeException("Token đã hết hạn");
+        }
+
+        return resetToken.getEmail();
+    }
+
+    private void deleteToken(String token) {
+        passwordResetTokenRepository.findByToken(token)
+                .ifPresent(passwordResetTokenRepository::delete);
     }
 }

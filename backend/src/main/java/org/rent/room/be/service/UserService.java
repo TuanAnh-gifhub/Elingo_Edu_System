@@ -1,5 +1,6 @@
 package org.rent.room.be.service;
 
+import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
@@ -15,7 +16,7 @@ public interface UserService {
 
     UserResponse getProfileUser();
 
-    List<UserResponse> getAllUsers(int page,int size);
+    PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active);
 
     List<UserResponse> getAllUsersByName(String username);
 

@@ -1,7 +1,12 @@
 package org.rent.room.be.repository;
 
+import org.rent.room.be.constant.Role;
 import org.rent.room.be.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,4 +22,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     User findByUserId(UUID id);
 
     List<User> findByUserName(String username);
+
+    @Query("SELECT u FROM User u WHERE " +
+            "(:role IS NULL OR u.role = :role) AND " +
+            "(:active IS NULL OR u.active = :active)")
+    Page<User> searchUsers(@Param("role") Role role,
+                           @Param("active") Boolean active,
+                           Pageable pageable);
 }

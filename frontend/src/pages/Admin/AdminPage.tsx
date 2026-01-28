@@ -1,120 +1,76 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Layout, Button } from "antd";
-import { Outlet, useNavigate } from "react-router-dom";
-import { BulbOutlined, BulbFilled } from "@ant-design/icons";
+import React, { useState, useEffect } from "react";
+import { Layout, ConfigProvider, theme as antTheme } from "antd";
+import { Outlet } from "react-router-dom"; // Bỏ useNavigate vì AuthContext đã lo điều hướng
 import Sidebar from "../../components/Admin/Sidebar";
 import AdminHeader from "../../components/Admin/Header";
+import { useAuth } from "../../context/AuthContext"; // <-- IMPORT QUAN TRỌNG
 
 const { Content } = Layout;
 
-interface AdminUser {
-  token?: string;
-  role?: string;
-  fullName?: string;
-  [key: string]: unknown;
-}
-
-const THEME_STORAGE_KEY = "adminTheme";
-const ADMIN_USER_STORAGE_KEY = "adminUser";
+const THEME_KEY = "adminTheme";
 
 const AdminPage: React.FC = () => {
-  const navigate = useNavigate();
+  // 1. Lấy user và hàm logout từ AuthContext
+  const { user, logout } = useAuth();
+
   const [collapsed, setCollapsed] = useState<boolean>(false);
-  const [theme, setTheme] = useState<string>(
-    localStorage.getItem(THEME_STORAGE_KEY) || "light"
-  );
 
-  const adminUser: AdminUser | null = useMemo(() => {
-    try {
-      const userStr = localStorage.getItem(ADMIN_USER_STORAGE_KEY);
-      return userStr ? JSON.parse(userStr) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const isDark = theme === "dark";
+  // 2. Logic Theme (Giữ nguyên vì nó chỉ liên quan đến giao diện)
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    return localStorage.getItem(THEME_KEY) === "dark";
+  });
 
   useEffect(() => {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-    document.body.setAttribute("data-theme", theme);
-  }, [theme]);
+    const themeValue = isDark ? "dark" : "light";
+    localStorage.setItem(THEME_KEY, themeValue);
+    document.body.setAttribute("data-theme", themeValue);
+  }, [isDark]);
 
-  const handleThemeToggle = (): void => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  const handleThemeToggle = () => setIsDark((prev) => !prev);
+
+  // 3. Hàm xử lý logout: Chỉ cần gọi hàm của Context
+  const handleLogoutClick = async () => {
+    await logout();
+    // Không cần navigate ở đây nữa, vì AuthContext đã dùng window.location.href
   };
-
-  const handleLogout = (): void => {
-    localStorage.clear();
-    navigate("/admin/login");
-  };
-
-  const toggleCollapsed = (): void => {
-    setCollapsed((prev) => !prev);
-  };
-
-  const mainLayoutStyle: React.CSSProperties = useMemo(
-    () => ({
-      flex: 1,
-      height: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      minWidth: 0,
-    }),
-    []
-  );
-
-  const contentStyle: React.CSSProperties = useMemo(
-    () => ({
-      padding: 24,
-      flex: 1,
-      background: isDark ? "#111827" : "#ffffff",
-      color: isDark ? "#ffffff" : "#1f2937",
-      overflowY: "auto",
-      transition: "background-color 0.2s, color 0.2s",
-    }),
-    [isDark]
-  );
-
-  const themeButtonStyle: React.CSSProperties = useMemo(
-    () => ({
-      backgroundColor: isDark ? "#374151" : "#ffffff",
-      borderColor: isDark ? "#4B5563" : "#D1D5DB",
-      color: isDark ? "#FBBF24" : "#1F2937",
-    }),
-    [isDark]
-  );
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        handleLogout={handleLogout}
-        collapsed={collapsed}
-        toggleCollapsed={toggleCollapsed}
-        theme={theme}
-      />
-      <Layout style={mainLayoutStyle} className="flex flex-col">
-        <AdminHeader
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: "#1677ff",
+        },
+      }}
+    >
+      <Layout className="h-screen overflow-hidden flex flex-row">
+        <Sidebar
           collapsed={collapsed}
-          toggleCollapsed={toggleCollapsed}
-          adminUser={adminUser}
-          theme={theme}
+          toggleCollapsed={() => setCollapsed(!collapsed)}
+          isDark={isDark}
+          adminUser={user} // <-- Truyền user từ Context vào
+          handleLogout={handleLogoutClick} // <-- Truyền hàm gọi context logout
         />
-        <div className="absolute top-4 right-4 z-10">
-          <Button
-            shape="circle"
-            size="large"
-            onClick={handleThemeToggle}
-            icon={isDark ? <BulbFilled /> : <BulbOutlined />}
-            title={isDark ? "Chuyển sang Light Mode" : "Chuyển sang Dark Mode"}
-            style={themeButtonStyle}
+
+        <Layout className="flex flex-col flex-1 min-w-0 transition-all duration-200">
+          <AdminHeader
+            collapsed={collapsed}
+            toggleCollapsed={() => setCollapsed(!collapsed)}
+            adminUser={user} // <-- Truyền user từ Context vào
+            isDark={isDark}
+            onThemeToggle={handleThemeToggle}
           />
-        </div>
-        <Content style={contentStyle}>
-          <Outlet context={{ theme }} />
-        </Content>
+
+          <Content
+            className={`flex-1 p-6 overflow-y-auto transition-colors duration-200 ${
+              isDark ? "bg-[#141414]" : "bg-[#f0f2f5]"
+            }`}
+          >
+            <Outlet context={{ isDark }} />
+          </Content>
+        </Layout>
       </Layout>
-    </div>
+    </ConfigProvider>
   );
 };
 

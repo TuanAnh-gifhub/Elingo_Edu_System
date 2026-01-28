@@ -1,265 +1,181 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Form, Input, Button, Card, Typography, Alert, message } from "antd";
 import { userService } from "../../../services/usersService";
 
-const EyeIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M1 1l22 22"></path>
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
-    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
-  </svg>
-);
+const { Title, Text } = Typography;
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const primaryColor = "#2563EB";
+  const [form] = Form.useForm();
 
   useEffect(() => {
     if (!token) {
-      setError("Token không hợp lệ hoặc đường dẫn bị lỗi.");
+      setApiError("Đường dẫn không hợp lệ hoặc thiếu Token xác thực.");
     }
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-
-    if (password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 8 ký tự.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
-
+  const onFinish = async (values: any) => {
+    setApiError("");
+    setSuccessMsg("");
     setIsLoading(true);
+
     try {
       if (token) {
-          await userService.resetPassword({
-            token: token,
-            newPassword: password
-          });
-          
-          setMessage('Đổi mật khẩu thành công!');
-          setTimeout(() => navigate('/'), 2000);
+        await userService.resetPassword({
+          token: token,
+          newPassword: values.password,
+        });
+
+        setSuccessMsg("Đổi mật khẩu thành công! Đang chuyển hướng...");
+        message.success("Đổi mật khẩu thành công!");
+        
+        setTimeout(() => navigate("/login"), 2000);
       }
     } catch (err: any) {
-      setError(
-        err.response?.data || "Đã có lỗi xảy ra. Token có thể đã hết hạn.",
-      );
+      const errorMsg = err.response?.data?.message || err.response?.data || "Đã có lỗi xảy ra.";
+      setApiError(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ... (Phần hiển thị lỗi token giữ nguyên) ...
-  if (!token) return <div style={styles.container}>Lỗi Token...</div>;
+  if (!token) {
+    return (
+      <div style={styles.container}>
+        <Card style={styles.card}>
+          <Alert
+            message="Lỗi Đường Dẫn"
+            description="Token không hợp lệ. Vui lòng kiểm tra lại email."
+            type="error"
+            showIcon
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Đặt lại mật khẩu</h2>
-        <p style={styles.subtitle}>Nhập mật khẩu mới cho tài khoản của bạn.</p>
+      <Card style={styles.card} bordered={false}>
+        {/* Header - Giảm margin bottom từ 30 xuống 20 */}
+        <div style={{ marginBottom: 20 }}> 
+          <Title level={3} style={{ margin: 0, color: "#1F2937", fontWeight: "bold" }}>
+            Đặt lại mật khẩu
+          </Title>
+          <Text type="secondary" style={{ fontSize: '13px' }}>Nhập mật khẩu mới cho tài khoản của bạn.</Text>
+        </div>
 
-        {error && <div style={styles.errorAlert}>{error}</div>}
-        {message && <div style={styles.successAlert}>{message}</div>}
+        {apiError && (
+          <Alert message={apiError} type="error" showIcon style={{ marginBottom: 15 }} />
+        )}
+        {successMsg && (
+          <Alert message={successMsg} type="success" showIcon style={{ marginBottom: 15 }} />
+        )}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {/* Input Mật khẩu mới */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Mật khẩu mới</label>
-            <div style={styles.passwordWrapper}>
-              <input
-                type={showPassword ? "text" : "password"} // Đổi type dựa trên state
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={styles.input}
-                placeholder="••••••"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-          </div>
-
-          {/* Input Xác nhận mật khẩu */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Xác nhận mật khẩu</label>
-            <div style={styles.passwordWrapper}>
-              <input
-                type={showConfirmPassword ? "text" : "password"} // Đổi type dựa trên state
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={styles.input}
-                placeholder="••••••"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeButton}
-              >
-                {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            style={{
-              ...styles.button,
-              backgroundColor: isLoading ? "#ccc" : primaryColor,
-            }}
-            disabled={isLoading}
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          autoComplete="off"
+          size="large"
+          requiredMark={false} // Tắt dấu sao đỏ mặc định nếu muốn form sạch hơn (tuỳ chọn)
+        >
+          {/* Mật khẩu mới - Giảm khoảng cách xuống 12px */}
+          <Form.Item
+            label={<span style={styles.label}>Mật khẩu mới</span>}
+            name="password"
+            style={{ marginBottom: 12 }} // <--- CHỈNH Ở ĐÂY
+            rules={[
+              { required: true, message: "Vui lòng nhập mật khẩu!" },
+              { min: 6, message: "Mật khẩu tối thiểu 6 ký tự." },
+            ]}
           >
-            {isLoading ? "Đang xử lý..." : "Xác nhận thay đổi"}
-          </button>
-        </form>
-      </div>
+            <Input.Password placeholder="••••••" style={styles.input} />
+          </Form.Item>
+
+          {/* Xác nhận mật khẩu - Giảm khoảng cách xuống 15px (để cách nút một chút) */}
+          <Form.Item
+            label={<span style={styles.label}>Xác nhận mật khẩu</span>}
+            name="confirmPassword"
+            dependencies={['password']}
+            style={{ marginBottom: 20 }} // <--- CHỈNH Ở ĐÂY
+            rules={[
+              { required: true, message: "Vui lòng xác nhận mật khẩu!" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Mật khẩu không khớp!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="••••••" style={styles.input} />
+          </Form.Item>
+
+          {/* Nút Submit */}
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={isLoading}
+              style={styles.button}
+            >
+              Xác nhận thay đổi
+            </Button>
+          </Form.Item>
+        </Form>
+      </Card>
     </div>
   );
 };
 
-// Cập nhật CSS để thêm vị trí cho nút con mắt
-const styles: any = {
+const styles = {
   container: {
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
+    paddingTop: "60px",
     minHeight: "100vh",
     backgroundColor: "#F3F4F6",
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    paddingBottom: "20px",
   },
   card: {
-    backgroundColor: "white",
-    padding: "40px",
+    width: "100%",
+    maxWidth: "420px", // Giảm chiều rộng card một chút cho gọn
     borderRadius: "16px",
     boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-    width: "100%",
-    maxWidth: "450px",
-    textAlign: "center",
+    textAlign: "center" as const,
+    padding: "10px 10px", // Giảm padding dọc của card
   },
-  title: {
-    fontSize: "24px",
-    fontWeight: "bold",
-    marginBottom: "8px",
-    color: "#1F2937",
-  },
-  subtitle: { color: "#6B7280", marginBottom: "30px", fontSize: "14px" },
-  form: { display: "flex", flexDirection: "column", gap: "20px" },
-  inputGroup: { textAlign: "left" },
   label: {
-    display: "block",
-    marginBottom: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
+    fontWeight: 600,
     color: "#374151",
-  },
-
-  // --- CSS MỚI CHO PHẦN PASSWORD ---
-  passwordWrapper: {
-    position: "relative", // Để nút con mắt canh theo khung này
-    display: "flex",
-    alignItems: "center",
+    fontSize: "13px", // Giảm size chữ label 1 chút cho tinh tế
   },
   input: {
-    width: "100%",
-    padding: "12px 45px 12px 16px", // Padding phải 45px để chữ không đè lên nút mắt
     borderRadius: "8px",
-    border: "1px solid #D1D5DB",
-    fontSize: "16px",
-    outline: "none",
-    transition: "border-color 0.2s",
-    color: '#1F2937',       // Ép chữ màu xám đậm/đen
-    backgroundColor: '#fff' // Ép nền ô nhập màu trắng
+    fontSize: "14px", // Chữ trong input vừa phải
   },
-  eyeButton: {
-    position: "absolute",
-    right: "12px", // Canh phải
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "#6B7280",
-    display: "flex",
-    alignItems: "center",
-    padding: 0,
-    marginTop: 0, // Reset margin cũ
-  },
-  // ---------------------------------
-
   button: {
-    color: "white",
-    padding: "12px",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
     borderRadius: "30px",
-    fontSize: "16px",
-    fontWeight: "600",
-    border: "none",
-    cursor: "pointer",
-    marginTop: "10px",
-    transition: "opacity 0.2s",
-  },
-  errorAlert: {
-    backgroundColor: "#FEE2E2",
-    color: "#B91C1C",
-    padding: "10px",
-    borderRadius: "8px",
-    fontSize: "14px",
-    marginBottom: "15px",
-  },
-  successAlert: {
-    backgroundColor: "#D1FAE5",
-    color: "#047857",
-    padding: "10px",
-    borderRadius: "8px",
-    fontSize: "14px",
-    marginBottom: "15px",
+    height: "42px", // Giảm chiều cao nút 1 xíu
+    fontWeight: 600,
+    fontSize: "15px",
+    boxShadow: "0 2px 4px rgba(37, 99, 235, 0.2)",
   },
 };
 

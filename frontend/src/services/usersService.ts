@@ -4,7 +4,6 @@ import api from "../config/axios";
 export interface UserResponse {
   userId: string;
   userName: string;
-  fullName: string;
   email: string;
   gender: string;
   phone: string;
@@ -23,6 +22,14 @@ export interface ApiResponse<T> {
   result: T;
 }
 
+export interface PageResponse<T> {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalElements: number;
+  data: T[];
+}
+
 // 3. Định nghĩa Interface cho Request body của Reset Password
 // (Khớp với ResetPasswordRequest bên Java)
 export interface ResetPasswordRequest {
@@ -32,7 +39,7 @@ export interface ResetPasswordRequest {
 
 export const userService = {
   getMe: () => {
-    return api.get<any, ApiResponse<UserResponse>>("/users/me");
+    return api.get<any, ApiResponse<UserResponse>>("/users/profile");
   },
 
   forgotPassword: (email: string) => {
@@ -43,5 +50,16 @@ export const userService = {
 
   resetPassword: (data: ResetPasswordRequest) => {
     return api.post<any, ApiResponse<void>>("/users/reset-password", data);
-  }
+  },
+
+  getAllUsers: (page: number, size: number, role?: string, active?: boolean) => {
+    const params: any = { page, size };
+    if (role) {
+      params.role = role;
+    }
+    if (active !== undefined) {
+      params.active = active;
+    }
+    return api.get('/users/all', { params }); 
+  },
 };

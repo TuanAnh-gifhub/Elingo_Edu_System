@@ -2,131 +2,71 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  FaPhoneAlt,
+  FaEnvelope, // Đổi từ FaPhoneAlt sang FaEnvelope
   FaLock,
   FaShieldAlt,
   FaEye,
   FaEyeSlash,
   FaUser,
 } from "react-icons/fa";
-import ForgotPassword from "./ForgotPassword";
-// import { authService } from "../../../services"; // TODO: Gắn API sau
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import authService from "../../services/auth/authService";
 
 interface LoginFormData {
-  phoneNumber: string;
+  email: string;
   password: string;
 }
 
-// TODO: Uncomment khi có API
-// interface LoginResponse {
-//   success: boolean;
-//   message?: string;
-//   data?: {
-//     token: string;
-//     role: string;
-//     fullName?: string;
-//     [key: string]: unknown;
-//   };
-// }
-
 const LoginAdmin: React.FC = () => {
   const navigate = useNavigate();
+  const { user, refreshProfile } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
-    phoneNumber: "",
+    email: "",
     password: "",
   });
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showForgot, setShowForgot] = useState<boolean>(false);
 
   useEffect(() => {
-    const adminUserStr = localStorage.getItem("adminUser");
-    const adminUser = adminUserStr ? JSON.parse(adminUserStr) : null;
-    // Giữ nguyên logic kiểm tra role trong useEffect
-    if (adminUser?.token && adminUser?.role !== "User") {
+    if (user && (user.role === "ADMIN" || user.role?.includes("ADMIN"))) {
       navigate("/admin", { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+      );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    // Validation: Kiểm tra phoneNumber và password
-    if (!formData.phoneNumber || !formData.password) {
-      setError("Vui lòng nhập đầy đủ số điện thoại và mật khẩu.");
-      return;
-    }
-
     setIsLoading(true);
 
-    // TODO: Thay thế bằng API call thật sau
-    // Mock login - chỉ để test giao diện
-    setTimeout(() => {
-      // Mock: Chấp nhận bất kỳ phoneNumber và password nào để test
-      // Trong production, sẽ gọi API thật ở đây
-      const mockUser = {
-        token: "mock-token-" + Date.now(),
-        role: "Admin",
-        fullName: "Admin User",
-        phoneNumber: formData.phoneNumber,
-      };
+    try {
+      // 1. Gọi API Login (Cookie sẽ được set tự động bởi browser)
+      const res: any = await authService.login(formData);
 
-      // Lưu thông tin user vào localStorage
-      localStorage.setItem("adminUser", JSON.stringify(mockUser));
+      if (res && (res.code === 200 || res.code === 1000)) {
+        // 2. Login thành công -> Gọi ngay refreshProfile để AuthContext cập nhật user từ Cookie
+        await refreshProfile();
 
-      toast.success("Đăng nhập Admin thành công! (Mock)", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-
-      // Chuyển hướng đến trang /admin
-      navigate("/admin", { replace: true });
-      setIsLoading(false);
-
-      // Uncomment phần dưới khi có API thật:
-      /*
-      try {
-        const loginPayload = {
-          phoneNumber: formData.phoneNumber,
-          password: formData.password,
-        };
-        const response = await authService.login(loginPayload);
-        const responseData = response as unknown as LoginResponse;
-        
-        if (responseData.success === true) {
-          const loggedInUser = responseData.data;
-          if (loggedInUser?.token && loggedInUser?.role !== "User") {
-            toast.success("Đăng nhập Admin thành công!", {
-              position: "top-right",
-              autoClose: 3000,
-            });
-            localStorage.setItem("adminUser", JSON.stringify(loggedInUser));
-            navigate("/admin", { replace: true });
-          } else {
-            setError("Tài khoản này không có quyền truy cập Admin.");
-          }
-        } else {
-          setError(responseData.message || "Số điện thoại hoặc mật khẩu không đúng.");
-        }
-      } catch (error: unknown) {
-        let errorMessage = "Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.";
-        if (error && typeof error === "object" && "response" in error) {
-          const errResponse = error.response as { status?: number; data?: { message?: string } };
-          if (errResponse?.status === 401) {
-            errorMessage = "Số điện thoại hoặc mật khẩu không đúng.";
-          } else if (errResponse?.data?.message) {
-            errorMessage = errResponse.data.message;
-          }
-        }
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
+        toast.success("Đăng nhập thành công!");
+        // useEffect ở trên sẽ tự động navigate khi thấy user mới load về là Admin
+      } else {
+        setError(res.message || "Email hoặc mật khẩu không đúng.");
       }
-      */
-    }, 1000);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || "Đăng nhập thất bại.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -139,7 +79,6 @@ const LoginAdmin: React.FC = () => {
           transition={{ duration: 0.8 }}
           className="max-w-md"
         >
-          {/* ... Phần trang trí giữ nguyên ... */}
           <div className="flex items-center mb-8">
             <FaShieldAlt className="text-5xl text-gray-800 mr-3" />
             <h1 className="text-3xl font-bold text-gray-800">
@@ -157,11 +96,12 @@ const LoginAdmin: React.FC = () => {
           <div className="bg-gray-100 p-6 rounded-lg">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                <FaUser className="text-blue-600" />{" "}
-                {/* Giữ icon user ở đây cũng được */}
+                <FaUser className="text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-800">Quản lý người dùng</h3>
+                <h3 className="font-medium text-gray-800">
+                  Quản lý người dùng
+                </h3>
                 <p className="text-sm text-gray-500">
                   Quản lý tài khoản và phân quyền
                 </p>
@@ -203,38 +143,35 @@ const LoginAdmin: React.FC = () => {
             <h2 className="text-3xl font-light text-gray-800">
               Đăng nhập Hệ thống
             </h2>
-            <p className="text-gray-500 mt-2">Vui lòng đăng nhập để tiếp tục</p>
+            <p className="text-gray-500 mt-2">
+              Vui lòng đăng nhập Email quản trị
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* --- Input Số Điện Thoại --- */}
+            {/* --- Input Email (Đã sửa từ Phone) --- */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Số điện thoại
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  {/* Đổi icon thành điện thoại */}
-                  <FaPhoneAlt className="h-5 w-5 text-gray-400" />
+                  {/* Icon Email */}
+                  <FaEnvelope className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="tel" // Đổi type thành 'tel'
+                  type="email"
                   required
                   className="pl-10 w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  value={formData.phoneNumber}
+                  value={formData.email}
                   onChange={(e) =>
-                    // Cập nhật state phoneNumber, chỉ cho phép nhập số
-                    setFormData({
-                      ...formData,
-                      phoneNumber: e.target.value.replace(/\D/g, ""),
-                    })
+                    setFormData({ ...formData, email: e.target.value })
                   }
-                  placeholder="Nhập số điện thoại"
-                  inputMode="numeric" // Gợi ý bàn phím số trên mobile
+                  placeholder="admin@eduroom.com"
                 />
               </div>
             </div>
-            {/* --- Kết thúc Input Số Điện Thoại --- */}
+            {/* --- Kết thúc Input Email --- */}
 
             {/* --- Input Mật Khẩu (Giữ nguyên) --- */}
             <div>
@@ -270,12 +207,11 @@ const LoginAdmin: React.FC = () => {
                 </button>
               </div>
             </div>
-            {/* --- Kết thúc Input Mật Khẩu --- */}
 
-            {/* Phần hiển thị lỗi và nút Submit (Giữ nguyên) */}
+            {/* Phần hiển thị lỗi */}
             {error && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">
-                <div className="flex">
+              <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm border border-red-200">
+                <div className="flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
@@ -292,11 +228,12 @@ const LoginAdmin: React.FC = () => {
                 </div>
               </div>
             )}
+
             <div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <svg
@@ -325,17 +262,6 @@ const LoginAdmin: React.FC = () => {
               </button>
             </div>
           </form>
-
-          {/* Phần Quên mật khẩu và Copyright (Giữ nguyên) */}
-          <div className="text-center mt-2">
-            <button
-              type="button"
-              className="text-blue-600 hover:underline text-sm"
-              onClick={() => setShowForgot(true)}
-            >
-              Quên mật khẩu ?
-            </button>
-          </div>
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
               © {new Date().getFullYear()} EduRoom Administration Panel
@@ -343,10 +269,6 @@ const LoginAdmin: React.FC = () => {
           </div>
         </motion.div>
       </div>
-      <ForgotPassword
-        visible={showForgot}
-        onCancel={() => setShowForgot(false)}
-      />
     </div>
   );
 };

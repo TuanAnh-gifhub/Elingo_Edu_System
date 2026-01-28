@@ -8,9 +8,10 @@ import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
 import WalletPromotion from "../pages/Customer/WalletPage/WalletPromotion";
 import NotFound from "../components/Error/NotFound";
 import AdminPage from "../pages/Admin/AdminPage";
-import LoginAdmin from "../pages/Admin/LoginAdmin/LoginAdmin";
+import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
+import UserManagement from "../pages/Admin/UserManage";
 
 export const router = createBrowserRouter([
   {
@@ -99,6 +100,10 @@ export const router = createBrowserRouter([
           </div>
         ),
       },
+      {
+        path: "customers",
+        element: <UserManagement />
+      }
     ],
   },
 ]);

@@ -5,11 +5,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
+import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.response.UserResponse;
-import org.rent.room.be.service.EmailService;
-import org.rent.room.be.service.PasswordResetService;
 import org.rent.room.be.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +24,6 @@ import java.util.List;
 public class UserController {
 
     UserService userService;
-    PasswordResetService passwordResetService;
-    EmailService emailService;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<?>> createUser(@RequestBody CreateUsersRequest user) {
@@ -53,20 +50,25 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<?>> getAllUsers(@RequestParam(defaultValue = "1",required = false )int page,
-                                                      @RequestParam(defaultValue = "10", required = false) int size) {
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
+            @RequestParam(defaultValue = "1", required = false) int page,
+            @RequestParam(defaultValue = "10", required = false) int size,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean active
+    ) {
         return ResponseEntity.ok(
-                ApiResponse.<List<UserResponse>>builder()
+                ApiResponse.<PageResponse<UserResponse>>builder()
                         .code(200)
-                        .message("Get all user successfully")
-                        .result(userService.getAllUsers(page,size))
+                        .message("Get user list successfully")
+                        .result(userService.getAllUsers(page, size, role, active))
                         .build()
         );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/username")
-    public ResponseEntity<ApiResponse<?>> getUserByUsername(@RequestParam String username) {
+    public ResponseEntity<ApiResponse<?>> getUserByUsername(
+            @RequestParam String username) {
         return ResponseEntity.ok(
                 ApiResponse.<List<UserResponse>>builder()
                         .code(200)

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+// Đảm bảo đường dẫn import đúng với project của bạn
 import { userService, type UserResponse } from "../services/usersService";
 import authService from "../services/auth/authService";
 
@@ -6,88 +7,91 @@ interface AuthContextType {
   user: UserResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: UserResponse) => void; // Hàm cập nhật state sau khi login thành công
-  logout: () => Promise<void>; // Hàm gọi API logout và xóa state
-  refreshProfile: () => Promise<void>; // Hàm gọi lại API getMe (dùng khi update profile hoặc login xong)
+  login: (userData: UserResponse) => void;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
-// Tạo Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // --- 1. Hàm check user khi reload trang (giữ nguyên) ---
   const fetchCurrentUser = async () => {
     setIsLoading(true);
     try {
       const response: any = await userService.getMe();
-
-      console.log("🚀 Debug API Response:", response); // Bật F12 xem dòng này in ra gì
-
       const actualData = response.data ? response.data : response;
 
       if (actualData && actualData.code === 200 && actualData.result) {
-        console.log("✅ Đăng nhập thành công, user:", actualData.result);
+        console.log("✅ Khôi phục phiên đăng nhập:", actualData.result);
         setUser(actualData.result);
       } else {
-        console.log("❌ API trả về nhưng không đúng format:", actualData);
         setUser(null);
       }
-    } catch (error: any) {
-      console.log("⚠️ Lỗi mạng hoặc chưa đăng nhập (403/401)");
+    } catch (error) {
       setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Chạy 1 lần khi App vừa load (F5 trang)
+  // Chạy 1 lần khi App mount
   useEffect(() => {
-    setIsLoading(false);
+    fetchCurrentUser();
   }, []);
 
-  // Hàm Login: Chỉ đơn giản là cập nhật state (vì API login đã được gọi ở LoginPage rồi)
   const login = (userData: UserResponse) => {
     setUser(userData);
   };
 
-  // Hàm Logout: Gọi API để xóa Cookie + Xóa state
+  // --- 2. HÀM LOGOUT ĐÃ SỬA (QUAN TRỌNG) ---
   const logout = async () => {
+    // A. Kiểm tra xem đang đứng ở trang Admin hay trang User
+    const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.startsWith("/admin");
+
     try {
+      // B. Gọi API logout (để Backend xóa Cookie)
+      // Dù API lỗi (do token hết hạn) thì vẫn phải chạy tiếp các bước dưới
       await authService.logout();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Logout API failed:", error);
     }
+
+    // C. Xóa user trong state
     setUser(null);
-    // Có thể điều hướng về trang chủ hoặc reload trang nếu cần
-    window.location.href = "/";
+
+    // D. Điều hướng về đúng trang Login
+    // Dùng window.location.href để reload sạch sẽ state của React
+    if (isAdminPage) {
+      window.location.href = "/admin/login";
+    } else {
+      window.location.href = "/"; // Hoặc "/login" tùy luồng User của bạn
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user, // Nếu có user object -> true, ngược lại false
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout,
         refreshProfile: fetchCurrentUser,
       }}
     >
-      {/* Mẹo UX: Nếu đang check login lần đầu (isLoading = true), 
-        bạn có thể return null hoặc một cái Loading Spinner toàn màn hình 
-        để tránh giao diện bị nháy từ "Login" -> "Avatar User"
-      */}
+      {/* Chỉ render con khi đã check xong session để tránh nháy giao diện */}
       {!isLoading && children}
     </AuthContext.Provider>
   );
 };
 
-// Custom Hook để dùng cho gọn
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

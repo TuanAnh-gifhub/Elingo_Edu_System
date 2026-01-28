@@ -33,21 +33,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     CustomUserDetailsService userDetailsService;
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-
-        boolean skip = path.startsWith("/auth/")
-                || path.equals("/users/create")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui");
-
-        log.info("JWT_FILTER shouldNotFilter path={} skip={}", path, skip);
-
-        return skip;
-    }
-
-
-    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,

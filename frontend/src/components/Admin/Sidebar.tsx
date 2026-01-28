@@ -1,192 +1,185 @@
-import { Layout, Menu } from "antd";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Layout, Menu, type MenuProps } from "antd";
+import { Link, useLocation } from "react-router-dom";
 import {
-  LineChartOutlined,
+  AppstoreOutlined,
+  CalendarOutlined,
+  TeamOutlined,
+  ShopOutlined, // Dùng cho Phòng/Cơ sở
+  DollarOutlined,
+  SettingOutlined,
   LogoutOutlined,
-  CaretRightOutlined,
-  CaretLeftOutlined,
+  ReconciliationOutlined, // Dùng cho đơn hàng/hóa đơn
+  StarOutlined,
 } from "@ant-design/icons";
-import { useState, useEffect, useMemo } from "react";
-import type { MenuProps } from "antd";
+import type { UserResponse } from "../../services/usersService";
 
 const { Sider } = Layout;
 
-interface AdminUser {
-  token?: string;
-  role?: string;
-  fullName?: string;
-  [key: string]: unknown;
+type MenuItem = Required<MenuProps>["items"][number];
+
+function getItem(
+  label: React.ReactNode,
+  key: React.Key,
+  icon?: React.ReactNode,
+  children?: MenuItem[],
+): MenuItem {
+  return {
+    key,
+    icon,
+    children,
+    label,
+  } as MenuItem;
 }
 
 interface SidebarProps {
   collapsed: boolean;
   toggleCollapsed: () => void;
-  theme: string;
+  isDark: boolean;
+  adminUser: UserResponse | null;
   handleLogout: () => void;
 }
 
-const SIDEBAR_WIDTH = 280;
-const ADMIN_USER_STORAGE_KEY = "adminUser";
-
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLogout, theme }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  collapsed,
+  isDark,
+  adminUser,
+  handleLogout,
+}) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [activeKey, setActiveKey] = useState<string>(location.pathname);
-  const isDark = theme === "dark";
-
-  const adminUser: AdminUser | null = useMemo(() => {
-    try {
-      const userStr = localStorage.getItem(ADMIN_USER_STORAGE_KEY);
-      return userStr ? JSON.parse(userStr) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const userRole = adminUser?.role || "Admin";
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
 
   useEffect(() => {
     setActiveKey(location.pathname);
   }, [location.pathname]);
 
-  const handleLogoutClick = (): void => {
-    localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
-    navigate("/admin/login");
-    handleLogout();
+  const onOpenChange: MenuProps["onOpenChange"] = (keys) => {
+    setOpenKeys(keys);
   };
 
-  const adminMenuItems: MenuProps["items"] = useMemo(
-    () => [
-      {
-        key: "/admin",
-        icon: <LineChartOutlined className="text-lg" />,
-        label: (
-          <Link to="/admin" className="text-inherit hover:text-inherit">
-            Dashboard
-          </Link>
-        ),
-      },
-      {
-        key: "logout",
-        icon: <LogoutOutlined className="text-lg" />,
-        label: "Đăng xuất",
-        danger: true,
-        onClick: handleLogoutClick,
-      },
-    ],
-    []
-  );
+  // --- CẤU HÌNH MENU CHO THUÊ PHÒNG ---
+  const items: MenuItem[] = [
+    // 1. Tổng quan
+    getItem(<Link to="/admin">Dashboard</Link>, "/admin", <AppstoreOutlined />),
 
-  const otherRoleMenuItems: MenuProps["items"] = useMemo(
-    () => [
-      {
-        key: "logout",
-        icon: <LogoutOutlined className="text-lg" />,
-        label: "Đăng xuất",
-        danger: true,
-        onClick: handleLogoutClick,
-      },
-    ],
-    []
-  );
+    // 2. Nghiệp vụ chính: Quản lý Lịch đặt
+    getItem("Quản lý Đặt phòng", "sub_booking", <CalendarOutlined />, [
+      getItem(
+        <Link to="/admin/bookings/calendar">Lịch phòng (Calendar)</Link>,
+        "/admin/bookings/calendar",
+      ), // Xem dạng lịch
+      getItem(
+        <Link to="/admin/bookings/list">Danh sách đơn đặt</Link>,
+        "/admin/bookings/list",
+      ), // Xem dạng bảng (Table)
+      getItem(
+        <Link to="/admin/bookings/check-in">Check-in/Check-out</Link>,
+        "/admin/bookings/check-in",
+      ), // Xử lý khách đến/đi
+    ]),
 
-  const menuItems = useMemo(
-    () => (userRole === "Admin" ? adminMenuItems : otherRoleMenuItems),
-    [userRole, adminMenuItems, otherRoleMenuItems]
-  );
+    // 3. Quản lý Tài nguyên (Phòng ốc)
+    getItem("Quản lý Phòng & Cơ sở", "sub_room", <ShopOutlined />, [
+      getItem(<Link to="/admin/rooms">Danh sách Phòng</Link>, "/admin/rooms"),
+      getItem(
+        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
+        "/admin/amenities",
+      ), // Máy chiếu, loa đài...
+      getItem(
+        <Link to="/admin/room-types">Loại phòng & Giá</Link>,
+        "/admin/room-types",
+      ),
+    ]),
 
-  const menuClassName = useMemo(
-    () => `
-    border-0 bg-transparent font-medium text-[15px] p-2
-    [&_.ant-menu-item]:rounded-xl
-    [&_.ant-menu-item]:mx-2
-    [&_.ant-menu-item]:my-1
-    [&_.ant-menu-item]:h-12
-    [&_.ant-menu-item]:flex
-    [&_.ant-menu-item]:items-center
-    [&_.ant-menu-item]:transition-all
-    [&_.ant-menu-item]:duration-200
-    [&_.ant-menu-item]:ease-out
-    ${isDark ? "[&_.ant-menu-item]:text-gray-300" : "[&_.ant-menu-item]:text-gray-700"}
-    [&_.ant-menu-item:not(.ant-menu-item-selected):hover]:bg-blue-500/20
-    [&_.ant-menu-item:not(.ant-menu-item-selected):hover]:translate-x-1
-    [&_.ant-menu-item-selected]:bg-blue-600
-    [&_.ant-menu-item-selected]:border-l-2
-    [&_.ant-menu-item-selected]:border-l-blue-400
-    [&_.ant-menu-item-selected]:text-white
-    [&_.ant-menu-item-selected]:font-semibold
-    [&_.ant-menu-item:last-child]:mt-auto
-    ${isDark ? "[&_.ant-menu-item-dangerous]:text-red-400" : "[&_.ant-menu-item-dangerous]:text-red-600"}
-    [&_.ant-menu-item-dangerous:hover]:bg-red-500
-    [&_.ant-menu-item-dangerous:hover]:text-white
-  `,
-    [isDark]
-  );
+    // 4. Khách hàng
+    getItem(
+      <Link to="/admin/customers">Khách hàng</Link>,
+      "/admin/customers",
+      <TeamOutlined />,
+    ),
+
+    // 5. Tài chính
+    getItem("Tài chính & Hóa đơn", "sub_finance", <DollarOutlined />, [
+      getItem(
+        <Link to="/admin/invoices">Hóa đơn dịch vụ</Link>,
+        "/admin/invoices",
+      ),
+      getItem(
+        <Link to="/admin/transactions">Lịch sử giao dịch</Link>,
+        "/admin/transactions",
+      ),
+    ]),
+
+    // 6. Đánh giá & Phản hồi
+    getItem(
+      <Link to="/admin/reviews">Đánh giá từ khách</Link>,
+      "/admin/reviews",
+      <StarOutlined />,
+    ),
+
+    // 7. Cài đặt hệ thống
+    getItem(
+      <Link to="/admin/settings">Cài đặt hệ thống</Link>,
+      "/admin/settings",
+      <SettingOutlined />,
+    ),
+
+    // Logout
+    getItem("Đăng xuất", "logout", <LogoutOutlined />),
+  ];
+
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    if (e.key === "logout") {
+      handleLogout();
+    }
+  };
 
   return (
     <Sider
       trigger={null}
       collapsible
       collapsed={collapsed}
-      width={SIDEBAR_WIDTH}
-      className={`admin-sider h-screen z-50 shadow-xl transition-all duration-300 ease-in-out ${
-        isDark ? "bg-blue-900" : "bg-white"
-      }`}
-      style={{ borderRight: "none" }}
+      width={260}
+      theme={isDark ? "dark" : "light"}
+      className="shadow-md z-20"
+      style={{
+        borderRight: isDark ? "1px solid #303030" : "1px solid #f0f0f0",
+      }}
     >
       {/* Logo Section */}
-      <div className={`p-5 border-b ${isDark ? "border-blue-800 bg-blue-900" : "border-gray-200 bg-white"}`}>
-        <div className={`transition-all duration-300 ${collapsed ? "w-12 h-12 mx-auto" : "w-full"}`}>
-          {collapsed ? (
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 border-2 ${
-              isDark ? "border-white/10" : "border-gray-200"
-            }`}>
-              <span className="text-xl font-bold text-white">E</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
-                <span className="text-lg font-bold text-white">E</span>
-              </div>
-              <div>
-                <div className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>EduRoom</div>
-                <div className={`text-xs font-medium mt-1 px-2 py-1 rounded-full text-center ${
-                  isDark 
-                    ? "bg-blue-500/20 text-blue-300" 
-                    : "bg-blue-100 text-blue-700"
-                }`}>
-                  {userRole === "Admin" ? "Quản trị viên" : userRole}
-                </div>
-              </div>
+      <div
+        className={`h-16 flex items-center justify-center border-b transition-colors ${
+          isDark ? "border-gray-700 bg-[#001529]" : "border-gray-200 bg-white"
+        }`}
+      >
+        <div className="flex items-center gap-2 overflow-hidden px-4">
+          <div className="min-w-[32px] h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+            E
+          </div>
+          {!collapsed && (
+            <div
+              className={`font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 ${
+                isDark ? "text-white" : "text-gray-800"
+              }`}
+            >
+              EduRoom
             </div>
           )}
         </div>
       </div>
 
-      {/* Navigation Menu */}
-      <div className="h-[calc(100vh-80px)] overflow-auto custom-scrollbar">
+      <div className="h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar py-2">
         <Menu
-          theme={isDark ? "dark" : "light"}
           mode="inline"
           selectedKeys={[activeKey]}
-          items={menuItems}
-          className={menuClassName}
+          openKeys={openKeys}
+          onOpenChange={onOpenChange}
+          items={items}
+          onClick={handleMenuClick}
+          theme={isDark ? "dark" : "light"}
+          style={{ border: "none", background: "transparent" }}
         />
-      </div>
-
-      {/* Collapse Toggle Button */}
-      <div className="absolute -right-3 top-20 z-10">
-        <button
-          onClick={toggleCollapsed}
-          className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-0 cursor-pointer transition-all duration-200 hover:scale-110 text-white text-xs active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            isDark 
-              ? "bg-blue-500 hover:bg-blue-600" 
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-          aria-label={collapsed ? "Mở rộng sidebar" : "Thu nhỏ sidebar"}
-        >
-          {collapsed ? <CaretRightOutlined /> : <CaretLeftOutlined />}
-        </button>
       </div>
     </Sider>
   );

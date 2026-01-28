@@ -1,11 +1,8 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
+import lombok.*;
+import lombok.experimental.*;
 
 import java.util.List;
 
@@ -16,16 +13,17 @@ import java.util.List;
 @Setter
 @SuperBuilder
 @Table(name = "cities")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class City {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "city_id")
-    private Long cityId;
+    Long cityId;
 
     @Column(name = "city_name", nullable = false, unique = true)
-    private String cityName;
+    String cityName;
 
     @OneToMany(mappedBy = "city", fetch = FetchType.LAZY)
-    private List<RentalArea> rentalAreas;
+    List<RentalArea> rentalAreas;
 }

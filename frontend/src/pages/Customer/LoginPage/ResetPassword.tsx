@@ -37,7 +37,7 @@ const ResetPassword = () => {
         setSuccessMsg("Đổi mật khẩu thành công! Đang chuyển hướng...");
         message.success("Đổi mật khẩu thành công!");
         
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => navigate("/"), 2000);
       }
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.response?.data || "Đã có lỗi xảy ra.";

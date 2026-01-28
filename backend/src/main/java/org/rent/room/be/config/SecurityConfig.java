@@ -1,6 +1,5 @@
 package org.rent.room.be.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -42,6 +41,8 @@ public class SecurityConfig {
             "/users/create",
             "/users/forgot-password/**",
             "/users/reset-password/**",
+            "/users/register/request/**",
+            "/users/register/confirm/**",
             "/ws/**",
     };
 

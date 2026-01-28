@@ -7,6 +7,7 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.constant.Role;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
+import org.rent.room.be.dto.request.user.UpdateUserRequest;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.entity.PasswordResetToken;
 import org.rent.room.be.entity.User;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -80,32 +80,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active, String keyword) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        Role roleEnum = null;
-        if (role != null && !role.isEmpty()) {
-            try {
-                roleEnum = Role.valueOf(role.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                roleEnum = null;
-            }
-        }
+        Page<User> pageData = userRepository.searchUsers(keyword, role, active, pageable);
 
-        Page<User> pageData = userRepository.searchUsers(roleEnum, active, pageable);
+        Page<UserResponse> responsePage = pageData.map(userMapper::toUserResponse);
 
         return PageResponse.<UserResponse>builder()
-                .currentPage(page)
-                .pageSize(size)
+                .currentPage(page + 1)
                 .totalPages(pageData.getTotalPages())
+                .pageSize(pageData.getSize())
                 .totalElements(pageData.getTotalElements())
-                .data(userMapper.toUserResponseList(pageData.getContent()))
+                .data(responsePage.getContent())
                 .build();
-    }
-
-    @Override
-    public List<UserResponse> getAllUsersByName(String username) {
-        return userMapper.toUserResponseList(userRepository.findByUserName(username));
     }
 
     @Override
@@ -144,6 +133,40 @@ public class UserServiceImpl implements UserService {
         // 4. Xóa token để không dùng lại được nữa
         deleteToken(request.getToken());
     }
+
+    @Override
+    public void updateStatus(UUID id, Boolean active) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setActive(active);
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserResponse updateUser(UUID id, UpdateUserRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (request.getUserName() != null) {
+            user.setUserName(request.getUserName());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+
+        if (request.getDateOfBirth() != null) {
+            user.setDateOfBirth(request.getDateOfBirth());
+        }
+
+        User savedUser = userRepository.save(user);
+
+        return userMapper.toUserResponse(savedUser);
+    }
+
 
     private String createToken(String email) {
         passwordResetTokenRepository.deleteByEmail(email);

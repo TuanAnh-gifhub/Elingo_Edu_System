@@ -11,7 +11,7 @@ import AdminPage from "../pages/Admin/AdminPage";
 import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
-import UserManagement from "../pages/Admin/UserManage";
+import UserManagement from "../pages/Admin/UserManagement";
 
 export const router = createBrowserRouter([
   {

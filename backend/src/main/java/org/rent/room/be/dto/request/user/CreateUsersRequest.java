@@ -42,4 +42,6 @@ public class CreateUsersRequest {
 
     @Pattern(regexp = "^(RENTER|OWNER|ADMIN)$", message = "ROLE_INVALID")
     String role;
+
+    String otp;
 }

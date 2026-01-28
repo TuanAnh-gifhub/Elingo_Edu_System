@@ -30,7 +30,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   // 3. Kiểm tra xem UserResponse của bạn dùng trường nào (fullName hay name?)
   // Ví dụ ở đây tôi đang giả định là fullName, nếu API trả về name thì sửa thành adminUser.name
-  const displayName = adminUser?.fullName || adminUser?.userName || "Admin";
+  const displayName = adminUser?.userName || "Admin";
 
   const userMenu: MenuProps["items"] = [
     { key: "1", label: "Hồ sơ cá nhân" },

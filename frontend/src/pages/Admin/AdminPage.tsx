@@ -62,8 +62,8 @@ const AdminPage: React.FC = () => {
           />
 
           <Content
-            className={`flex-1 p-6 overflow-y-auto transition-colors duration-200 ${
-              isDark ? "bg-[#141414]" : "bg-[#f0f2f5]"
+            className={`flex-1 p-3 overflow-y-auto transition-colors duration-200 ${
+              isDark ? "bg-[#141414]" : "bg-[#ffff]"
             }`}
           >
             <Outlet context={{ isDark }} />

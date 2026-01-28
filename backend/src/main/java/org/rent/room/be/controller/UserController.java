@@ -8,13 +8,16 @@ import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
+import org.rent.room.be.dto.request.user.UpdateUserRequest;
+import org.rent.room.be.dto.request.user.UpdateUserStatusRequest;
 import org.rent.room.be.dto.response.UserResponse;
+import org.rent.room.be.service.EmailService;
 import org.rent.room.be.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -24,6 +27,7 @@ import java.util.List;
 public class UserController {
 
     UserService userService;
+    EmailService emailService;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<?>> createUser(@RequestBody CreateUsersRequest user) {
@@ -48,32 +52,20 @@ public class UserController {
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
-            @RequestParam(defaultValue = "1", required = false) int page,
-            @RequestParam(defaultValue = "10", required = false) int size,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Boolean active
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) String keyword
     ) {
         return ResponseEntity.ok(
                 ApiResponse.<PageResponse<UserResponse>>builder()
                         .code(200)
-                        .message("Get user list successfully")
-                        .result(userService.getAllUsers(page, size, role, active))
-                        .build()
-        );
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/username")
-    public ResponseEntity<ApiResponse<?>> getUserByUsername(
-            @RequestParam String username) {
-        return ResponseEntity.ok(
-                ApiResponse.<List<UserResponse>>builder()
-                        .code(200)
-                        .message("Get user by username successfully")
-                        .result(userService.getAllUsersByName(username))
+                        .message("Get users success")
+                        .result(userService.getAllUsers(page - 1, size, role, active, keyword))
                         .build()
         );
     }
@@ -100,4 +92,61 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody UpdateUserStatusRequest statusRequest) {
+        userService.updateStatus(id, statusRequest.getStatus());
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .code(200)
+                        .message("Update status user successfully")
+                        .build()
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> updateUser(
+            @PathVariable UUID id,
+            @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.<UserResponse>builder()
+                        .code(200)
+                        .message("Cập nhật thông tin thành công")
+                        .result(userService.updateUser(id, request))
+                        .build()
+        );
+    }
+
+    @PostMapping("/register/request")
+    public ResponseEntity<ApiResponse<?>> sendOtp(
+            @RequestBody CreateUsersRequest user
+    ) {
+        emailService.sendOtpRegister(user);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(200)
+                        .message("Mã xác thực đã được gửi tới email của bạn.")
+                        .build()
+        );
+    }
+
+    @PostMapping("/register/confirm")
+    public ResponseEntity<ApiResponse<?>> confirmRegister(
+            @RequestParam String email,
+            @RequestParam String otp) {
+
+        CreateUsersRequest userRequest = emailService.verifyAndGetPendingUser(email, otp);
+
+        userService.createUser(userRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(200)
+                        .message("Đăng ký tài khoản thành công!")
+                        .build()
+        );
+    }
 }

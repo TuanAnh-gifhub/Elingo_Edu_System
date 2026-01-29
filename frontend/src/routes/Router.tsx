@@ -10,6 +10,9 @@ import NotFound from "../components/Error/NotFound";
 import AdminPage from "../pages/Admin/AdminPage";
 import LoginAdmin from "../pages/Admin/LoginAdmin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
+import AboutUs from "../pages/Customer/AboutUs/AboutUs";
+import ReportPage from "../pages/Admin/ReportAdmin/ReportPage";
+import ReportForm from "../pages/Customer/ReportPage/ReportForm";
 
 export const router = createBrowserRouter([
   {
@@ -67,6 +70,16 @@ export const router = createBrowserRouter([
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
       },
+      {
+        path: "about-us",
+        element: <AboutUs />,
+        handle: { breadcrumb: "Về chúng tôi" },
+      },
+      {
+        path: "report-form",
+        element: <ReportForm />,
+        handle: { breadcrumb: "Báo cáo vi phạm" },
+      },
     ],
   },
   // Admin routes
@@ -77,21 +90,30 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedAdminRoute>
-        <AdminPage />
-      </ProtectedAdminRoute>
+      // <ProtectedAdminRoute>
+      <AdminPage />
+      // </ProtectedAdminRoute>
     ),
     children: [
       {
         index: true,
         element: (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4" style={{ color: "inherit" }}>
+          <div className="">
+            <h1
+              className="text-2xl font-bold mb-4"
+              style={{ color: "inherit" }}
+            >
               Dashboard
             </h1>
-            <p style={{ color: "inherit" }}>Chào mừng đến với trang quản trị!</p>
+            <p style={{ color: "inherit" }}>
+              Chào mừng đến với trang quản trị!
+            </p>
           </div>
         ),
+      },
+      {
+        path: "reports",
+        element: <ReportPage />,
       },
     ],
   },

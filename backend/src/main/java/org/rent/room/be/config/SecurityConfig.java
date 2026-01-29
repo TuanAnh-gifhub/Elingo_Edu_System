@@ -40,6 +40,7 @@ public class SecurityConfig {
             "/auth/logout",
             "/users/create",
             "/ws/**",
+            "/reports/**"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;

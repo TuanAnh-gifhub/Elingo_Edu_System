@@ -21,7 +21,7 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [theme, setTheme] = useState<string>(
-    localStorage.getItem(THEME_STORAGE_KEY) || "light"
+    localStorage.getItem(THEME_STORAGE_KEY) || "light",
   );
 
   const adminUser: AdminUser | null = useMemo(() => {
@@ -61,7 +61,7 @@ const AdminPage: React.FC = () => {
       flexDirection: "column",
       minWidth: 0,
     }),
-    []
+    [],
   );
 
   const contentStyle: React.CSSProperties = useMemo(
@@ -73,7 +73,7 @@ const AdminPage: React.FC = () => {
       overflowY: "auto",
       transition: "background-color 0.2s, color 0.2s",
     }),
-    [isDark]
+    [isDark],
   );
 
   const themeButtonStyle: React.CSSProperties = useMemo(
@@ -82,7 +82,7 @@ const AdminPage: React.FC = () => {
       borderColor: isDark ? "#4B5563" : "#D1D5DB",
       color: isDark ? "#FBBF24" : "#1F2937",
     }),
-    [isDark]
+    [isDark],
   );
 
   return (

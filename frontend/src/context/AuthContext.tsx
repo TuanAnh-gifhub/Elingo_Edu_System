@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { userService, type UserResponse } from "../services/usersService";
 import authService from "../services/auth/authService";
-
+import { message } from "antd";
 interface AuthContextType {
   user: UserResponse | null;
   isAuthenticated: boolean;
@@ -20,7 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
+  const [messageApi, contextHolder] = message.useMessage();
   const fetchCurrentUser = async () => {
     setIsLoading(true);
     try {
@@ -31,10 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const actualData = response.data ? response.data : response;
 
       if (actualData && actualData.code === 200 && actualData.result) {
-        console.log("✅ Đăng nhập thành công, user:", actualData.result);
         setUser(actualData.result);
       } else {
-        console.log("❌ API trả về nhưng không đúng format:", actualData);
         setUser(null);
       }
     } catch (error: any) {
@@ -45,17 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Chạy 1 lần khi App vừa load (F5 trang)
   useEffect(() => {
-    setIsLoading(false);
+    fetchCurrentUser();
   }, []);
 
-  // Hàm Login: Chỉ đơn giản là cập nhật state (vì API login đã được gọi ở LoginPage rồi)
   const login = (userData: UserResponse) => {
     setUser(userData);
   };
 
-  // Hàm Logout: Gọi API để xóa Cookie + Xóa state
   const logout = async () => {
     try {
       await authService.logout();
@@ -63,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Logout error:", error);
     }
     setUser(null);
-    // Có thể điều hướng về trang chủ hoặc reload trang nếu cần
+
     window.location.href = "/";
   };
 
@@ -71,17 +66,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user, // Nếu có user object -> true, ngược lại false
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout,
         refreshProfile: fetchCurrentUser,
       }}
     >
-      {/* Mẹo UX: Nếu đang check login lần đầu (isLoading = true), 
-        bạn có thể return null hoặc một cái Loading Spinner toàn màn hình 
-        để tránh giao diện bị nháy từ "Login" -> "Avatar User"
-      */}
+      {contextHolder}
       {!isLoading && children}
     </AuthContext.Provider>
   );

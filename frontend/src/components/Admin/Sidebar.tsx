@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import { useState, useEffect, useMemo } from "react";
 import type { MenuProps } from "antd";
-
+import { MdOutlineReport } from "react-icons/md";
 const { Sider } = Layout;
 
 interface AdminUser {
@@ -28,7 +28,12 @@ interface SidebarProps {
 const SIDEBAR_WIDTH = 280;
 const ADMIN_USER_STORAGE_KEY = "adminUser";
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLogout, theme }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  collapsed,
+  toggleCollapsed,
+  handleLogout,
+  theme,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeKey, setActiveKey] = useState<string>(location.pathname);
@@ -67,6 +72,15 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
         ),
       },
       {
+        key: "/admin/reports",
+        icon: <MdOutlineReport className="text-lg size-4" />,
+        label: (
+          <Link to="/admin/reports" className="text-inherit hover:text-inherit">
+            Reports
+          </Link>
+        ),
+      },
+      {
         key: "logout",
         icon: <LogoutOutlined className="text-lg" />,
         label: "Đăng xuất",
@@ -74,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
         onClick: handleLogoutClick,
       },
     ],
-    []
+    [],
   );
 
   const otherRoleMenuItems: MenuProps["items"] = useMemo(
@@ -87,12 +101,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
         onClick: handleLogoutClick,
       },
     ],
-    []
+    [],
   );
 
   const menuItems = useMemo(
     () => (userRole === "Admin" ? adminMenuItems : otherRoleMenuItems),
-    [userRole, adminMenuItems, otherRoleMenuItems]
+    [userRole, adminMenuItems, otherRoleMenuItems],
   );
 
   const menuClassName = useMemo(
@@ -120,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
     [&_.ant-menu-item-dangerous:hover]:bg-red-500
     [&_.ant-menu-item-dangerous:hover]:text-white
   `,
-    [isDark]
+    [isDark],
   );
 
   return (
@@ -135,12 +149,18 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
       style={{ borderRight: "none" }}
     >
       {/* Logo Section */}
-      <div className={`p-5 border-b ${isDark ? "border-blue-800 bg-blue-900" : "border-gray-200 bg-white"}`}>
-        <div className={`transition-all duration-300 ${collapsed ? "w-12 h-12 mx-auto" : "w-full"}`}>
+      <div
+        className={`p-5 border-b ${isDark ? "border-blue-800 bg-blue-900" : "border-gray-200 bg-white"}`}
+      >
+        <div
+          className={`transition-all duration-300 ${collapsed ? "w-12 h-12 mx-auto" : "w-full"}`}
+        >
           {collapsed ? (
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 border-2 ${
-              isDark ? "border-white/10" : "border-gray-200"
-            }`}>
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 border-2 ${
+                isDark ? "border-white/10" : "border-gray-200"
+              }`}
+            >
               <span className="text-xl font-bold text-white">E</span>
             </div>
           ) : (
@@ -149,12 +169,18 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
                 <span className="text-lg font-bold text-white">E</span>
               </div>
               <div>
-                <div className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>EduRoom</div>
-                <div className={`text-xs font-medium mt-1 px-2 py-1 rounded-full text-center ${
-                  isDark 
-                    ? "bg-blue-500/20 text-blue-300" 
-                    : "bg-blue-100 text-blue-700"
-                }`}>
+                <div
+                  className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  EduRoom
+                </div>
+                <div
+                  className={`text-xs font-medium mt-1 px-2 py-1 rounded-full text-center ${
+                    isDark
+                      ? "bg-blue-500/20 text-blue-300"
+                      : "bg-blue-100 text-blue-700"
+                  }`}
+                >
                   {userRole === "Admin" ? "Quản trị viên" : userRole}
                 </div>
               </div>
@@ -179,8 +205,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleCollapsed, handleLog
         <button
           onClick={toggleCollapsed}
           className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-0 cursor-pointer transition-all duration-200 hover:scale-110 text-white text-xs active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            isDark 
-              ? "bg-blue-500 hover:bg-blue-600" 
+            isDark
+              ? "bg-blue-500 hover:bg-blue-600"
               : "bg-blue-600 hover:bg-blue-700"
           }`}
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu nhỏ sidebar"}

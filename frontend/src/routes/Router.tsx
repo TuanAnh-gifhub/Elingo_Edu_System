@@ -8,12 +8,13 @@ import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
 import WalletPromotion from "../pages/Customer/WalletPage/WalletPromotion";
 import NotFound from "../components/Error/NotFound";
 import AdminPage from "../pages/Admin/AdminPage";
-import LoginAdmin from "../pages/Admin/LoginAdmin/LoginAdmin";
+import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import AboutUs from "../pages/Customer/AboutUs/AboutUs";
 import ReportPage from "../pages/Admin/ReportAdmin/ReportPage";
 import ReportForm from "../pages/Customer/ReportPage/ReportForm";
-
+import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
+import UserManagement from "../pages/Admin/UserManagement";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -61,6 +62,11 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Khuyến mãi" },
       },
       {
+        path: "reset-password",
+        element: <ResetPassword />,
+        handle: { breadcrumb: "Đặt lại mật khẩu" },
+      },
+      {
         path: "*",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
@@ -90,9 +96,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      // <ProtectedAdminRoute>
-      <AdminPage />
-      // </ProtectedAdminRoute>
+      <ProtectedAdminRoute>
+        <AdminPage />
+      </ProtectedAdminRoute>
     ),
     children: [
       {
@@ -112,9 +118,13 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "reports",
-        element: <ReportPage />,
+        path: "customers",
+        element: <UserManagement />
       },
+        {
+            path: "reports",
+            element: <ReportPage />,
+        },
     ],
   },
 ]);

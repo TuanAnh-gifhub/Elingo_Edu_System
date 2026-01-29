@@ -1,7 +1,10 @@
 package org.rent.room.be.service;
 
+import org.rent.room.be.dto.request.user.CreateUsersRequest;
 
 public interface EmailService {
-
-   public void sendEmailToReporter(String userName,String reporterEmail,String content);
+    void sendResetPasswordEmail(String toEmail, String resetUrl);
+    void sendOtpRegister(CreateUsersRequest user);
+    CreateUsersRequest verifyAndGetPendingUser(String email, String otp);
+    public void sendEmailToReporter(String userName,String reporterEmail,String content);
 }

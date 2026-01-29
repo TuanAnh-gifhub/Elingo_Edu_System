@@ -1,5 +1,6 @@
 package org.rent.room.be.serviceImpl;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -144,15 +145,15 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmailToReporter(String userName, String reporterEmail, String content) {
         try {
 
-            System.err.println(emailSender);
-            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(reporterEmail);
             helper.setSubject("Phản hồi báo cáo vi phạm");
             String plainText = "Xin chào " + userName + "\n" +
                     "Chúng tôi đã nhận được báo cáo vi phạm của bạn \n"
                     + content + "\n\n" +
-                    "Email: " + mailSender + "\n\n" +
+                    "Email: " + mailProperties.getUsername() + "\n\n" +
                     "Trân trọng,\n" +
                     "Hệ thống EduRoom";
 
@@ -166,8 +167,8 @@ public class EmailServiceImpl implements EmailService {
                      </div>
                     """.formatted(userName,content);
             helper.setText(plainText, htmlText);
-            helper.setFrom(emailSender);
-            mailSender.send(message);
+            helper.setFrom(mailProperties.getUsername());
+            javaMailSender.send(message);
         } catch (MessagingException e) {
             log.error(e.getMessage());
         }

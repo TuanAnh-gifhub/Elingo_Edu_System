@@ -105,7 +105,7 @@ public class ReportImpl implements ReportService {
         if(request.getReportStatus().equals(ReportStatus.RESOLVED)){
             report.setStatus(ReportStatus.RESOLVED);
             System.err.println("Gui mail thanh cong");
-//            emailService.sendEmailToReporter(request.getUserName(),request.getEmail(),request.getContent());
+            emailService.sendEmailToReporter(request.getUserName(),request.getEmail(),request.getContent());
 
         }else if(request.getReportStatus().equals(ReportStatus.REJECTED)){
             report.setStatus(ReportStatus.REJECTED);

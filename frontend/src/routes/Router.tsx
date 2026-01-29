@@ -96,9 +96,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedAdminRoute>
-        <AdminPage />
-      </ProtectedAdminRoute>
+      // <ProtectedAdminRoute>
+      <AdminPage />
+      // </ProtectedAdminRoute>
     ),
     children: [
       {
@@ -119,12 +119,12 @@ export const router = createBrowserRouter([
       },
       {
         path: "customers",
-        element: <UserManagement />
+        element: <UserManagement />,
       },
-        {
-            path: "reports",
-            element: <ReportPage />,
-        },
+      {
+        path: "reports",
+        element: <ReportPage />,
+      },
     ],
   },
 ]);

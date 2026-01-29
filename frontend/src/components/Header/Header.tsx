@@ -23,15 +23,15 @@ const useScrollspy = () => ({ activeSection: "hero" });
 const useAuthCheck = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
+  
   const requireAuth = (cb: any) => {
     if (!isAuthenticated) {
-      // Nếu chưa đăng nhập thì mở modal hoặc báo lỗi (tùy logic bạn muốn xử lý)
-      // Ở đây tạm thời vẫn cho chạy callback hoặc bạn có thể kích hoạt modal login
-      // Ví dụ: alert("Vui lòng đăng nhập");
-      cb();
+        // Nếu chưa đăng nhập thì mở modal hoặc báo lỗi (tùy logic bạn muốn xử lý)
+        // Ở đây tạm thời vẫn cho chạy callback hoặc bạn có thể kích hoạt modal login
+        // Ví dụ: alert("Vui lòng đăng nhập");
+        cb(); 
     } else {
-      cb();
+        cb();
     }
   };
   return { requireAuth };
@@ -278,6 +278,22 @@ const Header = () => {
                 />
               </Link>
 
+              {/* Wallet */}
+              <button
+                onClick={() => {
+                  requireAuth(() => {
+                    navigate("/wallet");
+                  });
+                }}
+                className={`${ICON_BUTTON_CLASS} bg-yellow-50 hover:bg-yellow-100`}
+                title="Ví cá nhân"
+              >
+                <FaWallet
+                  size={18}
+                  className="md:text-[20px] text-yellow-600 m-auto"
+                />
+              </button>
+
               {/* Chat */}
               <button
                 onClick={() => {
@@ -315,7 +331,7 @@ const Header = () => {
               ) : (
                 <UserMenu
                   isLoggedIn={isAuthenticated}
-                  user={displayUser}
+                  user={displayUser} 
                   onLoginClick={() => setShowLoginModal(true)}
                   onLogoutClick={handleLogoutClick}
                 />

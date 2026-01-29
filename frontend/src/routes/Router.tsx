@@ -12,6 +12,7 @@ import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
+import ManagePage from "../pages/Customer/ManagePage/ManagePage";
 
 export const router = createBrowserRouter([
   {
@@ -63,6 +64,11 @@ export const router = createBrowserRouter([
         path: "reset-password",
         element: <ResetPassword />,
         handle: { breadcrumb: "Đặt lại mật khẩu" },
+      },
+      {
+        path: "manage-posts",
+        element: <ManagePage />,
+        handle: { breadcrumb: "Quản lý cá nhân" },
       },
       {
         path: "*",

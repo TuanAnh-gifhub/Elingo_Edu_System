@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiUser, FiHeart, FiLogOut, FiChevronDown } from "react-icons/fi";
+import {
+  FiUser,
+  FiHeart,
+  FiLogOut,
+  FiChevronDown,
+  FiCreditCard,
+  FiFileText,
+} from "react-icons/fi";
 
 // Style lấy từ Header cũ của bạn để đồng bộ
 const PRIMARY_BUTTON_CLASS = "px-1.5 md:px-4 py-1.5 md:py-2 font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out border hover:border-[#4da6ff]";
@@ -52,9 +59,9 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick }: UserMenuPro
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full border border-gray-200 hover:border-[#4da6ff] hover:bg-blue-50 transition-all bg-white shadow-sm"
       >
-        <img 
-          src={displayAvatar} 
-          alt="avatar" 
+        <img
+          src={displayAvatar}
+          alt="avatar"
           className="w-8 h-8 rounded-full object-cover border border-gray-200"
         />
         <span className="text-xs font-semibold text-gray-700 max-w-[100px] truncate hidden md:block">
@@ -87,12 +94,30 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick }: UserMenuPro
             </Link>
 
             <Link
-              to="/wishlist" // Đã sửa thành link wishlist của bạn
+              to="/wishlist"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
             >
               <FiHeart className="w-4 h-4" />
               Phòng yêu thích
+            </Link>
+
+            <Link
+              to="/wallet"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
+            >
+              <FiCreditCard className="w-4 h-4" />
+              Ví cá nhân
+            </Link>
+
+            <Link
+              to="/manage-posts"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
+            >
+              <FiFileText className="w-4 h-4" />
+              Quản lý cá nhân
             </Link>
 
             <div className="h-px bg-gray-100 my-1 mx-4" />

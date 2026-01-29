@@ -15,6 +15,8 @@ import ReportPage from "../pages/Admin/ReportAdmin/ReportPage";
 import ReportForm from "../pages/Customer/ReportPage/ReportForm";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
+import ManagePage from "../pages/Customer/ManagePage/ManagePage";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -67,6 +69,11 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Đặt lại mật khẩu" },
       },
       {
+        path: "manage-posts",
+        element: <ManagePage />,
+        handle: { breadcrumb: "Quản lý cá nhân" },
+      },
+      {
         path: "*",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
@@ -104,16 +111,11 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <div className="">
-            <h1
-              className="text-2xl font-bold mb-4"
-              style={{ color: "inherit" }}
-            >
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4" style={{ color: "inherit" }}>
               Dashboard
             </h1>
-            <p style={{ color: "inherit" }}>
-              Chào mừng đến với trang quản trị!
-            </p>
+            <p style={{ color: "inherit" }}>Chào mừng đến với trang quản trị!</p>
           </div>
         ),
       },

@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: BE
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  mongodb:
+    uri: ${SPRING_DATA_MONGODB_URI}
+    auto-index-creation: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
+server:
+  port: ${SERVER_PORT}
+  servlet:
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH}
+
+cors:
+  urls: ${CORS_URL}
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  access-expiration: ${JWT_ACCESS_EXPIRATION}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+app:
+  cookie:
+    secure: false
+
+google:
+  client:
+    id: ${GOOGLE_ID}
+    secret: ${GOOGLE_SECRET}
+    uri: ${GOOGLE_URI}
+
+sepay:
+  base-url: https://pgapi-sandbox.sepay.vn
+  merchant-id: your_merchant_id
+  secret-key: your_secret_key
+  webhook-path: /api/sepay/webhook

@@ -44,6 +44,7 @@ public class SecurityConfig {
             "/users/register/request/**",
             "/users/register/confirm/**",
             "/ws/**",
+            "/reports/**"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;

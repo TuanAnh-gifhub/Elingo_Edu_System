@@ -20,11 +20,11 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BaseEntity {
-    @CreatedDate // Tự động lấy giờ hiện tại khi insert
-    @Column(name = "created_at", updatable = false) // Map xuống cột created_at trong SQL
-    LocalDateTime createdAt; // Sửa tên biến thành camelCase
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    LocalDateTime createdAt;
 
-    @LastModifiedDate // Tự động lấy giờ khi update
+    @LastModifiedDate
     @Column(name = "updated_at")
-    LocalDateTime updatedAt; // Sửa tên biến thành camelCase
+    LocalDateTime updatedAt;
 }

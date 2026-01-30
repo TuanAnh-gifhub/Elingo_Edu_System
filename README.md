@@ -1,4 +1,4 @@
-# EduRoom 
+# EduRoom
 
 ```
 SBA301_FE_ROOM/
@@ -7,5 +7,3 @@ SBA301_FE_ROOM/
 ├── .gitignore
 └── README.md
 ```
-
-

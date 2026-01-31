@@ -12,6 +12,7 @@ import org.rent.room.be.service.RentPackageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.Objects;
@@ -35,7 +36,9 @@ public class RentPackageServiceImpl implements RentPackageService {
         }
 
         // price can be 0.0 meaning free RentPackage; validate negative values
-        if (pkg.getPrice() < 0) throw new AppException(ErrorCode.INVALID_RENTPACKAGE);
+        if (pkg.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new AppException(ErrorCode.INVALID_RENTPACKAGE);
+        }
         if (pkg.getDurationDays() < 0) throw new AppException(ErrorCode.INVALID_RENTPACKAGE);
 
         RentPackage saved = RentPackageRepository.save(pkg);
@@ -71,7 +74,7 @@ public class RentPackageServiceImpl implements RentPackageService {
         }
 
         // allow price to be updated to zero; only reject negative updates
-        if (pkg.getPrice() >= 0) {
+        if (pkg.getPrice().compareTo(BigDecimal.ZERO) >= 0) {
             existing.setPrice(pkg.getPrice());
         }
 

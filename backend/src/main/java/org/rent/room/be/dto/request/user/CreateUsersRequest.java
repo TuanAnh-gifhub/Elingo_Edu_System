@@ -22,6 +22,10 @@ public class CreateUsersRequest {
     @Pattern(regexp = "^[a-zA-Z0-9._]+$", message = "USERNAME_INVALID_CHARACTERS")
     String userName;
 
+    @NotBlank(message = "FULLNAME_REQUIRED")
+    @Size(max = 100, message = "FULLNAME_TOO_LONG")
+    String fullName;
+
     @Pattern(regexp = "^(MALE|FEMALE|OTHER)$", message = "GENDER_INVALID")
     String gender;
 
@@ -42,6 +46,4 @@ public class CreateUsersRequest {
 
     @Pattern(regexp = "^(RENTER|OWNER|ADMIN)$", message = "ROLE_INVALID")
     String role;
-
-    String otp;
 }

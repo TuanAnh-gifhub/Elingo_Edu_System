@@ -1,8 +1,11 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.List;
@@ -15,42 +18,41 @@ import java.util.UUID;
 @SuperBuilder
 @Entity
 @Table(name = "posts")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Post extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "post_id")
-    UUID postId;
+    private UUID postId;
 
     @Column(name = "title", nullable = false)
-    String title;
+    private String title;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
-    String content;
+    private String content;
 
     @Column(name = "post_status", length = 20)
-    String postStatus;
+    private String postStatus;
 
     @Column(name = "post_user_name")
-    String postUserName;
+    private String postUserName;
 
     @Column(name = "comment_on_post", columnDefinition = "TEXT")
-    String commentOnPost;
+    private String commentOnPost;
 
     @Column(name = "emotion", length = 50)
-    String emotion;
+    private String emotion;
 
     @Column(name = "total_vote")
-    Integer totalVote = 0;
+    private Integer totalVote = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rental_area_id")
-    RentalArea rentalArea;
+    private RentalArea rentalArea;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    User user;
+    private User user;
 
     @OneToMany(
             mappedBy = "post",
@@ -58,5 +60,5 @@ public class Post extends BaseEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    List<Media> mediaList;
+    private List<Media> mediaList;
 }

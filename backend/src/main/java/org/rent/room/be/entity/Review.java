@@ -1,8 +1,11 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.UUID;
@@ -14,25 +17,24 @@ import java.util.UUID;
 @SuperBuilder
 @Table(name = "reviews")
 @Entity
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Review extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "review_id")
-    UUID reviewId;
+    private UUID reviewId;
 
     @Column(name = "rating", nullable = false)
-    Integer rating;
+    private Integer rating;
 
     @Column(name = "comment", columnDefinition = "TEXT")
-    String comment;
+    private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    User user;
+    private User user;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
-    Booking booking;
+    private Booking booking;
 }

@@ -1,8 +1,11 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -15,28 +18,28 @@ import java.util.UUID;
 @SuperBuilder
 @Entity
 @Table(name = "subscriptions")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Subscription extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "subscription_id")
-    UUID subscriptionId;
+    private UUID subscriptionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    User user;
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "package_id", nullable = false)
-    ServicePackage servicePackage;
+    @JoinColumn(name = "package_id")
+    private RentPackage servicePackage;
 
     @Column(name = "start_date", nullable = false)
-    LocalDateTime startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date", nullable = false)
-    LocalDateTime endDate;
+    private LocalDateTime endDate;
 
     @Column(name = "status")
-    boolean active;
+    private boolean active;
 }
+

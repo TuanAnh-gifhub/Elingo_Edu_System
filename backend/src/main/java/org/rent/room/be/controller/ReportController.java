@@ -1,21 +1,12 @@
 package org.rent.room.be.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.rent.room.be.base.ApiResponse;
-import org.rent.room.be.base.PageResponse;
-import org.rent.room.be.constant.ReportStatus;
 import org.rent.room.be.dto.request.report.ReportRequest;
-import org.rent.room.be.dto.request.report.ReportStatusRequest;
-import org.rent.room.be.dto.response.report.ReportResponse;
 import org.rent.room.be.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
@@ -26,25 +17,15 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
-    @GetMapping()
-    public ApiResponse<?>getAllReports(
-            @RequestParam(required = false)ReportStatus reportStatus,
-            @RequestParam(required = false)String keyword,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDate fromDate,
-
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDate toDate,
+    @GetMapping("/all")
+    public ApiResponse<?> getAllReports(
             @RequestParam(defaultValue = "1", required = false) int page,
             @RequestParam(defaultValue = "10", required = false) int size) {
         try {
-
             return ApiResponse.builder()
                     .code(200)
                     .message("Get all reports successfully")
-                    .result( reportService.getAllReports(page, size,reportStatus,keyword,fromDate,toDate))
+                    .result(reportService.getAllReports(page, size))
                     .build();
 
         } catch (Exception e) {
@@ -56,8 +37,8 @@ public class ReportController {
 
     }
 
-    @PostMapping
-    public ApiResponse<?> createReport(@Valid @RequestBody ReportRequest reportRequest) {
+    @PostMapping("/create")
+    public ApiResponse<?> createReport(@RequestBody ReportRequest reportRequest) {
         try {
             reportService.createReport(reportRequest);
             return ApiResponse.builder()
@@ -76,11 +57,10 @@ public class ReportController {
     }
 
 
-    @PutMapping("/{reportId}")
-    public ApiResponse<?> updateReport(@PathVariable UUID reportId,@Valid @RequestBody ReportStatusRequest reportRequest) {
+    @PutMapping("/update-report/{reportId}")
+    public ApiResponse<?> updateReport(@PathVariable UUID reportId,ReportRequest reportRequest) {
         try {
             reportService.updateReport(reportId, reportRequest);
-            System.out.println(reportId);
             return
                     ApiResponse.builder()
                     .code(200)
@@ -88,7 +68,6 @@ public class ReportController {
                     .result(null)
                     .build();
         }catch (Exception e){
-            e.printStackTrace();
             return ApiResponse.builder()
                     .code(500)
                     .message("Api system have some problem " + e.getMessage())
@@ -97,16 +76,14 @@ public class ReportController {
 
     }
 
-    @GetMapping("/{reportId}")
+    @GetMapping("/get-report-by-id/{reportId}")
     public ApiResponse<?> getReportById(@PathVariable UUID reportId) {
 
         try{
-
-            ReportResponse rp = reportService.findReportById(reportId);
             return ApiResponse.builder()
                             .code(200)
-                            .message("Get report by id successfully")
-                            .result(rp)
+                            .message("Get report successfully")
+                            .result(reportService.findReportById(reportId))
                             .build();
         }catch(Exception e){
 
@@ -117,7 +94,7 @@ public class ReportController {
         }
     }
 
-    @DeleteMapping("/{reportId}")
+    @DeleteMapping("/delete-report/{reportId}")
     public ApiResponse<?> deleteReport(@PathVariable UUID reportId) {
       try{
           reportService.deleteReport(reportId);
@@ -134,24 +111,6 @@ public class ReportController {
                     .message("Api system have some problem " + e.getMessage())
                     .build();
       }
-    }
-
-    @GetMapping("/statistics")
-    public ApiResponse<?> getReportStatistics() {
-
-        try{
-            return  ApiResponse.builder()
-                    .code(200)
-                    .message("Get reports statistics successfully")
-                    .result(reportService.getStatistic())
-                    .build();
-
-        }catch(Exception e){
-            return  ApiResponse.builder()
-                    .code(500)
-                    .message("Api system have some problem " + e.getMessage())
-                    .build();
-        }
     }
 
 }

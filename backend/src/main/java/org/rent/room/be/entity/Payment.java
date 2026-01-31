@@ -1,13 +1,16 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.PaymentMethod;
 import org.rent.room.be.constant.PaymentStatus;
 
-import java.math.BigDecimal;
+import java.math.BigDecimal; // Import quan trọng
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,31 +21,31 @@ import java.util.UUID;
 @SuperBuilder
 @Table(name = "payments")
 @Entity
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Payment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "payment_id")
-    UUID paymentId;
+    private UUID paymentId;
 
     @Column(name = "transaction_date", nullable = false)
-    LocalDateTime transactionDate;
+    private LocalDateTime transactionDate;
 
     @Column(name = "amount", precision = 19, scale = 2, nullable = false)
-    BigDecimal amount;
+    private BigDecimal amount;
 
     @Column(name = "payment_method", length = 20)
-    PaymentMethod paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @Column(name = "payment_status", length = 20)
-    PaymentStatus paymentStatus;
+    private PaymentStatus paymentStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    User user;
+    private User user;
 
+    // SỬA LỖI TÊN CỘT (Xem mục 2)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id")
-    Wallet wallet;
+    private Wallet wallet;
 }

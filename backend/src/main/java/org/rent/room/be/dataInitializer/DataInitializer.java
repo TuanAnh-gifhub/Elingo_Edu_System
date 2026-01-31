@@ -55,19 +55,8 @@ public class DataInitializer implements CommandLineRunner {
                 .role(Role.ADMIN)
                 .active(true).build();
 
-        User user4 = User.builder()
-                .userName("Quang")
-                .gender("Other")
-                .email("quang@gmail.com")
-                .passwordHash(passwordEncoder.encode("12345678"))
-                .phone("1234567890")
-                .dateOfBirth(LocalDate.of(2004, 1, 2))
-                .role(Role.ADMIN)
-                .active(true).build();
-
-
         if (userRepository.count() == 0) {
-            userRepository.saveAll(List.of(user1, user2, user3,user4));
+            userRepository.saveAll(List.of(user1, user2, user3));
         }
     }
 }

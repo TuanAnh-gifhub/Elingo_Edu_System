@@ -57,8 +57,8 @@ public class Room extends BaseEntity {
     @JoinColumn(name = "category_id")
     private Category category;
 
-//    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
-//    private List<Report> reports;
+    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
+    private List<Report> reports;
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<Slot> slots;

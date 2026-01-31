@@ -1,8 +1,11 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.List;
@@ -14,21 +17,20 @@ import java.util.List;
 @Setter
 @SuperBuilder
 @Table(name = "categories")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Category extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    Integer categoryId;
+    private Integer categoryId;
 
     @Column(name = "category_name", length = 50, nullable = false, unique = true)
-    String categoryName;
+    private String categoryName;
 
     @Column(name = "description", length = 255)
-    String description;
+    private String description;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
-    List<Room> rooms;
+    private List<Room> rooms;
 
 }

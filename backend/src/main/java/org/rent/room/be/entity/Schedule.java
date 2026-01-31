@@ -1,8 +1,11 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.time.LocalDate;
@@ -18,23 +21,22 @@ import java.util.UUID;
 @Table(name = "schedules", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"room_id", "specific_date"})
 })
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Schedule extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "schedule_id")
-    UUID scheduleId;
+    private UUID scheduleId;
 
     @Column(name = "specific_date", nullable = false)
-    LocalDate specificDate;
+    private LocalDate specificDate;
 
     @Column(name = "availability_status", length = 20)
-    String availabilityStatus;
+    private String availabilityStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
-    Room room;
+    private Room room;
 
     @OneToMany(
             mappedBy = "schedule",
@@ -42,8 +44,8 @@ public class Schedule extends BaseEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    List<Slot> slots;
+    private List<Slot> slots;
 
     @OneToMany(mappedBy = "schedule", fetch = FetchType.LAZY)
-    List<ScheduleBooking> scheduleBookings;
+    private List<ScheduleBooking> scheduleBookings;
 }

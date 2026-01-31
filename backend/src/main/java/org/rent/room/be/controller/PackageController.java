@@ -9,6 +9,7 @@ import org.rent.room.be.dto.request.packages.RentPackageRequest;
 import org.rent.room.be.dto.response.RentPackageResponse;
 import org.rent.room.be.facade.PackageFacade;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -18,12 +19,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequestMapping("/api/packages")
+@RequestMapping("/packages")
 @Validated
 public class PackageController {
     PackageFacade packageFacade;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RentPackageResponse>> createPackage(
             @Valid @RequestBody RentPackageRequest request) {
         RentPackageResponse response = packageFacade.createRentPackage(request);
@@ -41,6 +43,7 @@ public class PackageController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RentPackageResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody RentPackageRequest request) {
@@ -48,6 +51,7 @@ public class PackageController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         packageFacade.deletePackage(id);
         return ResponseBuilder.success(null, "Deleted");

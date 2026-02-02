@@ -30,7 +30,7 @@ const LoginAdmin: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   useEffect(() => {
-    if (user && (user.role === "ADMIN" || user.role?.includes("ADMIN"))) {
+    if (user?.role?.includes("ADMIN")) {
       navigate("/admin", { replace: true });
     }
   }, [user, navigate]);
@@ -49,15 +49,20 @@ const LoginAdmin: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Gọi API Login (Cookie sẽ được set tự động bởi browser)
-      const res: any = await authService.login(formData);
+      const res = await authService.login(formData);
 
       if (res && (res.code === 200 || res.code === 1000)) {
-        // 2. Login thành công -> Gọi ngay refreshProfile để AuthContext cập nhật user từ Cookie
+        const { accessToken, refreshToken } = res.result;
+
+        // 1. Lưu token
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+
+        // 2. Gọi API lấy profile (dựa trên token)
         await refreshProfile();
 
         toast.success("Đăng nhập thành công!");
-        // useEffect ở trên sẽ tự động navigate khi thấy user mới load về là Admin
+        navigate("/admin", { replace: true });
       } else {
         setError(res.message || "Email hoặc mật khẩu không đúng.");
       }

@@ -25,12 +25,16 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPasswordHash();
+        return user.getPasswordHash() != null ? user.getPasswordHash() : "";
+    }
+
+    public boolean hasPassword() {
+        return user.getPasswordHash() != null && !user.getPasswordHash().isEmpty();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName()));
     }
 
     @Override

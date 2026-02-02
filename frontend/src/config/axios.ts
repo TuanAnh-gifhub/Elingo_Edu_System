@@ -1,63 +1,79 @@
-import axios from 'axios';
+import axios from "axios";
 
-export const AXIOS_AUTH_ERROR_EVENT = 'axios-auth-error';
+export const AXIOS_AUTH_ERROR_EVENT = "axios-auth-error";
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1/rent-room',
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
+
+api.interceptors.request.use(
+  (config) => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // Nếu request login/logout bị lỗi thì trả về lỗi luôn, không retry (tránh loop)
-    if (originalRequest.url && (originalRequest.url.includes("/auth/login") || originalRequest.url.includes("/auth/logout"))) {
-        return Promise.reject(error);
-    }
+    if (!originalRequest) return Promise.reject(error);
 
-    // XỬ LÝ LỖI 401
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      const currentPath = window.location.pathname;
+    const url = originalRequest.url || "";
+    if (url.startsWith("/auth")) return Promise.reject(error);
 
-      // 1. Nếu đang ở trang Admin (mà không phải trang login admin)
-      // -> Redirect cứng về /admin/login
-      if (currentPath.startsWith("/admin") && !currentPath.includes("/admin/login")) {
-          window.location.href = "/admin/login";
-          return Promise.reject(error);
-      }
+    // Nếu không phải 401 thì bỏ qua
+    if (error.response?.status !== 401) return Promise.reject(error);
 
-      // 2. Nếu đang ở trang Login Admin rồi -> Không làm gì cả (để UI hiện lỗi đỏ)
-      if (currentPath.includes("/admin/login")) {
-          return Promise.reject(error);
-      }
+    // Tránh loop vô hạn
+    if (originalRequest._retry) return Promise.reject(error);
+    originalRequest._retry = true;
 
-      // 3. Nếu là User thường (đang ở trang chủ, sản phẩm...)
-      // -> Logic cũ: Refresh token hoặc bắn Event
-      if (originalRequest.url.includes("/auth/refresh")) {
-          // Refresh thất bại -> Bắn event để App mở Modal Login
-          window.dispatchEvent(new CustomEvent(AXIOS_AUTH_ERROR_EVENT));
-          return Promise.reject(error);
-      }
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) throw new Error("No refresh token");
 
-      originalRequest._retry = true;
+      // Gọi API refresh
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/refresh`,
+        null,
+        { headers: { Authorization: `Bearer ${refreshToken}` } },
+      );
 
-      try {
-        await api.post("/auth/refresh");
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh thất bại -> Bắn event
+      const { accessToken, refreshToken: newRefreshToken } = res.data.result;
+
+      // Lưu token mới
+      localStorage.setItem("accessToken", accessToken);
+      if (newRefreshToken)
+        localStorage.setItem("refreshToken", newRefreshToken);
+
+      // FIX CHÍNH: Ép token mới vào header của request bị lỗi
+      originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
+      // FIX CHÍNH: Dùng axios(originalRequest) thay vì api(...) để ép nó dùng header mới này
+      return axios(originalRequest);
+    } catch (refreshError: any) {
+      console.log("❌ REFRESH TOKEN FAIL:", refreshError.response?.status);
+      console.log("❌ REFRESH RESPONSE:", refreshError.response?.data);
+
+      if (
+        refreshError.response?.status === 401 ||
+        refreshError.response?.status === 400
+      ) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         window.dispatchEvent(new CustomEvent(AXIOS_AUTH_ERROR_EVENT));
-        return Promise.reject(refreshError);
       }
+      return Promise.reject(refreshError);
     }
-
-    return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

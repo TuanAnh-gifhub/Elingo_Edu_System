@@ -37,8 +37,6 @@ spring:
     uri: ${SPRING_DATA_MONGODB_URI}
     auto-index-creation: true
 
-
-
 server:
   port: ${SERVER_PORT}
   servlet:
@@ -52,10 +50,6 @@ jwt:
   access-expiration: ${JWT_ACCESS_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
 
-app:
-  cookie:
-    secure: false
-
 google:
   client:
     id: ${GOOGLE_ID}
@@ -67,3 +61,5 @@ sepay:
   merchant-id: your_merchant_id
   secret-key: your_secret_key
   webhook-path: /api/sepay/webhook
+
+token_reset_password_expire_seconds: 900

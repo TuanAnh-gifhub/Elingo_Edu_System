@@ -16,6 +16,7 @@ import ReportForm from "../pages/Customer/ReportPage/ReportForm";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
 import ManagePage from "../pages/Customer/ManagePage/ManagePage";
+import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
 
 export const router = createBrowserRouter([
   {
@@ -82,6 +83,11 @@ export const router = createBrowserRouter([
         path: "admin",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
+      },
+      {
+        path: "register/confirm",
+        element: <ConfirmRegister />,
+        handle: { breadcrumb: "Xác nhận tài khoản" },
       },
       {
         path: "about-us",

@@ -1,5 +1,6 @@
 package org.rent.room.be.config;
 
+import io.swagger.v3.oas.annotations.tags.Tags;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -7,12 +8,14 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import jakarta.persistence.Table;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.util.List;
 import io.swagger.v3.oas.models.tags.Tag;
 
 // truy cập http://localhost:8080/api/v1/rent-room/swagger-ui/index.html để xem tài liệu API
+@Tags()
 @Configuration
 public class SwaggerConfig {
 

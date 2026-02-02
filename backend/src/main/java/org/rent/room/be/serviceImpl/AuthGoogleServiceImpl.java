@@ -1,8 +1,6 @@
 package org.rent.room.be.serviceImpl;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.rent.room.be.dto.response.auth.LoginGoogleResponse;
 import org.rent.room.be.properties.ClientProperties;
@@ -18,12 +16,11 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AuthGoogleServiceImpl implements AuthGoogleService {
 
-    WebClient webClient = WebClient.create();
-    ClientProperties clientProperties;
+    private final WebClient webClient = WebClient.create();
+    private final ClientProperties clientProperties;
 
     @Override
     public LoginGoogleResponse authenticate(String code) {
@@ -49,7 +46,6 @@ public class AuthGoogleServiceImpl implements AuthGoogleService {
                     .bodyToMono(Map.class)
                     .block();
 
-            assert response != null;
             String accessToken = (String) response.get("access_token");
             log.info("Get Access Token Success: {}", accessToken != null ? "YES" : "NO");
 

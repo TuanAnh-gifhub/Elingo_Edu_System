@@ -12,7 +12,7 @@ export const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  // 1. Nếu AuthProvider đang load (đang gọi API check cookie) -> Hiện Loading
+  // 1. Nếu AuthProvider đang load -> Hiện Loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">

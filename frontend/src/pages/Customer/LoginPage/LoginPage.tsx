@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaArrowLeft } from "react-icons/fa";
+import {
+  FaEnvelope,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaTimes,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { message } from "antd";
 import { useGoogleLogin } from "@react-oauth/google";
 import authService from "../../../services/auth/authService";
 import { useAuth } from "../../../context/AuthContext";
-import { userService } from "../../../services/usersService";
-
 interface LoginPageProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,8 +19,7 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
-  const { refreshProfile } = useAuth();
-
+  const { refreshProfile, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,14 +43,23 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
     onClose();
   };
 
-  const handleLoginSuccess = async () => {
-    await refreshProfile();
+  const handleLoginSuccess = (data: any) => {
+    if (data.token) {
+      localStorage.setItem("accessToken", data.token);
+    }
+
+    login(data.user || data);
+
+    message.success({
+      content: "Đăng nhập thành công!",
+      duration: 3,
+    });
+
     handleClose();
     setEmail("");
     setPassword("");
   };
 
-  // --- Xử lý Login ---
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -54,15 +68,22 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
     try {
       const res = await authService.login({ email, password });
       if (res && res.code === 200) {
-        await handleLoginSuccess();
+        console.log("LOG 1: Kết quả Login API:", res);
+        await handleLoginSuccess(res.result);
+      } else {
+        setErrorMessage("Đăng nhập thất bại. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      console.error("Login failed:", error);
       const errorResponse = error.response?.data;
+
       if (errorResponse?.code === 1000) {
         setErrorMessage("Email hoặc mật khẩu không chính xác.");
+      } else if (errorResponse?.message?.includes("Google")) {
+        setErrorMessage(
+          "Tài khoản này được liên kết với Google. Vui lòng chọn 'Đăng nhập với Google'.",
+        );
       } else {
-        setErrorMessage(errorResponse?.message || "Lỗi kết nối server. Vui lòng thử lại sau!");
+        setErrorMessage(errorResponse?.message || "Lỗi kết nối server.");
       }
     } finally {
       setIsLoading(false);
@@ -84,14 +105,19 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
 
     try {
       // Gọi API forgotPassword từ userService
-      await userService.forgotPassword(email);
-      
+      await authService.forgotPassword(email);
+
       // Nếu thành công (API không throw lỗi)
-      setSuccessMessage("Link đặt lại mật khẩu đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.");
+      setSuccessMessage(
+        "Link đặt lại mật khẩu đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.",
+      );
     } catch (error: any) {
       console.error("Forgot password failed:", error);
       const errorResponse = error.response?.data;
-      setErrorMessage(errorResponse?.message || "Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.");
+      setErrorMessage(
+        errorResponse?.message ||
+          "Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +132,7 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
       try {
         const res = await authService.loginGoogle(codeResponse.code);
         if (res && (res.code === 200 || res.result)) {
-          await handleLoginSuccess();
+          await handleLoginSuccess(res.result);
         } else {
           setErrorMessage("Không thể đăng nhập bằng Google.");
         }
@@ -153,8 +179,8 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
             {isForgotPasswordMode && (
               <button
                 onClick={() => {
-                   setIsForgotPasswordMode(false);
-                   resetForm();
+                  setIsForgotPasswordMode(false);
+                  resetForm();
                 }}
                 className="absolute top-2 left-2 w-6.5 h-6.5 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
               >
@@ -165,19 +191,33 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
             <div className="flex justify-center mb-2">
               <div className="w-10 h-10 border-2 border-white rounded-lg flex items-center justify-center">
                 {isForgotPasswordMode ? (
-                   <FaEnvelope className="w-5 h-5" /> 
+                  <FaEnvelope className="w-5 h-5" />
                 ) : (
-                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
                 )}
               </div>
             </div>
 
             <h2 className="text-xl font-bold text-center mb-1">
-              {isForgotPasswordMode ? "Khôi Phục Mật Khẩu" : "Chào Mừng Trở Lại!"}
+              {isForgotPasswordMode
+                ? "Khôi Phục Mật Khẩu"
+                : "Chào Mừng Trở Lại!"}
             </h2>
             <p className="text-center text-white/90 text-xs">
-              {isForgotPasswordMode 
-                ? "Nhập email để nhận hướng dẫn đặt lại mật khẩu" 
+              {isForgotPasswordMode
+                ? "Nhập email để nhận hướng dẫn đặt lại mật khẩu"
                 : "Đăng nhập để tiếp tục"}
             </p>
           </div>
@@ -192,15 +232,18 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
             )}
             {/* Alert Thành công (Cho Forgot Pass) */}
             {successMessage && (
-               <div className="mb-3 p-2 bg-green-50 border border-green-200 text-green-600 text-xs rounded-lg text-center font-medium">
-                 {successMessage}
-               </div>
+              <div className="mb-3 p-2 bg-green-50 border border-green-200 text-green-600 text-xs rounded-lg text-center font-medium">
+                {successMessage}
+              </div>
             )}
 
             {/* --- FORM VIEW: Conditional Rendering --- */}
             {isForgotPasswordMode ? (
               // >>>>> FORM QUÊN MẬT KHẨU <<<<<
-              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 pt-2 pb-2">
+              <form
+                onSubmit={handleForgotPasswordSubmit}
+                className="space-y-4 pt-2 pb-2"
+              >
                 <div>
                   <label className="block text-left text-xs font-medium text-gray-800 mb-1">
                     Email đăng ký
@@ -228,18 +271,18 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
                 >
                   {isLoading ? "Đang gửi..." : "Gửi link xác nhận"}
                 </button>
-                
+
                 <div className="text-center mt-2">
-                    <button 
-                        type="button" 
-                        onClick={() => {
-                            setIsForgotPasswordMode(false);
-                            resetForm();
-                        }}
-                        className="text-xs text-gray-500 hover:text-gray-700 font-medium"
-                    >
-                        Quay lại đăng nhập
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPasswordMode(false);
+                      resetForm();
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                  >
+                    Quay lại đăng nhập
+                  </button>
                 </div>
               </form>
             ) : (
@@ -302,8 +345,8 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
                       type="button"
                       // KHI BẤM NÚT NÀY SẼ CHUYỂN MODE
                       onClick={() => {
-                          setErrorMessage(""); 
-                          setIsForgotPasswordMode(true);
+                        setErrorMessage("");
+                        setIsForgotPasswordMode(true);
                       }}
                       className="text-xs text-[#4da6ff] hover:text-blue-600 font-medium focus:outline-none"
                     >
@@ -336,19 +379,33 @@ const LoginPage = ({ isOpen, onClose, onSwitchToRegister }: LoginPageProps) => {
                     type="button"
                     className="w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-800 font-medium py-2 px-3 rounded-lg transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {/* SVG Google giữ nguyên */}
+                    {/* SVG Google giữ nguyên */}
                     <svg width="17" height="17" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
                     </svg>
                     <span>Đăng nhập với Google</span>
                   </button>
                 </div>
 
                 <div className="mt-2.5 text-center">
-                  <span className="text-xs text-gray-700">Chưa có tài khoản? </span>
+                  <span className="text-xs text-gray-700">
+                    Chưa có tài khoản?{" "}
+                  </span>
                   <button
                     onClick={onSwitchToRegister}
                     className="text-xs text-[#4da6ff] hover:text-blue-600 font-semibold focus:outline-none"

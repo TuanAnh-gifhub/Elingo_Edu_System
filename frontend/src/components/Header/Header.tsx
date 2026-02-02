@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { FiMessageCircle, FiMoon, FiSun } from "react-icons/fi";
-import { FaHeart, FaWallet } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -22,16 +22,14 @@ const useScrollspy = () => ({ activeSection: "hero" });
 // Hàm check auth đơn giản (có thể nâng cấp sau để check isAuthenticated từ context)
 const useAuthCheck = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  
-  const requireAuth = (cb: any) => {
+  const requireAuth = (cb: () => void) => {
     if (!isAuthenticated) {
-        // Nếu chưa đăng nhập thì mở modal hoặc báo lỗi (tùy logic bạn muốn xử lý)
-        // Ở đây tạm thời vẫn cho chạy callback hoặc bạn có thể kích hoạt modal login
-        // Ví dụ: alert("Vui lòng đăng nhập");
-        cb(); 
+      // Nếu chưa đăng nhập thì mở modal hoặc báo lỗi (tùy logic bạn muốn xử lý)
+      // Ở đây tạm thời vẫn cho chạy callback hoặc bạn có thể kích hoạt modal login
+      // Ví dụ: alert("Vui lòng đăng nhập");
+      cb();
     } else {
-        cb();
+      cb();
     }
   };
   return { requireAuth };
@@ -39,33 +37,14 @@ const useAuthCheck = () => {
 
 const useUnreadMessages = () => ({ unreadMessages: [], unreadCount: 0 });
 
-interface ActiveNavigationStates {
-  isActiveAllProducts: boolean;
-  isActivePromotion: boolean;
-  isActiveAboutUs: boolean;
-}
-
 const HEADER_CONFIG = { MIN_HEIGHT: 64 } as const;
 
 const ICON_BUTTON_CLASS =
   "relative w-9 h-9 md:w-10 md:h-10 grid place-items-center rounded-full border border-transparent hover:border-[#4da6ff] shadow-sm hover:shadow-md hover:scale-105 transition-transform duration-300 ease-in-out origin-center will-change-transform";
 const PRIMARY_BUTTON_CLASS =
   "px-1.5 md:px-4 py-1.5 md:py-2 font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out border hover:border-[#4da6ff]";
-const NAV_LINK_CLASS =
-  "px-2 py-2 text-xs font-semibold rounded hover:bg-[#4da6ff]/10 transition-colors duration-150";
 const BUTTON_TEXT_HOVER_CLASS =
   "text-[11px] md:text-xs whitespace-nowrap inline-block hover:scale-110 transition-transform duration-300 ease-in-out";
-
-const getActiveNavigationStates = (
-  location: any,
-  activeSection: string,
-): ActiveNavigationStates => {
-  return {
-    isActiveAllProducts: location.pathname === "/products",
-    isActivePromotion: location.pathname === "/plans",
-    isActiveAboutUs: activeSection === "about-us" && location.pathname === "/",
-  };
-};
 
 const Header = () => {
   // --- 1. LẤY DATA TỪ CONTEXT ---
@@ -76,6 +55,7 @@ const Header = () => {
   const { unreadCount } = useUnreadMessages();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isHeaderTransparent, setIsHeaderTransparent] = useState<boolean>(false);
 
   // --- 2. CÁC STATE UI (Giao diện) ---
   const [headerHeight, setHeaderHeight] = useState<number>(
@@ -89,7 +69,6 @@ const Header = () => {
   });
 
   const headerRef = useRef<HTMLElement>(null);
-  const activeStates = getActiveNavigationStates(location, activeSection);
   const headerHeightClass = "md:h-16 py-1";
   const logoSizeClass = "h-9 w-9 md:h-11 md:w-11";
   const titleTextClass = "text-base md:text-2xl";
@@ -115,10 +94,29 @@ const Header = () => {
     return () => window.removeEventListener("resize", updateHeaderHeight);
   }, []);
 
+  // Make header transparent when user is at the very top (hero/video area on landing page)
+  useEffect(() => {
+    const isHome = location.pathname === "/";
+    if (!isHome) {
+      // Khi KHÔNG ở trang chủ thì luôn đảm bảo header là dạng bình thường (không trong suốt)
+      setIsHeaderTransparent(false);
+      return;
+    }
+
+    const onScroll = () => {
+      // Threshold to avoid flicker while still near the top
+      setIsHeaderTransparent(window.scrollY < 40);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [location.pathname]);
+
   // Chuẩn bị dữ liệu hiển thị cho UserMenu
-  // Vì UserResponse có fullName, userName nhưng UserMenu có thể cần prop khác
+  // UserResponse currently exposes userName (no fullName)
   const displayUser = user ? {
-    name: user.fullName || user.userName || "User",
+    name: user.userName || "User",
     // avatar: user.avatar // Nếu sau này có avatar thì thêm vào
   } : null;
 
@@ -126,7 +124,10 @@ const Header = () => {
     <>
       <header
         ref={headerRef}
-        className="w-full fixed top-0 left-0 right-0 z-50 border-b-2 border-[#4da6ff] text-[#0e0e0e] text-base leading-[1.4] shadow-sm bg-[rgba(228,228,228,0.82)] backdrop-blur-[2px]"
+        className={`w-full fixed top-0 left-0 right-0 z-50 text-[#0e0e0e] text-base leading-[1.4] transition-colors duration-300 ${isHeaderTransparent
+          ? "border-b-0 shadow-none bg-transparent"
+          : "border-b-2 border-[#4da6ff] shadow-sm bg-[rgba(228,228,228,0.82)] backdrop-blur-[2px]"
+          }`}
         style={{ minHeight: `${HEADER_CONFIG.MIN_HEIGHT}px` }}
       >
         <div
@@ -134,7 +135,7 @@ const Header = () => {
         >
           <div className="flex items-center justify-between w-full gap-2 md:gap-4">
             {/* LOGO */}
-            <div className="flex items-center flex-shrink-0 gap-1 md:gap-3">
+            <div className="flex items-center shrink-0 gap-1 md:gap-3">
               <Link
                 to="/"
                 className="flex items-center gap-1 md:gap-2"
@@ -198,144 +199,111 @@ const Header = () => {
               </Link>
             </div>
 
-            {/* NAVIGATION */}
-            <nav className="hidden md:flex flex-1 items-center justify-center gap-x-1 ml-24">
-              <Link to="/products" className={NAV_LINK_CLASS}>
-                <AnimatedNavText
-                  isActive={activeStates.isActiveAllProducts}
-                  text="Tất Cả Phòng"
-                  triggerKey={location.pathname}
-                />
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => {
-                  requireAuth(() => {
-                    navigate("/plans");
-                  });
-                }}
-                className={NAV_LINK_CLASS}
-              >
-                <AnimatedNavText
-                  isActive={activeStates.isActivePromotion}
-                  text="Khuyến Mãi"
-                  triggerKey={location.pathname}
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate("/about-us")}
-                className={`${NAV_LINK_CLASS} bg-transparent border-0 focus:outline-none`}
-              >
-                <AnimatedNavText
-                  isActive={activeStates.isActiveAboutUs}
-                  text="Về Chúng Tôi"
-                  triggerKey={activeSection}
-                />
-              </button>
-            </nav>
-
             {/* RIGHT ACTIONS */}
-            <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
-              {/* Dark Mode */}
-              <button
-                onClick={() => {
-                  setIsDarkMode((prev) => {
-                    const newValue = !prev;
-                    localStorage.setItem("landing_dark_mode", String(newValue));
-                    window.dispatchEvent(
-                      new CustomEvent("darkModeChanged", {
-                        detail: { isDarkMode: newValue },
-                      }),
-                    );
-                    return newValue;
-                  });
-                }}
-                className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4da6ff] ${isDarkMode ? "bg-slate-700" : "bg-gray-300"}`}
-              >
-                <span
-                  className={`inline-flex items-center justify-center h-6 w-6 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${isDarkMode ? "translate-x-7" : "translate-x-1"}`}
-                >
-                  {isDarkMode ? (
-                    <FiMoon size={14} className="text-slate-700" />
-                  ) : (
-                    <FiSun size={14} className="text-yellow-500" />
-                  )}
-                </span>
-              </button>
+            <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
+              {(() => {
+                const iconBgClass = isHeaderTransparent
+                  ? "bg-transparent hover:bg-white/10"
+                  : "";
+                const wishlistBgClass = isHeaderTransparent
+                  ? iconBgClass
+                  : "bg-red-50 hover:bg-red-100";
+                const chatBgClass = isHeaderTransparent
+                  ? iconBgClass
+                  : "bg-blue-50 hover:bg-blue-100";
 
-              {/* Wishlist */}
-              <Link
-                to="/wishlist"
-                className={`${ICON_BUTTON_CLASS} bg-red-50 hover:bg-red-100`}
-                title="Yêu thích"
-              >
-                <FaHeart
-                  size={18}
-                  className="md:text-[20px] text-[#ff3b6b] m-auto"
-                />
-              </Link>
+                return (
+                  <>
+                    {/* Dark Mode */}
+                    <button
+                      onClick={() => {
+                        setIsDarkMode((prev) => {
+                          const newValue = !prev;
+                          localStorage.setItem("landing_dark_mode", String(newValue));
+                          window.dispatchEvent(
+                            new CustomEvent("darkModeChanged", {
+                              detail: { isDarkMode: newValue },
+                            }),
+                          );
+                          return newValue;
+                        });
+                      }}
+                      className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none ${isHeaderTransparent
+                        ? "bg-white/10 hover:bg-white/15"
+                        : isDarkMode
+                          ? "bg-slate-700"
+                          : "bg-gray-300"
+                        }`}
+                    >
+                      <span
+                        className={`inline-flex items-center justify-center h-6 w-6 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${isDarkMode ? "translate-x-7" : "translate-x-1"}`}
+                      >
+                        {isDarkMode ? (
+                          <FiMoon size={14} className="text-slate-700" />
+                        ) : (
+                          <FiSun size={14} className="text-yellow-500" />
+                        )}
+                      </span>
+                    </button>
 
-              {/* Wallet */}
-              <button
-                onClick={() => {
-                  requireAuth(() => {
-                    navigate("/wallet");
-                  });
-                }}
-                className={`${ICON_BUTTON_CLASS} bg-yellow-50 hover:bg-yellow-100`}
-                title="Ví cá nhân"
-              >
-                <FaWallet
-                  size={18}
-                  className="md:text-[20px] text-yellow-600 m-auto"
-                />
-              </button>
+                    {/* Wishlist */}
+                    <Link
+                      to="/wishlist"
+                      className={`${ICON_BUTTON_CLASS} ${wishlistBgClass}`}
+                      title="Yêu thích"
+                    >
+                      <FaHeart
+                        size={18}
+                        className="md:text-[20px] text-[#ff3b6b] m-auto"
+                      />
+                    </Link>
 
-              {/* Chat */}
-              <button
-                onClick={() => {
-                  requireAuth(() => {
-                    navigate("/chat");
-                  });
-                }}
-                className={`${ICON_BUTTON_CLASS} bg-blue-50 hover:bg-blue-100`}
-                title="Chat"
-              >
-                <FiMessageCircle
-                  size={18}
-                  className="md:text-[20px] text-[#4da6ff] m-auto"
-                />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+                    {/* Chat */}
+                    <button
+                      onClick={() => {
+                        requireAuth(() => {
+                          navigate("/chat");
+                        });
+                      }}
+                      className={`${ICON_BUTTON_CLASS} ${chatBgClass}`}
+                      title="Chat"
+                    >
+                      <FiMessageCircle
+                        size={18}
+                        className="md:text-[20px] text-[#4da6ff] m-auto"
+                      />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
 
-              {/* Đăng phòng */}
-              <button
-                onClick={() => requireAuth(() => navigate("/post-item"))}
-                className={`${PRIMARY_BUTTON_CLASS} bg-black hover:bg-gray-800 text-white border-black`}
-                title="Đăng phòng"
-              >
-                <span className={BUTTON_TEXT_HOVER_CLASS}>Đăng phòng</span>
-              </button>
+                    {/* Đăng phòng */}
+                    <button
+                      onClick={() => requireAuth(() => navigate("/post-item"))}
+                      className={`${PRIMARY_BUTTON_CLASS} inline-flex items-center justify-center h-10 md:h-11 px-3 md:px-5 py-2 md:py-2.5 bg-[#4da6ff]/70 hover:bg-[#4da6ff]/90 text-white border-[#4da6ff]/50 hover:border-[#4da6ff]`}
+                      title="Đăng tin"
+                    >
+                      <span className={`${BUTTON_TEXT_HOVER_CLASS} leading-none`}>Đăng phòng</span>
+                    </button>
 
-              {/* --- 5. USER MENU MỚI --- */}
-              {isLoading ? (
-                // Skeleton Loader khi đang check Auth từ Context
-                <div className="w-10 h-10 ml-2 bg-gray-200 rounded-full animate-pulse" />
-              ) : (
-                <UserMenu
-                  isLoggedIn={isAuthenticated}
-                  user={displayUser} 
-                  onLoginClick={() => setShowLoginModal(true)}
-                  onLogoutClick={handleLogoutClick}
-                />
-              )}
+                    {/* --- 5. USER MENU MỚI --- */}
+                    {isLoading ? (
+                      // Skeleton Loader khi đang check Auth từ Context
+                      <div className="w-10 h-10 ml-2 bg-gray-200 rounded-full animate-pulse" />
+                    ) : (
+                      <UserMenu
+                        isLoggedIn={isAuthenticated}
+                        user={displayUser}
+                        onLoginClick={() => setShowLoginModal(true)}
+                        onLogoutClick={handleLogoutClick}
+                        isHeaderTransparent={isHeaderTransparent}
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

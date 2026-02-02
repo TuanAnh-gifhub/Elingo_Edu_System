@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FiSearch, FiMapPin, FiCalendar } from "react-icons/fi";
 import { FaChalkboardTeacher } from "react-icons/fa";
 import backgroundHeroSection from "../../assets/backgroundHeroSection.jpg";
+import introLandingVideo from "../../assets/intro_landing_page.mp4";
 
 const CITIES = ["Tp Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Cần Thơ"] as const;
 
@@ -234,22 +235,38 @@ const HeroSection = () => {
   };
 
   return (
-  <div className="relative w-full flex items-start justify-center pt-0 pb-8 md:pb-12 min-h-[400px] md:min-h-[450px]">
-    {/* Hero background with image */}
-    <div 
-      className="absolute inset-0 bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(135deg, rgba(77,166,255,0.6) 0%, rgba(77,166,255,0.5) 50%, rgba(59,130,246,0.6) 100%), url(${backgroundHeroSection})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    />
-    
-    {/* Overlay for better text readability */}
-    <div className="absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-black/10" />
+  <div className="relative w-full -mt-16 flex items-start justify-center pt-0 pb-10 md:pb-14 min-h-screen min-h-[100svh] overflow-hidden">
+    {/* Hero background with video */}
+    <div className="absolute inset-0 z-0">
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        poster={backgroundHeroSection}
+        aria-hidden="true"
+        disablePictureInPicture
+      >
+        <source src={introLandingVideo} type="video/mp4" />
+      </video>
+
+      {/* Gradient overlay to keep content readable */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(77,166,255,0.45) 0%, rgba(77,166,255,0.35) 50%, rgba(59,130,246,0.45) 100%)",
+        }}
+      />
+    </div>
+
+    {/* Extra overlay for better text readability */}
+    <div className="absolute inset-0 z-10 bg-linear-to-b from-black/20 via-transparent to-black/10" />
     
     {/* Content */}
-    <div className="relative z-20 w-full max-w-5xl mx-auto px-4 pt-12 md:pt-16 text-white">
+    <div className="relative z-20 w-full max-w-5xl mx-auto px-4 pt-[calc(4rem+2rem)] md:pt-[calc(4rem+3rem)] text-white">
       <motion.h1 
         className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2 md:mb-3 drop-shadow-lg text-center"
         initial={{ opacity: 0, y: 20 }}

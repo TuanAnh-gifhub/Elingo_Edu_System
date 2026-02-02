@@ -6,4 +6,5 @@ public interface EmailService {
     void sendResetPasswordEmail(String toEmail, String resetUrl);
     void sendOtpRegister(CreateUsersRequest user);
     CreateUsersRequest verifyAndGetPendingUser(String email, String otp);
+    public void sendEmailToReporter(String userName,String reporterEmail,String content);
 }

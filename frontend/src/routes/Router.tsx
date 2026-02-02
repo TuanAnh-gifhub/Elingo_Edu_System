@@ -10,8 +10,12 @@ import NotFound from "../components/Error/NotFound";
 import AdminPage from "../pages/Admin/AdminPage";
 import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
+import AboutUs from "../pages/Customer/AboutUs/AboutUs";
+import ReportPage from "../pages/Admin/ReportAdmin/ReportPage";
+import ReportForm from "../pages/Customer/ReportPage/ReportForm";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
+import ManagePage from "../pages/Customer/ManagePage/ManagePage";
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +69,11 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Đặt lại mật khẩu" },
       },
       {
+        path: "manage-posts",
+        element: <ManagePage />,
+        handle: { breadcrumb: "Quản lý cá nhân" },
+      },
+      {
         path: "*",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
@@ -73,6 +82,16 @@ export const router = createBrowserRouter([
         path: "admin",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
+      },
+      {
+        path: "about-us",
+        element: <AboutUs />,
+        handle: { breadcrumb: "Về chúng tôi" },
+      },
+      {
+        path: "report-form",
+        element: <ReportForm />,
+        handle: { breadcrumb: "Báo cáo vi phạm" },
       },
     ],
   },
@@ -85,8 +104,8 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedAdminRoute>
-        <AdminPage />
-      </ProtectedAdminRoute>
+      <AdminPage />
+       </ProtectedAdminRoute>
     ),
     children: [
       {
@@ -102,8 +121,12 @@ export const router = createBrowserRouter([
       },
       {
         path: "customers",
-        element: <UserManagement />
-      }
+        element: <UserManagement />,
+      },
+      {
+        path: "reports",
+        element: <ReportPage />,
+      },
     ],
   },
 ]);

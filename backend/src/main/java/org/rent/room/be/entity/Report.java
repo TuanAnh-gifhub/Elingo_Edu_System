@@ -1,46 +1,50 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.ReportStatus;
 
 import java.util.UUID;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
 @Entity
-@Table(name = "reports")
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@Table(name = "report")
 public class Report extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "report_id")
-    UUID reportId;
+    private UUID reportId;
 
     @Column(name = "title", length = 100)
-    String title;
+    private String title;
 
-    @Column(name = "reason", length = 150)
-    String content;
+    @Column(name = "content", length = 255)
+    private String content;
+
+    @Column(name ="address")
+    private String address;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20,nullable = false)
-    ReportStatus status ;
+    private ReportStatus status ;
 
     @Column(name = "is_deleted")
-    Boolean isDeleted ;
+    private Boolean isDeleted ;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    User user;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    Room room;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "room_id")
+//    private Room room;
 }
+

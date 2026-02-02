@@ -38,12 +38,6 @@ public class Post extends BaseEntity {
     @Column(name = "comment_on_post", columnDefinition = "TEXT")
     String commentOnPost;
 
-    @Column(name = "emotion", length = 50)
-    String emotion;
-
-    @Column(name = "total_vote")
-    Integer totalVote = 0;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rental_area_id")
     RentalArea rentalArea;

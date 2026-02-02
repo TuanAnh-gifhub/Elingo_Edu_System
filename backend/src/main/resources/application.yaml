@@ -65,3 +65,9 @@ sepay:
   merchant-id: your_merchant_id
   secret-key: your_secret_key
   webhook-path: /api/sepay/webhook
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  folder: ${CLOUDINARY_FOLDER:springboot_uploads}

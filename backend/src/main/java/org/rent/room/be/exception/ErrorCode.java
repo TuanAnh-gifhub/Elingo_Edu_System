@@ -26,10 +26,16 @@ public enum ErrorCode {
     // Page Errors
     INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
 
+    // Package Errors
+    RENTPACKAGE_NOT_FOUND(4001, "Package not found", HttpStatus.NOT_FOUND),
+    INVALID_RENTPACKAGE(4002, "Invalid package data", HttpStatus.BAD_REQUEST),
+
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung
     ;
+
+
 
     private int code;
     private String message;

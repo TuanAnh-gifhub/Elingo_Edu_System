@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @FieldDefaults(level = AccessLevel.PACKAGE, makeFinal = true)
 @RequestMapping("/users")
-@Tag(name = "2. User", description = "API quản lý người dùng")
+@Tag(name = "2. User")
 public class UserController {
 
     UserService userService;
@@ -50,7 +50,7 @@ public class UserController {
         );
     }
 
-    @GetMapping("/all")
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "1") int page,

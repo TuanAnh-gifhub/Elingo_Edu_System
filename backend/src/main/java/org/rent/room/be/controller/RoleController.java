@@ -44,7 +44,7 @@ public class RoleController {
     public ResponseEntity<ApiResponse<Role>> createRole(@RequestBody  Role role) {
         return ResponseEntity.ok(
                 ApiResponse.<Role>builder()
-                        .code(200)
+                        .code(201)
                         .message("Role created successfully")
                         .result(roleService.createRole(role))
                         .build()

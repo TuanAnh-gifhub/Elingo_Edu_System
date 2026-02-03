@@ -69,7 +69,7 @@ export const userService = {
     if (role) params.role = role;
     if (active !== undefined) params.active = active;
     if (keyword) params.keyword = keyword;
-    return api.get("/users/all", { params });
+    return api.get("/users", { params });
   },
 
   updateUser: (userId: string, data: UpdateUserRequest) => {

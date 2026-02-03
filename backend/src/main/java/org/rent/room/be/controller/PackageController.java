@@ -1,5 +1,6 @@
 package org.rent.room.be.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequestMapping("/packages")
 @Validated
+@Tag(name = "4. Package")
 public class PackageController {
     PackageFacade packageFacade;
 

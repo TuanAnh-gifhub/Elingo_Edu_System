@@ -11,16 +11,13 @@ import org.rent.room.be.dto.response.report.ReportResponse;
 import org.rent.room.be.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/reports")
-@Tag(name = "3. Report", description = "API quản lý báo cáo vi phạm")
+@Tag(name = "5. Report")
 public class ReportController {
 
     @Autowired

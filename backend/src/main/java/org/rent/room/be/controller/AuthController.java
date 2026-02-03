@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequestMapping("/auth")
-@Tag(name = "1. Authentication", description = "API quản lý xác thực")
+@Tag(name = "1. Authentication")
 public class AuthController {
 
     AuthService authService;

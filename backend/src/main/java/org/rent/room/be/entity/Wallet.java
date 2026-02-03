@@ -1,11 +1,8 @@
 package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
+import lombok.*;
+import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.WalletStatus;
 
@@ -20,26 +17,27 @@ import java.util.UUID;
 @SuperBuilder
 @Entity
 @Table(name = "wallets")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Wallet extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "wallet_id")
-    private UUID walletId;
+    UUID walletId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    User user;
 
     @Column(name = "balance", precision = 19, scale = 2)
-    private BigDecimal balance = BigDecimal.ZERO;
+    BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "wallet_status", length = 20)
-    private WalletStatus walletStatus;
+    WalletStatus walletStatus;
 
     @OneToMany(mappedBy = "wallet", fetch = FetchType.LAZY)
-    private List<Payment> payments;
+    List<Payment> payments;
 
     @OneToMany(mappedBy = "wallet", fetch = FetchType.LAZY)
-    private List<Order> orders;
+    List<Order> orders;
 }

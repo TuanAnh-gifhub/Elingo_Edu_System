@@ -26,9 +26,11 @@ public class Report extends BaseEntity {
     @Column(name = "title", length = 100)
     private String title;
 
-    @Column(name = "reason", length = 150)
+    @Column(name = "content", length = 255)
     private String content;
 
+    @Column(name ="address")
+    private String address;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20,nullable = false)
@@ -37,12 +39,12 @@ public class Report extends BaseEntity {
     @Column(name = "is_deleted")
     private Boolean isDeleted ;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    private Room room;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "room_id")
+//    private Room room;
 }
 

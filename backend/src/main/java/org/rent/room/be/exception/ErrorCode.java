@@ -21,17 +21,25 @@ public enum ErrorCode {
     USER_EXISTED(2001,"Email existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(2002,"User not found", HttpStatus.NOT_FOUND),
     USER_NOT_AUTHENTICATED(2003,"User not authenticated", HttpStatus.UNAUTHORIZED),
+    EMAIL_NOT_FOUND(2004,"Email not found", HttpStatus.NOT_FOUND),
 
     // Page Errors
     INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
 
     // Package Errors
     RENTPACKAGE_NOT_FOUND(4001, "Package not found", HttpStatus.NOT_FOUND),
-    INVALID_RENTPACKAGE(4002, "Invalid package data", HttpStatus.BAD_REQUEST);
+    INVALID_RENTPACKAGE(4002, "Invalid package data", HttpStatus.BAD_REQUEST),
 
-    private final int code;
-    private final String message;
-    private final HttpStatusCode httpStatusCode;
+
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
+    INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung
+    ;
+
+
+
+    private int code;
+    private String message;
+    private HttpStatusCode httpStatusCode;
 
     ErrorCode(int code, String message, HttpStatusCode httpStatusCode) {
         this.code = code;

@@ -1,9 +1,9 @@
 package org.rent.room.be.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.rent.room.be.security.JwtAuthenticationEntryPoint;
 import org.rent.room.be.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,24 +39,26 @@ public class SecurityConfig {
             "/auth/refresh",
             "/auth/logout",
             "/users/create",
+            "/users/forgot-password/**",
+            "/users/reset-password/**",
+            "/users/register/request/**",
+            "/users/register/confirm/**",
             "/ws/**",
+            "/reports/**"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;
+    JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain appSecurityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
 
-                // 🔥 CỰC KỲ QUAN TRỌNG
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
-                        })
-                )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINT).permitAll()
@@ -67,7 +69,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

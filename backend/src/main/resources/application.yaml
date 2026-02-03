@@ -2,9 +2,6 @@ spring:
   application:
     name: BE
 
-  jackson:
-    time-zone: Asia/Ho_Chi_Minh
-
   mail:
     host: smtp.gmail.com
     port: 587

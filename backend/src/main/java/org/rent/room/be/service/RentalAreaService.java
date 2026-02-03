@@ -9,4 +9,11 @@ import java.util.UUID;
 
 public interface RentalAreaService {
     RentalAreaResponse createRentalArea(CreateRentalAreaRequest req, List<MultipartFile> images, UUID currentUserId);
-}
+
+    List<RentalAreaResponse> getAllRentalAreas();
+
+    List<RentalAreaResponse> getRentalAreasByUserId(UUID userId);
+
+    RentalAreaResponse getRentalAreaById(UUID rentalAreaId);
+
+    void deleteRentalArea(UUID rentalAreaId, UUID currentUserId, String currentUserRole);}

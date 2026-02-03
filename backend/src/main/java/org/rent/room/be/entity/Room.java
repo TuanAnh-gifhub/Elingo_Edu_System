@@ -29,8 +29,6 @@ public class Room extends BaseEntity {
     @Column(name = "room_name", length = 100, nullable = false)
     private String roomName;
 
-    @Column(name = "price", precision = 19, scale = 2, nullable = false)
-    private BigDecimal price;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;

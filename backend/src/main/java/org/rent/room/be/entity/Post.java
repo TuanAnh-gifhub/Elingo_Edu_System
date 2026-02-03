@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,14 +30,14 @@ public class Post extends BaseEntity {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     String content;
 
+    @Column(name = "price", precision = 19, scale = 2, nullable = false)
+    private BigDecimal price;
+
     @Column(name = "post_status", length = 20)
     String postStatus;
 
     @Column(name = "post_user_name")
     String postUserName;
-
-    @Column(name = "comment_on_post", columnDefinition = "TEXT")
-    String commentOnPost;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rental_area_id")

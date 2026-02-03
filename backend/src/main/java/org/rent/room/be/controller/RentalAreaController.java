@@ -61,5 +61,79 @@ public class RentalAreaController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<RentalAreaResponse>>> getAllRentalAreas() {
+        List<RentalAreaResponse> result = rentalAreaService.getAllRentalAreas();
+        ApiResponse<List<RentalAreaResponse>> response = ApiResponse.<List<RentalAreaResponse>>builder()
+                .code(200)
+                .message("Get all rental areas successfully")
+                .result(result)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/my-rental-areas")
+    public ResponseEntity<ApiResponse<List<RentalAreaResponse>>> getMyRentalAreas(
+            @AuthenticationPrincipal UserDetails principal
+    ) {
+        UUID currentUserId = null;
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            currentUserId = customUserDetails.getUserId();
+        }
+        if (currentUserId == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        List<RentalAreaResponse> result = rentalAreaService.getRentalAreasByUserId(currentUserId);
+        ApiResponse<List<RentalAreaResponse>> response = ApiResponse.<List<RentalAreaResponse>>builder()
+                .code(200)
+                .message("Get user rental areas successfully")
+                .result(result)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{rentalAreaId}")
+    public ResponseEntity<ApiResponse<RentalAreaResponse>> getRentalAreaById(
+            @PathVariable UUID rentalAreaId
+    ) {
+        RentalAreaResponse result = rentalAreaService.getRentalAreaById(rentalAreaId);
+        ApiResponse<RentalAreaResponse> response = ApiResponse.<RentalAreaResponse>builder()
+                .code(200)
+                .message("Get rental area successfully")
+                .result(result)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{rentalAreaId}")
+    public ResponseEntity<ApiResponse<Void>> deleteRentalArea(
+            @PathVariable UUID rentalAreaId,
+            @AuthenticationPrincipal UserDetails principal
+    ) {
+        UUID currentUserId = null;
+        String currentUserRole = null;
+
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            currentUserId = customUserDetails.getUserId();
+            currentUserRole = customUserDetails.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (currentUserId == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        rentalAreaService.deleteRentalArea(rentalAreaId, currentUserId, currentUserRole);
+
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .code(200)
+                .message("Delete rental area successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 }
 

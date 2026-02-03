@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -105,5 +106,69 @@ public class RentalAreaServiceImpl implements RentalAreaService {
                 .status(rentalArea.getStatus().name())
                 .images(imageResponses)
                 .build();
+    }
+
+    @Override
+    public List<RentalAreaResponse> getAllRentalAreas() {
+        List<RentalArea> rentalAreas = rentalAreaRepository.findAllActive();
+        return rentalAreas.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RentalAreaResponse> getRentalAreasByUserId(UUID userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        List<RentalArea> rentalAreas = rentalAreaRepository.findByOwnerId(userId);
+        return rentalAreas.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public RentalAreaResponse getRentalAreaById(UUID rentalAreaId) {
+        RentalArea rentalArea = rentalAreaRepository.findByIdActive(rentalAreaId)
+                .orElseThrow(() -> new AppException(ErrorCode.RENTAL_AREA_NOT_FOUND));
+        return mapToResponse(rentalArea);
+    }
+
+    private RentalAreaResponse mapToResponse(RentalArea rentalArea) {
+        List<RentalAreaImageResponse> imageResponses = rentalAreaImageRepository.findByRentalArea(rentalArea)
+                .stream()
+                .sorted(Comparator.comparing(RentalAreaImage::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                .map(img -> RentalAreaImageResponse.builder()
+                        .rentalAreaImageId(img.getRentalAreaImageId())
+                        .imageUrl(img.getImageUrl())
+                        .isCover(img.getIsCover())
+                        .sortOrder(img.getSortOrder())
+                        .build())
+                .collect(Collectors.toList());
+
+        return RentalAreaResponse.builder()
+                .rentalAreaId(rentalArea.getRentalAreaId())
+                .rentalAreaName(rentalArea.getRentalAreaName())
+                .address(rentalArea.getAddress())
+                .contactName(rentalArea.getContactName())
+                .contactPhone(rentalArea.getContactPhone())
+                .status(rentalArea.getStatus().name())
+                .images(imageResponses)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteRentalArea(UUID rentalAreaId, UUID currentUserId, String currentUserRole) {
+        RentalArea rentalArea = rentalAreaRepository.findByIdActive(rentalAreaId)
+                .orElseThrow(() -> new AppException(ErrorCode.RENTAL_AREA_NOT_FOUND));
+
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUserRole);
+
+        if (!isAdmin && !rentalArea.getOwner().getUserId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        rentalArea.setDeletedAt(LocalDateTime.now());
+        rentalAreaRepository.save(rentalArea);
     }
 }

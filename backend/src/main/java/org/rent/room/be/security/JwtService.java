@@ -40,10 +40,16 @@ public class JwtService {
 
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
+        String userId = "";
+        if (user instanceof CustomUserDetails customUserDetails) {
+            userId = customUserDetails.getUserId().toString();
+        }
+
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(expirationSeconds))
                 .subject(user.getUsername())
+                .claim("userId", userId)
                 .claim("type", type)
                 .claim("email", user.getUsername())
                 .claim("roles", user.getAuthorities()

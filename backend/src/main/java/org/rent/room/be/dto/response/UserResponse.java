@@ -3,7 +3,7 @@ package org.rent.room.be.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.rent.room.be.constant.Role;
+import org.rent.room.be.entity.Role;
 import org.rent.room.be.entity.User;
 
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ public class UserResponse {
     String phone;
     LocalDate dateOfBirth;
     int age;
-    Role role;
+    String role;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     boolean active;

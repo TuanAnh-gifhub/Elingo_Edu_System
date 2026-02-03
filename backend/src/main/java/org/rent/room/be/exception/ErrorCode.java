@@ -16,6 +16,7 @@ public enum ErrorCode {
     INVALID_TOKEN_TYPE(1005, "Invalid token type", HttpStatus.BAD_REQUEST),
     LOGOUT_FAILED(1006, "Logout failed", HttpStatus.INTERNAL_SERVER_ERROR),
     REFRESH_TOKEN_EXPIRED(1007, "Refresh token expired", HttpStatus.UNAUTHORIZED),
+    SOCIAL_ACCOUNT_REQUIRED(1008, "Social account required", HttpStatus.BAD_REQUEST),
 
     //User
     USER_EXISTED(2001,"Email existed", HttpStatus.BAD_REQUEST),
@@ -23,8 +24,11 @@ public enum ErrorCode {
     USER_NOT_AUTHENTICATED(2003,"User not authenticated", HttpStatus.UNAUTHORIZED),
     EMAIL_NOT_FOUND(2004,"Email not found", HttpStatus.NOT_FOUND),
 
+    //Role
+    ROLE_NOT_FOUND(3001,"Role not found", HttpStatus.NOT_FOUND),
+
     // Page Errors
-    INVALID_PAGINATION(3001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
+    INVALID_PAGINATION(4001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
 
     // Package Errors
     RENTPACKAGE_NOT_FOUND(4001, "Package not found", HttpStatus.NOT_FOUND),

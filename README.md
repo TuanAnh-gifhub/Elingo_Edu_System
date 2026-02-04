@@ -17,6 +17,7 @@ SBA301_FE_ROOM/
    cd backend
    docker compose up -d
 2. Cài đặt và chạy Frontend
+   ```bash
    cd frontend
    npm install
    npm run dev

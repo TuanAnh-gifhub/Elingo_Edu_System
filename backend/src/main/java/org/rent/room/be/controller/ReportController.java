@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/reports")
-@Tag(name = "5. Report")
+@Tag(name = "7. Report")
 public class ReportController {
 
     @Autowired

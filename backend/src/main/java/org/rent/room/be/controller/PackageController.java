@@ -22,7 +22,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequestMapping("/packages")
 @Validated
-@Tag(name = "4. Package")
+@Tag(name = "6. Package")
 public class PackageController {
     PackageFacade packageFacade;
 

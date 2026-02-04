@@ -22,8 +22,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
                 @Tag(name = "1. Authentication", description = "API quản lý xác thực"),
                 @Tag(name = "2. User", description = "API quản lý người dùng"),
                 @Tag(name = "3. Role", description = "API quản lý vai trò người dùng"),
-                @Tag(name = "4. Package", description = "API quản lý gói thuê"),
-                @Tag(name = "5. Report", description = "API quản lý báo cáo vi phạm"),
+                @Tag(name = "4. Rental Area", description = "API quản lý gói tòa nhà"),
+                @Tag(name = "5. Room", description = "API quản lý gói thuê"),
+                @Tag(name = "6. Package", description = "API quản lý gói thuê"),
+                @Tag(name = "7. Report", description = "API quản lý báo cáo vi phạm"),
         }
 )
 

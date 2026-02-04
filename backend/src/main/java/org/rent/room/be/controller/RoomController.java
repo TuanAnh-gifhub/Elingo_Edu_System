@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/rooms")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Tag(name = "5. Room", description = "API quản lý phòng học")
+@Tag(name = "5. Room")
 public class RoomController {
 
     RoomService roomService;

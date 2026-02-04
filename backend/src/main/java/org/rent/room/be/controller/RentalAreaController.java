@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/rental-areas")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Tag(name = "4. Rental Area", description = "API quản lý tòa nhà")
+@Tag(name = "4. Rental Area")
 public class RentalAreaController {
 
     RentalAreaService rentalAreaService;

@@ -7,10 +7,13 @@ import org.rent.room.be.constant.Role;
 import org.rent.room.be.entity.Amenity;
 import org.rent.room.be.entity.Category;
 import org.rent.room.be.entity.City;
+import org.jspecify.annotations.NonNull;
+import org.rent.room.be.entity.Role;
 import org.rent.room.be.entity.User;
 import org.rent.room.be.repository.AmenityRepository;
 import org.rent.room.be.repository.CategoryRepository;
 import org.rent.room.be.repository.CityRepository;
+import org.rent.room.be.repository.RoleRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
 
     PasswordEncoder passwordEncoder;
     UserRepository userRepository;
+    RoleRepository roleRepository;
     CityRepository cityRepository;
     CategoryRepository categoryRepository;
     AmenityRepository amenityRepository;
@@ -41,7 +45,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedUsers() {
         if (userRepository.count() > 0) return;
-
         User user1 = User.builder()
                 .userName("RenterName")
                 .gender("Male")
@@ -140,6 +143,19 @@ public class DataInitializer implements CommandLineRunner {
                         .amenityName(name)
                         .build());
             }
+            userRepository.saveAll(List.of(user1, user2, user3, user4));
         }
     }
+
+    private org.rent.room.be.entity.Role createRoleIfNotExist(String roleName, String description) {
+        return roleRepository.findByRoleName(roleName)
+                .orElseGet(() -> roleRepository.save(
+                        org.rent.room.be.entity.Role.builder()
+                                .roleName(roleName)
+                                .description(description)
+                                .active(true)
+                                .build()
+                ));
+    }
+
 }

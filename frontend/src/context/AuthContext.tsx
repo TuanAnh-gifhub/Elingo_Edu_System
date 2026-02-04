@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 // Đảm bảo đường dẫn import đúng với project của bạn
 import { userService, type UserResponse } from "../services/usersService";
-import authService from "../services/auth/authService";
 
 interface AuthContextType {
   user: UserResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: UserResponse) => void;
-  logout: () => Promise<void>;
+  logout: () => void;
   refreshProfile: () => Promise<void>;
 }
 
@@ -20,21 +19,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // --- 1. Hàm check user khi reload trang (giữ nguyên) ---
   const fetchCurrentUser = async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response: any = await userService.getMe();
       const actualData = response.data ? response.data : response;
 
-      if (actualData && actualData.code === 200 && actualData.result) {
-        console.log("✅ Khôi phục phiên đăng nhập:", actualData.result);
+      if (actualData?.result) {
         setUser(actualData.result);
-      } else {
-        setUser(null);
       }
     } catch (error) {
-      setUser(null);
+      console.error("Fetch user thất bại, chờ interceptor refresh token...");
+      // ❌ KHÔNG setUser(null) ở đây
     } finally {
       setIsLoading(false);
     }
@@ -47,32 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = (userData: UserResponse) => {
     setUser(userData);
+    setIsLoading(false);
   };
 
-  // --- 2. HÀM LOGOUT ĐÃ SỬA (QUAN TRỌNG) ---
-  const logout = async () => {
-    // A. Kiểm tra xem đang đứng ở trang Admin hay trang User
-    const currentPath = window.location.pathname;
-    const isAdminPage = currentPath.startsWith("/admin");
-
-    try {
-      // B. Gọi API logout (để Backend xóa Cookie)
-      // Dù API lỗi (do token hết hạn) thì vẫn phải chạy tiếp các bước dưới
-      await authService.logout();
-    } catch (error) {
-      console.error("Logout API failed:", error);
-    }
-
-    // C. Xóa user trong state
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     setUser(null);
-
-    // D. Điều hướng về đúng trang Login
-    // Dùng window.location.href để reload sạch sẽ state của React
-    if (isAdminPage) {
-      window.location.href = "/admin/login";
-    } else {
-      window.location.href = "/"; // Hoặc "/login" tùy luồng User của bạn
-    }
   };
 
   return (

@@ -51,9 +51,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         log.info("JWT_FILTER access_token present={}", token != null);
         if (token == null) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
+
+        String token = authHeader.substring(7);
 
         try {
             Jwt jwt = jwtDecoder.decode(token);
@@ -85,7 +90,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .setAuthentication(authentication);
 
         } catch (JwtException e) {
-            log.error("JWT_FILTER jwt error: {}", e.getMessage());
+            log.error("JWT_FILTER invalid token: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

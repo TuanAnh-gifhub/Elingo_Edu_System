@@ -30,11 +30,15 @@ export interface PageResponse<T> {
   data: T[];
 }
 
-// 3. Định nghĩa Interface cho Request body của Reset Password
-// (Khớp với ResetPasswordRequest bên Java)
-export interface ResetPasswordRequest {
-  token: string;
-  newPassword: string;
+export interface CreateUsersRequest {
+  userName: string;
+  gender: string;
+  email: string;
+  password?: string;
+  phone: string;
+  dateOfBirth: string;
+  role: string;
+  otp?: string;
 }
 
 export interface UpdateUserRequest {
@@ -50,17 +54,7 @@ export interface UpdateUserStatusRequest {
 
 export const userService = {
   getMe: () => {
-    return api.get<any, ApiResponse<UserResponse>>("/users/profile");
-  },
-
-  forgotPassword: (email: string) => {
-    return api.post<any, ApiResponse<void>>("/users/forgot-password", null, {
-      params: { email: email },
-    });
-  },
-
-  resetPassword: (data: ResetPasswordRequest) => {
-    return api.post<any, ApiResponse<void>>("/users/reset-password", data);
+    return api.get<any, ApiResponse<UserResponse>>("/users/me");
   },
 
   getAllUsers: (
@@ -75,7 +69,7 @@ export const userService = {
     if (role) params.role = role;
     if (active !== undefined) params.active = active;
     if (keyword) params.keyword = keyword;
-    return api.get("/users/all", { params });
+    return api.get("/users", { params });
   },
 
   updateUser: (userId: string, data: UpdateUserRequest) => {

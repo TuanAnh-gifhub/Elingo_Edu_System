@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Form, Input, Button, Card, Typography, Alert, message } from "antd";
-import { userService } from "../../../services/usersService";
-
+import authService from "../../../services/auth/authService";
 const { Title, Text } = Typography;
 
 const ResetPassword = () => {
@@ -29,18 +28,21 @@ const ResetPassword = () => {
 
     try {
       if (token) {
-        await userService.resetPassword({
+        await authService.resetPassword({
           token: token,
           newPassword: values.password,
         });
 
         setSuccessMsg("Đổi mật khẩu thành công! Đang chuyển hướng...");
         message.success("Đổi mật khẩu thành công!");
-        
+
         setTimeout(() => navigate("/"), 2000);
       }
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.response?.data || "Đã có lỗi xảy ra.";
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        "Đã có lỗi xảy ra.";
       setApiError(errorMsg);
     } finally {
       setIsLoading(false);
@@ -66,18 +68,33 @@ const ResetPassword = () => {
     <div style={styles.container}>
       <Card style={styles.card} bordered={false}>
         {/* Header - Giảm margin bottom từ 30 xuống 20 */}
-        <div style={{ marginBottom: 20 }}> 
-          <Title level={3} style={{ margin: 0, color: "#1F2937", fontWeight: "bold" }}>
+        <div style={{ marginBottom: 20 }}>
+          <Title
+            level={3}
+            style={{ margin: 0, color: "#1F2937", fontWeight: "bold" }}
+          >
             Đặt lại mật khẩu
           </Title>
-          <Text type="secondary" style={{ fontSize: '13px' }}>Nhập mật khẩu mới cho tài khoản của bạn.</Text>
+          <Text type="secondary" style={{ fontSize: "13px" }}>
+            Nhập mật khẩu mới cho tài khoản của bạn.
+          </Text>
         </div>
 
         {apiError && (
-          <Alert message={apiError} type="error" showIcon style={{ marginBottom: 15 }} />
+          <Alert
+            message={apiError}
+            type="error"
+            showIcon
+            style={{ marginBottom: 15 }}
+          />
         )}
         {successMsg && (
-          <Alert message={successMsg} type="success" showIcon style={{ marginBottom: 15 }} />
+          <Alert
+            message={successMsg}
+            type="success"
+            showIcon
+            style={{ marginBottom: 15 }}
+          />
         )}
 
         <Form
@@ -105,16 +122,16 @@ const ResetPassword = () => {
           <Form.Item
             label={<span style={styles.label}>Xác nhận mật khẩu</span>}
             name="confirmPassword"
-            dependencies={['password']}
+            dependencies={["password"]}
             style={{ marginBottom: 20 }} // <--- CHỈNH Ở ĐÂY
             rules={[
               { required: true, message: "Vui lòng xác nhận mật khẩu!" },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
+                  if (!value || getFieldValue("password") === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('Mật khẩu không khớp!'));
+                  return Promise.reject(new Error("Mật khẩu không khớp!"));
                 },
               }),
             ]}

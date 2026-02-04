@@ -40,8 +40,8 @@ public class CreateUsersRequest {
     @Past(message = "DOB_MUST_BE_IN_PAST")
     LocalDate dateOfBirth;
 
-    @Pattern(regexp = "^(RENTER|OWNER|ADMIN)$", message = "ROLE_INVALID")
-    String role;
+    @NotNull(message = "ROLE_REQUIRED")
+    String roleName;
 
     String otp;
 }

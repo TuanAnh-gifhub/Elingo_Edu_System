@@ -73,3 +73,5 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
   folder: ${CLOUDINARY_FOLDER:springboot_uploads}
+
+token_reset_password_expire_seconds: 900

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
-import org.rent.room.be.constant.Role;
+import org.rent.room.be.constant.AuthProvider;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,8 +35,15 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true, length = 100)
     String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     String passwordHash;
+
+    @Column(name = "google_id", unique = true)
+    String googleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider")
+    AuthProvider provider;
 
     @Column(name = "phone_number", length = 20)
     String phone;
@@ -44,8 +51,8 @@ public class User extends BaseEntity {
     @Column(name = "date_of_birth")
     LocalDate dateOfBirth;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id")
     Role role;
 
     @Column(name = "is_active")

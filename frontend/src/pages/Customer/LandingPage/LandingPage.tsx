@@ -139,14 +139,10 @@ const LandingPage = () => {
     return () => window.removeEventListener('darkModeChanged', handleDarkModeChange);
   }, []);
 
-  // Detect scroll to show/hide sidebar and handle footer collision
   useEffect(() => {
     const handleScroll = () => {
-      // Show sidebar when scrolled down more than 50px (header is compact)
-      // Temporarily disabled: setShowSidebar(window.scrollY > 50);
-      setShowSidebar(false); // Temporarily disabled sidebar
+      setShowSidebar(false);
 
-      // Calculate sidebar bottom position to avoid footer
       if (footerRef.current && showSidebar) {
         const footerRect = footerRef.current.getBoundingClientRect();
         const windowHeight = window.innerHeight;

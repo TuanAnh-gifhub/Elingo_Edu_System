@@ -1,4 +1,5 @@
 import api from "../../config/axios";
+import type { UserResponse } from "../usersService";
 
 export interface ApiResponse<T> {
   code: number;
@@ -45,7 +46,7 @@ export interface ResetPasswordRequest {
 }
 
 const authService = {
-  login: async (data: LoginRequest) => {
+  login: async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
     const response = await api.post<ApiResponse<LoginResponse>>(
       "/auth/login",
       data,
@@ -60,7 +61,7 @@ const authService = {
     return response.data;
   },
 
-  loginGoogle: async (code: string) => {
+  loginGoogle: async (code: string): Promise<ApiResponse<LoginGoogleResponse>> => {
     const payload: LoginGoogleRequest = { code };
     const response = await api.post<ApiResponse<LoginGoogleResponse>>(
       "/auth/google",
@@ -69,12 +70,12 @@ const authService = {
     return response.data;
   },
 
-  refreshToken: async () => {
+  refreshToken: async (): Promise<ApiResponse<void>> => {
     const response = await api.post<ApiResponse<void>>("/auth/refresh");
     return response.data;
   },
 
-  registerRequest: async (data: CreateUsersRequest) => {
+  registerRequest: async (data: CreateUsersRequest): Promise<ApiResponse<void>> => {
     const response = await api.post<ApiResponse<void>>(
       "/auth/register/request",
       data,
@@ -82,20 +83,28 @@ const authService = {
     return response.data; // Trả về data chứa { code, message, result }
   },
 
-  registerConfirm: (email: string, otp: string) => {
-    return api.get<any, ApiResponse<void>>("/auth/register/confirm", {
+  registerConfirm: (email: string, otp: string): Promise<ApiResponse<void>> => {
+    return api.get<unknown, ApiResponse<void>>("/auth/register/confirm", {
       params: { email, otp },
     });
   },
 
-  forgotPassword: (email: string) => {
-    return api.post<any, ApiResponse<void>>("/auth/forgot-password", null, {
+  forgotPassword: (email: string): Promise<ApiResponse<void>> => {
+    return api.post<unknown, ApiResponse<void>>("/auth/forgot-password", null, {
       params: { email: email },
     });
   },
 
-  resetPassword: (data: ResetPasswordRequest) => {
-    return api.post<any, ApiResponse<void>>("/auth/reset-password", data);
+  resetPassword: (data: ResetPasswordRequest): Promise<ApiResponse<void>> => {
+    return api.post<unknown, ApiResponse<void>>("/auth/reset-password", data);
+  },
+
+  // Lấy thông tin user hiện tại sau khi đã có accessToken
+  getCurrentUser: async (): Promise<ApiResponse<UserResponse>> => {
+    const response = await api.get<unknown, ApiResponse<UserResponse>>(
+      "/users/me",
+    );
+    return response;
   },
 };
 

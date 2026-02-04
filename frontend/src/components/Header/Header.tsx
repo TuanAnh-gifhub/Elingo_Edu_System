@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 
 // Import components
 import LoginPage from "../../pages/Customer/LoginPage/LoginPage";
-import RegisterPage from "../../pages/Customer/LoginPage/RegisterPage";
 import ScrambleText from "./ScrambleText";
 import AnimatedNavText from "./AnimatedNavText";
 import UserMenu from "./UserMenu";
@@ -58,11 +57,8 @@ const Header = () => {
   const [isHeaderTransparent, setIsHeaderTransparent] = useState<boolean>(false);
 
   // --- 2. CÁC STATE UI (Giao diện) ---
-  const [headerHeight, setHeaderHeight] = useState<number>(
-    HEADER_CONFIG.MIN_HEIGHT,
-  );
+  const [headerHeight, setHeaderHeight] = useState<number>(HEADER_CONFIG.MIN_HEIGHT);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("landing_dark_mode") === "true";
@@ -311,22 +307,10 @@ const Header = () => {
 
       <div style={{ height: headerHeight }} />
 
-      {/* Modals */}
+      {/* Modal Login + Register (slide trong 1 popup) */}
       <LoginPage
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onSwitchToRegister={() => {
-          setShowLoginModal(false);
-          setShowRegisterModal(true);
-        }}
-      />
-      <RegisterPage
-        isOpen={showRegisterModal}
-        onClose={() => setShowRegisterModal(false)}
-        onSwitchToLogin={() => {
-          setShowRegisterModal(false);
-          setShowLoginModal(true);
-        }}
       />
     </>
   );

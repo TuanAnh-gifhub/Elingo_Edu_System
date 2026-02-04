@@ -1,27 +1,17 @@
 import React, { useState } from "react";
-import {
-  Form,
-  Input,
-  Button,
-  DatePicker,
-  Select,
-  Row,
-  Col,
-  message,
-  ConfigProvider,
-  Alert,
-} from "antd";
-import {
-  MailOutlined,
-  LockOutlined,
-  PhoneOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { message } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
-import locale from "antd/es/date-picker/locale/vi_VN";
+import {
+  FaEnvelope,
+  FaLock,
+  FaPhone,
+  FaUser,
+  FaTimes,
+} from "react-icons/fa";
 import authService, {
   type CreateUsersRequest,
 } from "../../../services/auth/authService";
+import loginIntroVideo from "../../../assets/login_intro_video.mp4";
 
 interface RegisterPageProps {
   isOpen: boolean;
@@ -29,26 +19,92 @@ interface RegisterPageProps {
   onSwitchToLogin: () => void;
 }
 
+type RegisterFormValues = {
+  userName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone?: string;
+  gender: "MALE" | "FEMALE";
+  dateOfBirth: string;
+};
+
 const RegisterPage: React.FC<RegisterPageProps> = ({
   isOpen,
   onClose,
   onSwitchToLogin,
 }) => {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [formValues, setFormValues] = useState<RegisterFormValues>({
+    userName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    gender: "MALE",
+    dateOfBirth: "",
+  });
 
-  const onFinish = async (values: any) => {
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const handleChange =
+    (field: keyof RegisterFormValues) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const value = e.target.value;
+        setFormValues((prev) => ({ ...prev, [field]: value }));
+      };
+
+  const validateForm = (): string | null => {
+    if (!formValues.userName.trim()) return "Vui lòng nhập họ và tên.";
+    if (!formValues.email.trim()) return "Vui lòng nhập email.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formValues.email)) return "Email không hợp lệ.";
+
+    if (formValues.phone && !/^0\d{9,10}$/.test(formValues.phone)) {
+      return "Số điện thoại không hợp lệ.";
+    }
+
+    if (!formValues.dateOfBirth) return "Vui lòng chọn ngày sinh.";
+    if (!formValues.gender) return "Vui lòng chọn giới tính.";
+
+    if (!formValues.password) return "Vui lòng nhập mật khẩu.";
+    if (formValues.password.length < 8) {
+      return "Mật khẩu tối thiểu 8 ký tự.";
+    }
+
+    if (!formValues.confirmPassword) return "Vui lòng nhập lại mật khẩu.";
+    if (formValues.password !== formValues.confirmPassword) {
+      return "Mật khẩu nhập lại không khớp.";
+    }
+
+    return null;
+  };
+
+  const resetStates = () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+  };
+
+  const onFinish = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    resetStates();
+
+    const validationError = validateForm();
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
     setLoading(true);
-    setShowSuccess(false);
     try {
       const payload: CreateUsersRequest = {
-        userName: values.userName,
-        email: values.email,
-        password: values.password,
-        phone: values.phone,
-        gender: values.gender,
-        dateOfBirth: values.dateOfBirth.format("YYYY-MM-DD"),
+        userName: formValues.userName.trim(),
+        email: formValues.email.trim(),
+        password: formValues.password,
+        phone: formValues.phone ?? "",
+        gender: formValues.gender,
+        dateOfBirth: formValues.dateOfBirth,
         roleName: "RENTER",
       };
 
@@ -57,22 +113,50 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
       // Kiểm tra logic response tùy theo API của bạn
       if (response && response.code === 200) {
         setLoading(false);
-        setShowSuccess(true);
+        setSuccessMessage(
+          "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
+        );
 
         // THÊM DÒNG NÀY ĐỂ HIỆN MESSAGE POP-UP
         message.success(response.message || "Đăng ký thành công!");
+
+        // Reset form
+        setFormValues({
+          userName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          phone: "",
+          gender: "MALE",
+          dateOfBirth: "",
+        });
       } else {
         setLoading(false);
+        setErrorMessage(
+          response?.message || "Đăng ký thất bại. Vui lòng thử lại!",
+        );
         message.error(
           response?.message || "Đăng ký thất bại. Vui lòng thử lại!",
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Register Error:", error);
       setLoading(false);
 
-      // Lấy message lỗi từ Server trả về
-      const errorMsg = error.response?.data?.message || "Lỗi kết nối máy chủ!";
+      // Lấy message lỗi từ Server trả về (nếu có dạng response.data.message)
+      const errorMsg =
+        typeof error === "object" &&
+          error !== null &&
+          "response" in error &&
+          (error as { response?: { data?: { message?: string } } }).response?.data
+            ?.message
+          ? (
+            error as {
+              response?: { data?: { message?: string } };
+            }
+          ).response!.data!.message!
+          : "Lỗi kết nối máy chủ!";
+      setErrorMessage(errorMsg);
       message.error(errorMsg);
     }
   };
@@ -81,244 +165,261 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+        {/* Backdrop giống LoginPage */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-[720px] bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-200"
+          className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-200"
         >
-          {/* Header */}
-          <div className="relative bg-gradient-to-br from-[#4da6ff] to-blue-500 px-6 py-5 text-white">
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 text-white/70 hover:text-white"
-            >
-              ✕
-            </button>
-            <div className="flex justify-center mb-2">
-              <div className="w-10 h-10 border-2 border-white rounded-lg flex items-center justify-center">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
+          {/* Close button (global) */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-20 w-8 h-8 bg-black/30 hover:bg-black/40 rounded-full flex items-center justify-center transition-colors"
+            aria-label="Đóng"
+          >
+            <FaTimes className="w-3.5 h-3.5 text-white" />
+          </button>
+
+          <div className="relative h-[520px] w-full bg-black">
+            {/* Video nền full modal */}
+            <video
+              className="absolute inset-0 h-full w-full object-cover"
+              src={loginIntroVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+            <div className="absolute inset-0 bg-black/40" />
+
+            {/* Thông tin thương hiệu trên video */}
+            <div className="absolute bottom-4 right-4 text-white hidden md:block text-right">
+              <div className="text-lg font-semibold">EduRoom</div>
+              <div className="text-xs text-white/90">
+                Đăng ký ngay để bắt đầu.
               </div>
             </div>
-            <h2 className="text-xl font-bold text-center">Tạo Tài Khoản</h2>
-            <p className="text-center text-white/80 text-xs">
-              Đăng ký ngay để bắt đầu
-            </p>
-          </div>
 
-          <div className="px-8 py-6">
-            {/* Success Alert */}
-            {/* Success Alert - Đã làm nhỏ gọn và thanh thoát */}
-            <AnimatePresence>
-              {showSuccess && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0, marginBottom: 0 }}
-                  animate={{ height: "auto", opacity: 1, marginBottom: 16 }}
-                  exit={{ height: 0, opacity: 0, marginBottom: 0 }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <Alert
-                    // Bỏ description, chỉ để lại message cho nhỏ gọn
-                    message="Đăng ký thành công! Vui lòng kiểm tra email của bạn."
-                    type="success"
-                    showIcon
-                    // py-1.5 giúp Alert mảnh khảnh như trong ảnh mẫu
-                    className="rounded-md border-green-200 bg-green-50 text-[13px] py-1.5 px-3"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <ConfigProvider locale={locale}>
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={onFinish}
-                requiredMark={false}
-                initialValues={{ gender: "MALE" }}
-              >
-                <Row gutter={8}>
-                  <Col span={7}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">
-                          Họ và tên
-                        </span>
-                      }
-                      name="userName"
-                      rules={[{ required: true, message: "Nhập tên" }]}
-                      className="mb-2"
-                    >
-                      <Input
-                        prefix={<UserOutlined />}
-                        placeholder="Họ tên"
-                        className="h-8 text-sm rounded-md"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={6}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">
-                          Ngày sinh
-                        </span>
-                      }
-                      name="dateOfBirth"
-                      rules={[{ required: true, message: "Chọn ngày" }]}
-                      className="mb-2"
-                    >
-                      <DatePicker
-                        className="w-full h-8 text-sm rounded-md"
-                        placeholder="DD/MM/YYYY"
-                        format="DD/MM/YYYY"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={5}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">
-                          Giới tính
-                        </span>
-                      }
-                      name="gender"
-                      className="mb-2"
-                    >
-                      <Select className="h-8 text-sm w-full">
-                        <Select.Option value="MALE">Nam</Select.Option>
-                        <Select.Option value="FEMALE">Nữ</Select.Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                  <Col span={6}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">SĐT</span>
-                      }
-                      name="phone"
-                      rules={[{ pattern: /^0\d{9,10}$/, message: "Sai!" }]}
-                      className="mb-2"
-                    >
-                      <Input
-                        prefix={<PhoneOutlined />}
-                        placeholder="SĐT"
-                        className="h-8 text-sm rounded-md"
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <Row gutter={8}>
-                  <Col span={8}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">Email</span>
-                      }
-                      name="email"
-                      rules={[
-                        { required: true, type: "email", message: "Sai!" },
-                      ]}
-                      className="mb-3"
-                    >
-                      <Input
-                        prefix={<MailOutlined />}
-                        placeholder="Email"
-                        className="h-8 text-sm rounded-md"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={8}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">
-                          Mật khẩu
-                        </span>
-                      }
-                      name="password"
-                      rules={[
-                        {
-                          required: true,
-                          min: 8,
-                          message: "Tối thiểu 8 ký tự",
-                        },
-                      ]}
-                      className="mb-3"
-                    >
-                      <Input.Password
-                        prefix={<LockOutlined />}
-                        placeholder="••••••••"
-                        className="h-8 text-sm rounded-md"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={8}>
-                    <Form.Item
-                      label={
-                        <span className="text-[12px] font-medium">
-                          Nhập lại mật khẩu
-                        </span>
-                      }
-                      name="confirmPassword"
-                      dependencies={["password"]}
-                      className="mb-3"
-                      rules={[
-                        { required: true, message: "Nhập lại mật khẩu!" },
-                        ({ getFieldValue }) => ({
-                          validator(_, value) {
-                            if (!value || getFieldValue("password") === value) {
-                              return Promise.resolve();
-                            }
-                            return Promise.reject(
-                              new Error("Mật khẩu không khớp!"),
-                            );
-                          },
-                        }),
-                      ]}
-                    >
-                      <Input.Password
-                        prefix={<LockOutlined />}
-                        placeholder="••••••••"
-                        className="h-8 text-sm rounded-md"
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  block
-                  loading={loading}
-                  className="h-9 bg-[#4da6ff] hover:bg-[#3d8cff] border-none rounded-lg font-bold text-sm mt-1"
-                >
-                  {loading ? "Đang xử lý..." : "Tiếp tục"}
-                </Button>
-
-                <div className="mt-4 text-center">
-                  <span className="text-xs text-gray-500">
-                    Đã có tài khoản?{" "}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onSwitchToLogin}
-                    className="text-xs text-[#4da6ff] font-bold hover:underline"
-                  >
-                    Đăng nhập
-                  </button>
+            {/* Thẻ form đè bên trái video */}
+            <div className="relative z-10 flex h-full items-center justify-start px-4 sm:px-6">
+              <div className="w-full max-w-sm bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs">
+                {/* Header */}
+                <div className="relative bg-linear-to-br from-[#4da6ff] to-blue-500 px-5 py-3.5 text-white">
+                  <div className="flex justify-center mb-2">
+                    <div className="w-10 h-10 border-2 border-white rounded-lg flex items-center justify-center">
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h2 className="text-xl font-bold text-center">Tạo Tài Khoản</h2>
+                  <p className="text-center text-white/80 text-xs">
+                    Đăng ký ngay để bắt đầu
+                  </p>
                 </div>
-              </Form>
-            </ConfigProvider>
+
+                <div className="px-5 py-2.5 flex-1 overflow-y-auto">
+                  {/* Alert lỗi */}
+                  {errorMessage && (
+                    <div className="mb-2 p-1.5 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
+                      {errorMessage}
+                    </div>
+                  )}
+
+                  {/* Alert thành công */}
+                  {successMessage && (
+                    <div className="mb-2 p-1.5 bg-green-50 border border-green-200 text-green-600 text-xs rounded-lg text-center font-medium">
+                      {successMessage}
+                    </div>
+                  )}
+
+                  <form onSubmit={onFinish} className="space-y-2.5">
+                    {/* Họ và tên + SĐT */}
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-7">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          Họ và tên
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                            <FaUser className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <input
+                            type="text"
+                            value={formValues.userName}
+                            onChange={handleChange("userName")}
+                            placeholder="Họ tên"
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            disabled={loading}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="col-span-5">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          SĐT
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                            <FaPhone className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <input
+                            type="tel"
+                            value={formValues.phone}
+                            onChange={handleChange("phone")}
+                            placeholder="Số điện thoại"
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            disabled={loading}
+                            pattern="^0\\d{9,10}$"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ngày sinh + Giới tính */}
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-7">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          Ngày sinh
+                        </label>
+                        <input
+                          type="date"
+                          value={formValues.dateOfBirth}
+                          onChange={handleChange("dateOfBirth")}
+                          className="w-full px-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                          disabled={loading}
+                          required
+                        />
+                      </div>
+
+                      <div className="col-span-5">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          Giới tính
+                        </label>
+                        <select
+                          value={formValues.gender}
+                          onChange={handleChange("gender")}
+                          className="w-full px-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                          disabled={loading}
+                        >
+                          <option value="MALE">Nam</option>
+                          <option value="FEMALE">Nữ</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                        Email
+                      </label>
+                      <div className="relative">
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                          <FaEnvelope className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="email"
+                          value={formValues.email}
+                          onChange={handleChange("email")}
+                          placeholder="email@example.com"
+                          className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                          disabled={loading}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mật khẩu + Nhập lại mật khẩu */}
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-6">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          Mật khẩu
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                            <FaLock className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <input
+                            type="password"
+                            value={formValues.password}
+                            onChange={handleChange("password")}
+                            placeholder="••••••••"
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            disabled={loading}
+                            required
+                            minLength={8}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="col-span-6">
+                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
+                          Nhập lại mật khẩu
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                            <FaLock className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <input
+                            type="password"
+                            value={formValues.confirmPassword}
+                            onChange={handleChange("confirmPassword")}
+                            placeholder="••••••••"
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            disabled={loading}
+                            required
+                            minLength={8}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`w-full bg-[#4da6ff] hover:bg-[#3d8cff] text-white font-semibold py-1.5 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg text-xs mt-1 ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                    >
+                      {loading ? "Đang xử lý..." : "Tiếp tục"}
+                    </button>
+
+                    {/* Đã có tài khoản? */}
+                    <div className="mt-2 text-center">
+                      <span className="text-xs text-gray-700">
+                        Đã có tài khoản?{" "}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={onSwitchToLogin}
+                        className="text-xs text-[#4da6ff] hover:text-blue-600 font-semibold focus:outline-none"
+                      >
+                        Đăng nhập
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>

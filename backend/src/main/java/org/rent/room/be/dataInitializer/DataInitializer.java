@@ -3,7 +3,6 @@ package org.rent.room.be.dataInitializer;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.rent.room.be.constant.Role;
 import org.rent.room.be.entity.Amenity;
 import org.rent.room.be.entity.Category;
 import org.rent.room.be.entity.City;
@@ -44,6 +43,10 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedUsers() {
+        Role adminRole = createRoleIfNotExist("ADMIN", "Quản trị hệ thống");
+        Role ownerRole = createRoleIfNotExist("OWNER", "Chủ nhà");
+        Role renterRole = createRoleIfNotExist("RENTER", "Người thuê");
+
         if (userRepository.count() > 0) return;
         User user1 = User.builder()
                 .userName("RenterName")
@@ -52,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("12345678"))
                 .phone("0987654321")
                 .dateOfBirth(LocalDate.of(2000, 1, 2))
-                .role(Role.RENTER)
+                .role(renterRole)
                 .active(true).build();
 
         User user2 = User.builder()
@@ -62,7 +65,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("12345678"))
                 .phone("0123456789")
                 .dateOfBirth(LocalDate.of(1990, 1, 2))
-                .role(Role.OWNER)
+                .role(ownerRole)
                 .active(true).build();
 
         User user3 = User.builder()
@@ -72,7 +75,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("12345678"))
                 .phone("1234567890")
                 .dateOfBirth(LocalDate.of(2008, 1, 2))
-                .role(Role.ADMIN)
+                .role(adminRole)
                 .active(true).build();
 
         User user4 = User.builder()
@@ -82,7 +85,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("12345678"))
                 .phone("1234567890")
                 .dateOfBirth(LocalDate.of(2004, 1, 2))
-                .role(Role.ADMIN)
+                .role(adminRole)
                 .active(true).build();
 
         userRepository.saveAll(List.of(user1, user2, user3, user4));
@@ -143,11 +146,10 @@ public class DataInitializer implements CommandLineRunner {
                         .amenityName(name)
                         .build());
             }
-            userRepository.saveAll(List.of(user1, user2, user3, user4));
         }
     }
 
-    private org.rent.room.be.entity.Role createRoleIfNotExist(String roleName, String description) {
+    private Role createRoleIfNotExist(String roleName, String description) {
         return roleRepository.findByRoleName(roleName)
                 .orElseGet(() -> roleRepository.save(
                         org.rent.room.be.entity.Role.builder()

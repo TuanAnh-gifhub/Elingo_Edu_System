@@ -8,8 +8,6 @@ SBA301_FE_ROOM/
 └── README.md
 ```
 ## 🚀 Hướng dẫn chạy dự án
-
-### 1. Cài đặt và chạy Backend (Docker)
 Đảm bảo bạn đã cài đặt **Docker Desktop** trên máy.
 
 1. Di chuyển vào thư mục backend:

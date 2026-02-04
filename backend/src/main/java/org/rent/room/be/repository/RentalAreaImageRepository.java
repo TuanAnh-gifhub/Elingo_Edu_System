@@ -11,5 +11,4 @@ import java.util.UUID;
 @Repository
 public interface RentalAreaImageRepository  extends JpaRepository<RentalAreaImage, UUID> {
     List<RentalAreaImage> findByRentalArea(RentalArea rentalArea);
-    List<RentalAreaImage> findByRentalAreaRentalAreaIdOrderBySortOrderAsc(UUID rentalAreaId);
 }

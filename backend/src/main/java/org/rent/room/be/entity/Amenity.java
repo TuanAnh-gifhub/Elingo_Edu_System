@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -17,21 +18,16 @@ import java.util.UUID;
 @SuperBuilder
 @Table(name = "amenity")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Amenity extends BaseEntity {
+public class Amenity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "amenity_id")
-    UUID amenityId;
+    Long amenityId;
 
-    @Column(name = "name", length = 100, nullable = false)
-    String name;
+    @Column(name = "amenity_name", length = 100, nullable = false, unique = true)
+    String amenityName;
 
-    @Column(name = "note", length = 255)
-    String note;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    Room room;
-
+    @ManyToMany(mappedBy = "amenities", fetch = FetchType.LAZY)
+    Set<Room> rooms;
 }

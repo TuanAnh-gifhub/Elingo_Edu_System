@@ -1,0 +1,31 @@
+package org.rent.room.be.dto.request.room;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.Set;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class CreateRoomRequest {
+
+    @NotBlank
+    @Size(max = 100)
+    String roomName;
+
+    String description;
+
+    Integer capacity;
+
+    Double area;
+
+    Integer categoryId;
+
+    Set<Long> amenityIds;
+}

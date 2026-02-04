@@ -2,9 +2,12 @@ package org.rent.room.be.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.*;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.RentalAreaStatus;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -12,8 +15,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-@Table(name = "rental_areas")
 @Entity
+@Table(name = "rental_areas")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalArea extends BaseEntity {
 
@@ -22,27 +25,30 @@ public class RentalArea extends BaseEntity {
     @Column(name = "rental_area_id")
     UUID rentalAreaId;
 
-    @Column(name = "rental_area_name", length = 100, nullable = false)
+    @Column(name = "rental_area_name", length = 150, nullable = false)
     String rentalAreaName;
 
-    @Column(name = "address_detail", length = 255, nullable = false)
-    String addressDetail;
+    @Column(name = "address", length = 255, nullable = false)
+    String address;
 
-    @Column(name = "ward", length = 100)
-    String ward;
+    @Column(name = "contact_name", length = 100)
+    String contactName;
 
-    @Column(name = "district", length = 100)
-    String district;
+    @Column(name = "contact_phone", length = 20)
+    String contactPhone;
 
-    @Column(name = "rental_area_type", length = 50)
-    String rentalAreaType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
+    RentalAreaStatus status;
+
+    @Column(name = "deleted_at")
+    LocalDateTime deletedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
     City city;
 
-    @Builder.Default
-    @Column(name = "country", length = 50)
-    String country = "Việt Nam";
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    User owner;
 }

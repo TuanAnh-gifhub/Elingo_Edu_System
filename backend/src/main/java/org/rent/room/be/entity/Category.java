@@ -15,7 +15,7 @@ import java.util.List;
 @SuperBuilder
 @Table(name = "categories")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Category extends BaseEntity {
+public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +25,6 @@ public class Category extends BaseEntity {
     @Column(name = "category_name", length = 50, nullable = false, unique = true)
     String categoryName;
 
-    @Column(name = "description", length = 255)
-    String description;
-
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     List<Room> rooms;
-
 }

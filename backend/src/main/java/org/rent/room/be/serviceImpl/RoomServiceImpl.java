@@ -72,9 +72,10 @@ public class RoomServiceImpl implements RoomService {
         Room room = Room.builder()
                 .roomName(req.getRoomName())
                 .description(req.getDescription())
+                .price(req.getPrice())
                 .capacity(req.getCapacity())
                 .area(req.getArea())
-                .roomStatus(RoomStatus.ACTIVE) // recommend ACTIVE/MAINTENANCE/INACTIVE
+                .roomStatus(RoomStatus.ACTIVE)
                 .rentalArea(rentalArea)
                 .category(category)
                 .amenities(amenities)
@@ -126,6 +127,7 @@ public class RoomServiceImpl implements RoomService {
                 .rentalAreaId(rentalArea.getRentalAreaId())
                 .roomName(room.getRoomName())
                 .description(room.getDescription())
+                .price(room.getPrice())
                 .roomStatus(room.getRoomStatus() != null ? room.getRoomStatus().name() : null)
                 .capacity(room.getCapacity())
                 .area(room.getArea())
@@ -135,4 +137,61 @@ public class RoomServiceImpl implements RoomService {
                 .images(imageResponses)
                 .build();
     }
+
+    @Override
+    public List<RoomResponse> getAllRooms() {
+        List<Room> rooms = roomRepository.findAllNotInactive();
+        return rooms.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RoomResponse> getRoomsByUserId(UUID userId) {
+        List<Room> rooms = roomRepository.findByOwnerIdNotInactive(userId);
+        return rooms.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private RoomResponse mapToResponse(Room room) {
+        // images
+        List<RoomImageResponse> imageResponses = roomImageRepository.findByRoom(room)
+                .stream()
+                .sorted(Comparator.comparing(RoomImage::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                .map(img -> RoomImageResponse.builder()
+                        .roomImageId(img.getRoomImageId())
+                        .imageUrl(img.getImageUrl())
+                        .isCover(img.getIsCover())
+                        .sortOrder(img.getSortOrder())
+                        .build())
+                .collect(Collectors.toList());
+
+        // amenities + category
+        Set<RoomResponse.AmenityItem> amenityItems = (room.getAmenities() == null ? Set.<Amenity>of() : room.getAmenities())
+                .stream()
+                .map(a -> RoomResponse.AmenityItem.builder()
+                        .amenityId(a.getAmenityId())
+                        .amenityName(a.getAmenityName())
+                        .build())
+                .collect(Collectors.toSet());
+
+        Category category = room.getCategory();
+
+        return RoomResponse.builder()
+                .roomId(room.getRoomId())
+                .rentalAreaId(room.getRentalArea() != null ? room.getRentalArea().getRentalAreaId() : null)
+                .roomName(room.getRoomName())
+                .description(room.getDescription())
+                .price(room.getPrice())
+                .roomStatus(room.getRoomStatus() != null ? room.getRoomStatus().name() : null)
+                .capacity(room.getCapacity())
+                .area(room.getArea())
+                .categoryId(category != null ? category.getCategoryId() : null)
+                .categoryName(category != null ? category.getCategoryName() : null)
+                .amenities(amenityItems)
+                .images(imageResponses)
+                .build();
+    }
+
 }

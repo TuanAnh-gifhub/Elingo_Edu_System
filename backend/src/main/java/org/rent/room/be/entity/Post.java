@@ -30,18 +30,11 @@ public class Post extends BaseEntity {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     String content;
 
-    @Column(name = "price", precision = 19, scale = 2, nullable = false)
-    private BigDecimal price;
-
     @Column(name = "post_status", length = 20)
     String postStatus;
 
     @Column(name = "post_user_name")
     String postUserName;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rental_area_id")
-    RentalArea rentalArea;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

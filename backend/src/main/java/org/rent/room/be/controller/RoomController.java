@@ -56,4 +56,42 @@ public class RoomController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getAllRooms() {
+        List<RoomResponse> result = roomService.getAllRooms();
+
+        ApiResponse<List<RoomResponse>> response = ApiResponse.<List<RoomResponse>>builder()
+                .code(200)
+                .message("Get all rooms successfully")
+                .result(result)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getMyRooms(
+            @AuthenticationPrincipal UserDetails principal
+    ) {
+        UUID currentUserId = null;
+
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            currentUserId = customUserDetails.getUserId();
+        }
+        if (currentUserId == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        List<RoomResponse> result = roomService.getRoomsByUserId(currentUserId);
+
+        ApiResponse<List<RoomResponse>> response = ApiResponse.<List<RoomResponse>>builder()
+                .code(200)
+                .message("Get my rooms successfully")
+                .result(result)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
 }

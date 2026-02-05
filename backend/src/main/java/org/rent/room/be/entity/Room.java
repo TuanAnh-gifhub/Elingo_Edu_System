@@ -32,6 +32,10 @@ public class Room extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+
+    @Column(name = "price", precision = 19, scale = 2, nullable = false)
+    private BigDecimal price;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "room_status", length = 30)
     private RoomStatus roomStatus;

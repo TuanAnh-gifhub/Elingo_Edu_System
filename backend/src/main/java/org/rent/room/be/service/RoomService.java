@@ -9,4 +9,8 @@ import java.util.UUID;
 
 public interface RoomService {
     RoomResponse createRoom(UUID rentalAreaId, CreateRoomRequest req, List<MultipartFile> images, UUID currentUserId);
+
+    List<RoomResponse> getAllRooms();
+
+    List<RoomResponse> getRoomsByUserId(UUID userId);
 }

@@ -1,24 +1,30 @@
-package org.rent.room.be.dto.response.rental_area;
+package org.rent.room.be.dto.request.rental_area;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RentalAreaResponse {
-    UUID rentalAreaId;
+public class UpdateRentalAreaRequest {
+
+    @NotBlank
     String rentalAreaName;
+
+    @NotBlank
     String address;
+
     String contactName;
+
     String contactPhone;
-    String status;
+
+    @NotNull
     Long cityId;
-    String cityName;
-    List<RentalAreaImageResponse> images;
 }

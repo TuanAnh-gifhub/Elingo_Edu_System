@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.*;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.PostStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,13 +32,14 @@ public class Post extends BaseEntity {
     String content;
 
     @Column(name = "post_status", length = 20)
-    String postStatus;
-
-    @Column(name = "post_user_name")
-    String postUserName;
+    PostStatus postStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     User user;
-    
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false, unique = true)
+    Room room;
+
 }

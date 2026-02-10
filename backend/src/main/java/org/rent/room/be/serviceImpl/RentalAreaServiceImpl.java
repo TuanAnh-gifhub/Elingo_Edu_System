@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.rent.room.be.constant.RentalAreaStatus;
 import org.rent.room.be.dto.internal.CloudinaryUploadResult;
 import org.rent.room.be.dto.request.rental_area.CreateRentalAreaRequest;
+import org.rent.room.be.dto.request.rental_area.UpdateRentalAreaRequest;
+import org.rent.room.be.dto.request.rental_area.UpdateRentalAreaStatusRequest;
 import org.rent.room.be.dto.response.rental_area.RentalAreaImageResponse;
 import org.rent.room.be.dto.response.rental_area.RentalAreaResponse;
 import org.rent.room.be.entity.City;
@@ -152,6 +154,8 @@ public class RentalAreaServiceImpl implements RentalAreaService {
                 .contactName(rentalArea.getContactName())
                 .contactPhone(rentalArea.getContactPhone())
                 .status(rentalArea.getStatus().name())
+                .cityId(rentalArea.getCity().getCityId())
+                .cityName(rentalArea.getCity().getCityName())
                 .images(imageResponses)
                 .build();
     }
@@ -170,5 +174,59 @@ public class RentalAreaServiceImpl implements RentalAreaService {
 
         rentalArea.setDeletedAt(LocalDateTime.now());
         rentalAreaRepository.save(rentalArea);
+    }
+
+    @Override
+    @Transactional
+    public RentalAreaResponse updateRentalArea(UUID rentalAreaId, UpdateRentalAreaRequest req,
+                                               UUID currentUserId, String currentUserRole) {
+
+        RentalArea rentalArea = rentalAreaRepository.findByIdActive(rentalAreaId)
+                .orElseThrow(() -> new AppException(ErrorCode.RENTAL_AREA_NOT_FOUND));
+
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUserRole);
+        if (!isAdmin && !rentalArea.getOwner().getUserId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        City city = cityRepository.findById(req.getCityId())
+                .orElseThrow(() -> new NoSuchElementException("City not found"));
+
+        rentalArea.setRentalAreaName(req.getRentalAreaName());
+        rentalArea.setAddress(req.getAddress());
+        rentalArea.setContactName(req.getContactName());
+        rentalArea.setContactPhone(req.getContactPhone());
+        rentalArea.setCity(city);
+
+        rentalAreaRepository.save(rentalArea);
+        return mapToResponse(rentalArea);
+    }
+
+    @Override
+    @Transactional
+    public RentalAreaResponse updateRentalAreaStatus(UUID rentalAreaId, UpdateRentalAreaStatusRequest req,
+                                                     UUID currentUserId, String currentUserRole) {
+
+        RentalArea rentalArea = rentalAreaRepository.findByIdActive(rentalAreaId)
+                .orElseThrow(() -> new AppException(ErrorCode.RENTAL_AREA_NOT_FOUND));
+
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUserRole);
+        if (!isAdmin && !rentalArea.getOwner().getUserId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        RentalAreaStatus newStatus = req.getStatus();
+        if (!isAdmin && newStatus == RentalAreaStatus.SUSPENDED) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (newStatus != RentalAreaStatus.ACTIVE && newStatus != RentalAreaStatus.INACTIVE) {
+            throw new IllegalArgumentException("Status must be ACTIVE or INACTIVE");
+        }
+
+        rentalArea.setStatus(newStatus);
+        rentalAreaRepository.save(rentalArea);
+
+        return mapToResponse(rentalArea);
     }
 }

@@ -65,6 +65,9 @@ public class Room extends BaseEntity {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomImage> images;
 
+    @OneToOne(mappedBy = "room", fetch = FetchType.LAZY)
+    private Post post;
+
 //    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
 //    private List<Report> reports;
 

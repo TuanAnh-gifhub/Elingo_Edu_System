@@ -28,6 +28,9 @@ public class Amenity {
     @Column(name = "amenity_name", length = 100, nullable = false, unique = true)
     String amenityName;
 
+    @Column(name = "icon_key", length = 50, nullable = false)
+    String iconKey;
+
     @ManyToMany(mappedBy = "amenities", fetch = FetchType.LAZY)
     Set<Room> rooms;
 }

@@ -17,6 +17,7 @@ import RentalAreaFilters from "./RentalAreaFilters";
 import RentalAreaTable from "./RentalAreaTable";
 import CreateRentalAreaModal from "./CreateRentalAreaModal";
 import UpdateRentalAreaModal from "./UpdateRentalAreaModal";
+import RentalAreaRoomsDrawer from "./RentalAreaRoomsDrawer";
 
 const ManageRoomPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,6 +44,12 @@ const ManageRoomPage: React.FC = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editing, setEditing] = useState<RentalAreaResponse | null>(null);
+
+  // Drawer manage rooms
+  const [roomsDrawerOpen, setRoomsDrawerOpen] = useState(false);
+  const [selectedRentalArea, setSelectedRentalArea] =
+    useState<RentalAreaResponse | null>(null);
+  const [openCreateRoom, setOpenCreateRoom] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -147,13 +154,24 @@ const ManageRoomPage: React.FC = () => {
     }
   };
 
-  const handleAddRoom = (rentalArea: RentalAreaResponse) => {
-    // Dừng trước phần Room
-    message.info(
-      `Chuyển sang màn tạo phòng cho: ${rentalArea.rentalAreaName} (làm sau)`,
-    );
-    // Nếu bạn muốn navigate sau này:
-    // navigate("/manage-rooms/create", { state: { rentalAreaId: rentalArea.rentalAreaId }});
+  const openRoomsDrawer = (
+    ra: RentalAreaResponse,
+    openCreateRoomNow?: boolean,
+  ) => {
+    setSelectedRentalArea(ra);
+    setRoomsDrawerOpen(true);
+    setOpenCreateRoom(!!openCreateRoomNow);
+  };
+
+  const closeRoomsDrawer = () => {
+    setRoomsDrawerOpen(false);
+    setSelectedRentalArea(null);
+    setOpenCreateRoom(false);
+  };
+
+  const handleAddRoom = (ra: RentalAreaResponse) => {
+    // bấm “Thêm phòng” từ table -> mở drawer + auto mở modal tạo phòng
+    openRoomsDrawer(ra, true);
   };
 
   const handleDeleteRentalArea = async (ra: RentalAreaResponse) => {
@@ -224,7 +242,8 @@ const ManageRoomPage: React.FC = () => {
   };
 
   const handleViewRentalArea = (ra: RentalAreaResponse) => {
-    message.info(`Xem chi tiết: ${ra.rentalAreaName} (làm sau)`);
+    // bấm “Xem/Chi tiết” từ table -> mở drawer quản lý phòng
+    openRoomsDrawer(ra, false);
   };
 
   if (authLoading) {
@@ -313,6 +332,13 @@ const ManageRoomPage: React.FC = () => {
           initial={editing}
           onClose={handleCloseEdit}
           onSubmit={handleUpdate}
+        />
+
+        <RentalAreaRoomsDrawer
+          open={roomsDrawerOpen}
+          rentalArea={selectedRentalArea}
+          openCreateRoom={openCreateRoom}
+          onClose={closeRoomsDrawer}
         />
       </div>
     </div>

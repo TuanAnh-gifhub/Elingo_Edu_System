@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.constant.PostStatus;
 import org.rent.room.be.dto.request.post.CreatePostRequest;
+import org.rent.room.be.dto.request.post.UpdatePostRequest;
 import org.rent.room.be.dto.response.post.PostDetailResponse;
 import org.rent.room.be.dto.response.post.PostResponse;
 import org.rent.room.be.dto.response.post.PostSummaryResponse;
@@ -45,6 +46,7 @@ public class PostServiceImpl implements PostService {
             throw new RuntimeException("Forbidden: not owner of this room");
         }
 
+        // IMPORTANT: 1 room chỉ được 1 post
         if (postRepository.existsByRoom_RoomId(room.getRoomId())) {
             throw new IllegalArgumentException("This room already has a post");
         }
@@ -75,10 +77,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostSummaryResponse> getAllPosts() {
         List<Post> posts = postRepository.findAllByPostStatus(PostStatus.PUBLISHED);
-
-        return posts.stream()
-                .map(this::mapToSummary)
-                .toList();
+        return posts.stream().map(this::mapToSummary).toList();
     }
 
     @Override
@@ -102,6 +101,147 @@ public class PostServiceImpl implements PostService {
                 .rentalArea(rentalAreaResponse)
                 .build();
     }
+
+    // =========================
+    // Owner manage
+    // =========================
+
+    @Override
+    public List<PostSummaryResponse> getMyPosts(UUID currentUserId, String status) {
+        List<Post> posts;
+
+        if (status == null || status.isBlank()) {
+            posts = postRepository.findByUser_UserIdOrderByCreatedAtDesc(currentUserId);
+        } else {
+            PostStatus st;
+            try {
+                st = PostStatus.valueOf(status);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid post status: " + status);
+            }
+            posts = postRepository.findByUser_UserIdAndPostStatusOrderByCreatedAtDesc(currentUserId, st);
+        }
+
+        posts = posts.stream().filter(p -> p.getPostStatus() != PostStatus.DELETED).toList();
+
+        return posts.stream().map(this::mapToSummary).toList();
+    }
+
+    @Override
+    public PostDetailResponse getMyPostDetail(UUID postId, UUID currentUserId) {
+        Post post = postRepository.findByPostIdAndUser_UserId(postId, currentUserId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+
+        if (post.getPostStatus() == PostStatus.DELETED) {
+            throw new NoSuchElementException("Post not found");
+        }
+
+        Room room = post.getRoom();
+        RentalArea rentalArea = room != null ? room.getRentalArea() : null;
+
+        return PostDetailResponse.builder()
+                .postId(post.getPostId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .postStatus(post.getPostStatus() != null ? post.getPostStatus().name() : null)
+                .room(room != null ? mapRoomToResponse(room) : null)
+                .rentalArea(rentalArea != null ? mapRentalAreaToResponse(rentalArea) : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PostResponse updateMyPost(UUID postId, UpdatePostRequest request, UUID currentUserId) {
+        Post post = postRepository.findByPostIdAndUser_UserId(postId, currentUserId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+
+        if (post.getPostStatus() == PostStatus.DELETED) {
+            throw new NoSuchElementException("Post not found");
+        }
+
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+
+        // Rule tuỳ business: sửa bài đang PUBLISHED có cần về PENDING để duyệt lại không?
+        // Nếu cần duyệt lại:
+        // if (post.getPostStatus() == PostStatus.PUBLISHED) post.setPostStatus(PostStatus.PENDING);
+
+        postRepository.save(post);
+
+        return PostResponse.builder()
+                .postId(post.getPostId())
+                .roomId(post.getRoom() != null ? post.getRoom().getRoomId() : null)
+                .userId(post.getUser() != null ? post.getUser().getUserId() : null)
+                .title(post.getTitle())
+                .content(post.getContent())
+                .postStatus(post.getPostStatus() != null ? post.getPostStatus().name() : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PostResponse updateMyPostStatus(UUID postId, String status, UUID currentUserId) {
+        Post post = postRepository
+                .findByPostIdAndRoom_RentalArea_Owner_UserId(postId, currentUserId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+
+        PostStatus newStatus;
+        try {
+            newStatus = PostStatus.valueOf(status);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid post status: " + status);
+        }
+
+        if (newStatus != PostStatus.PUBLISHED && newStatus != PostStatus.HIDDEN) {
+            throw new IllegalArgumentException("User can only switch between PUBLISHED and HIDDEN");
+        }
+
+        post.setPostStatus(newStatus);
+        postRepository.save(post);
+
+        return PostResponse.builder()
+                .postId(post.getPostId())
+                .roomId(post.getRoom().getRoomId())
+                .userId(post.getUser().getUserId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .postStatus(post.getPostStatus() != null ? post.getPostStatus().name() : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteMyPost(UUID postId, UUID currentUserId) {
+        Post post = postRepository.findByPostIdAndUser_UserId(postId, currentUserId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+
+        // soft delete
+        if (post.getPostStatus() == PostStatus.DELETED) return;
+
+        post.setPostStatus(PostStatus.DELETED);
+        postRepository.save(post);
+    }
+
+    @Override
+    public PostResponse getMyPostByRoom(UUID roomId, UUID currentUserId) {
+        Post post = postRepository.findByRoom_RoomIdAndUser_UserId(roomId, currentUserId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+
+        if (post.getPostStatus() == PostStatus.DELETED) {
+            throw new NoSuchElementException("Post not found");
+        }
+
+        return PostResponse.builder()
+                .postId(post.getPostId())
+                .roomId(post.getRoom() != null ? post.getRoom().getRoomId() : null)
+                .userId(post.getUser() != null ? post.getUser().getUserId() : null)
+                .title(post.getTitle())
+                .content(post.getContent())
+                .postStatus(post.getPostStatus() != null ? post.getPostStatus().name() : null)
+                .build();
+    }
+
+
 
     private PostSummaryResponse mapToSummary(Post post) {
         Room room = post.getRoom();
@@ -143,7 +283,6 @@ public class PostServiceImpl implements PostService {
     }
 
     private RoomResponse mapRoomToResponse(Room room) {
-        // images
         List<RoomImageResponse> imageResponses = roomImageRepository.findByRoom(room)
                 .stream()
                 .sorted(Comparator.comparing(RoomImage::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
@@ -155,7 +294,6 @@ public class PostServiceImpl implements PostService {
                         .build())
                 .collect(Collectors.toList());
 
-        // amenities + category
         Set<RoomResponse.AmenityItem> amenityItems = (room.getAmenities() == null ? Set.<Amenity>of() : room.getAmenities())
                 .stream()
                 .map(a -> RoomResponse.AmenityItem.builder()
@@ -204,4 +342,3 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 }
-

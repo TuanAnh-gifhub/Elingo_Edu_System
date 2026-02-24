@@ -31,6 +31,7 @@ public class Post extends BaseEntity {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     String content;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "post_status", length = 20)
     PostStatus postStatus;
 

@@ -18,4 +18,15 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     Optional<Post> findByPostIdAndPostStatus(UUID postId, PostStatus postStatus);
 
+    List<Post> findByUser_UserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<Post> findByUser_UserIdAndPostStatusOrderByCreatedAtDesc(UUID userId, PostStatus status);
+
+    Optional<Post> findByPostIdAndUser_UserId(UUID postId, UUID userId);
+
+    Optional<Post> findByRoom_RoomIdAndUser_UserId(UUID roomId, UUID userId);
+
+    Optional<Post> findByPostIdAndRoom_RentalArea_Owner_UserId(UUID postId, UUID ownerId);
+
+
 }

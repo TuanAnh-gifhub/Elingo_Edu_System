@@ -4,9 +4,10 @@ export const AXIOS_AUTH_ERROR_EVENT = "axios-auth-error";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // ❌ KHÔNG set Content-Type mặc định ở đây
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
 });
 
 api.interceptors.request.use(
@@ -15,6 +16,22 @@ api.interceptors.request.use(
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    // ✅ FIX multipart: nếu là FormData thì KHÔNG ép Content-Type
+    const isFormData =
+      typeof FormData !== "undefined" && config.data instanceof FormData;
+
+    if (config.headers) {
+      if (isFormData) {
+        // Browser sẽ tự set multipart/form-data; boundary=...
+        delete (config.headers as any)["Content-Type"];
+        delete (config.headers as any)["content-type"];
+      } else {
+        // Các request JSON thông thường
+        (config.headers as any)["Content-Type"] = "application/json";
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -56,6 +73,16 @@ api.interceptors.response.use(
 
       // FIX CHÍNH: Ép token mới vào header của request bị lỗi
       originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
+      // ✅ FIX thêm: nếu request cũ là FormData thì không được ép JSON
+      const isFormData =
+        typeof FormData !== "undefined" &&
+        originalRequest.data instanceof FormData;
+
+      if (isFormData) {
+        delete originalRequest.headers["Content-Type"];
+        delete originalRequest.headers["content-type"];
+      }
 
       // FIX CHÍNH: Dùng axios(originalRequest) thay vì api(...) để ép nó dùng header mới này
       return axios(originalRequest);

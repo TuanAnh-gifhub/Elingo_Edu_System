@@ -2,6 +2,12 @@ spring:
   application:
     name: BE
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -43,6 +49,10 @@ server:
   port: ${SERVER_PORT}
   servlet:
     context-path: ${SERVER_SERVLET_CONTEXT_PATH}
+
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
 
 cors:
   urls: ${CORS_URL}

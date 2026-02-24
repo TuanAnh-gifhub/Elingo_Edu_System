@@ -3,6 +3,7 @@ package org.rent.room.be.dto.response.room;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -20,6 +21,7 @@ public class RoomResponse {
 
     String roomName;
     String description;
+    BigDecimal price;
     String roomStatus;
 
     Integer capacity;

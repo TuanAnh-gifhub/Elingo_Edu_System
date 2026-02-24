@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 @Getter
@@ -20,6 +21,8 @@ public class CreateRoomRequest {
     String roomName;
 
     String description;
+
+    BigDecimal price;
 
     Integer capacity;
 

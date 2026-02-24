@@ -21,8 +21,10 @@ public class CreateRentalAreaRequest {
     @NotBlank
     String address;
 
+    @NotBlank
     String contactName;
 
+    @NotBlank
     String contactPhone;
 
     @NotNull

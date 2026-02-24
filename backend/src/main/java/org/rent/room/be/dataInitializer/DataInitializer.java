@@ -129,25 +129,32 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAmenities() {
-        List<String> amenities = List.of(
-                "Wifi",
-                "Ổ điện",
-                "Máy lạnh",
-                "Máy chiếu",
-                "Bảng trắng",
-                "Micro",
-                "Loa",
-                "Nước uống"
+
+        List<Amenity> amenities = List.of(
+                Amenity.builder().amenityName("Wifi tốc độ cao").iconKey("FaWifi").build(),
+                Amenity.builder().amenityName("Máy lạnh").iconKey("FaSnowflake").build(),
+                Amenity.builder().amenityName("Ổ điện").iconKey("FaPlug").build(),
+                Amenity.builder().amenityName("Bảng trắng").iconKey("FaChalkboard").build(),
+                Amenity.builder().amenityName("Máy chiếu").iconKey("FaVideo").build(),
+                Amenity.builder().amenityName("TV / Màn hình lớn").iconKey("FaTv").build(),
+                Amenity.builder().amenityName("Micro").iconKey("FaMicrophone").build(),
+                Amenity.builder().amenityName("Loa").iconKey("FaVolumeUp").build(),
+                Amenity.builder().amenityName("Máy tính cấu hình cao").iconKey("FaDesktop").build(),
+                Amenity.builder().amenityName("Máy in").iconKey("FaPrint").build(),
+                Amenity.builder().amenityName("Server nội bộ").iconKey("FaServer").build(),
+                Amenity.builder().amenityName("Thiết bị đo lường").iconKey("FaRulerCombined").build(),
+                Amenity.builder().amenityName("Hệ thống thông gió").iconKey("FaFan").build(),
+                Amenity.builder().amenityName("Máy lọc nước").iconKey("FaTint").build()
         );
 
-        for (String name : amenities) {
-            if (!amenityRepository.existsByAmenityName(name)) {
-                amenityRepository.save(Amenity.builder()
-                        .amenityName(name)
-                        .build());
+        for (Amenity a : amenities) {
+            if (!amenityRepository.existsByAmenityName(a.getAmenityName())) {
+                amenityRepository.save(a);
             }
         }
     }
+
+
 
     private Role createRoleIfNotExist(String roleName, String description) {
         return roleRepository.findByRoleName(roleName)

@@ -44,14 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-//        String token = extractTokenFromHeader(request);
-//        if (token == null) {
-//            token = extractTokenFromCookie(request);
-//        }
-//
-//        log.info("JWT_FILTER access_token present={}", token != null);
-//        if (token == null) {
-
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -99,24 +91,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.info("JWT_FILTER start path={}", request.getServletPath());
     }
 
-//    private String extractTokenFromCookie(HttpServletRequest request) {
-//        if (request.getCookies() == null) return null;
-//
-//        for (Cookie cookie : request.getCookies()) {
-//            if ("access_token".equals(cookie.getName())) {
-//                return cookie.getValue();
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private String extractTokenFromHeader(HttpServletRequest request) {
-//        String authHeader = request.getHeader("Authorization");
-//        if (authHeader == null || authHeader.isBlank()) return null;
-//
-//        if (authHeader.startsWith("Bearer ")) {
-//            return authHeader.substring(7);
-//        }
-//        return null;
-//    }
 }

@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.rental_area.CreateRentalAreaRequest;
+import org.rent.room.be.dto.request.rental_area.UpdateRentalAreaRequest;
+import org.rent.room.be.dto.request.rental_area.UpdateRentalAreaStatusRequest;
 import org.rent.room.be.dto.response.rental_area.RentalAreaResponse;
 import org.rent.room.be.security.CustomUserDetails;
 import org.rent.room.be.service.RentalAreaService;
@@ -134,6 +136,64 @@ public class RentalAreaController {
                 .message("Delete rental area successfully")
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{rentalAreaId}")
+    public ResponseEntity<ApiResponse<RentalAreaResponse>> updateRentalArea(
+            @PathVariable UUID rentalAreaId,
+            @Valid @RequestBody UpdateRentalAreaRequest request,
+            @AuthenticationPrincipal UserDetails principal
+    ) {
+        UUID currentUserId = null;
+        String currentUserRole = null;
+
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            currentUserId = customUserDetails.getUserId();
+            currentUserRole = customUserDetails.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (currentUserId == null) throw new RuntimeException("User not authenticated");
+
+        RentalAreaResponse result = rentalAreaService.updateRentalArea(
+                rentalAreaId, request, currentUserId, currentUserRole
+        );
+
+        return ResponseEntity.ok(ApiResponse.<RentalAreaResponse>builder()
+                .code(200)
+                .message("Update rental area successfully")
+                .result(result)
+                .build());
+    }
+
+    @PatchMapping("/{rentalAreaId}/status")
+    public ResponseEntity<ApiResponse<RentalAreaResponse>> updateRentalAreaStatus(
+            @PathVariable UUID rentalAreaId,
+            @Valid @RequestBody UpdateRentalAreaStatusRequest request,
+            @AuthenticationPrincipal UserDetails principal
+    ) {
+        UUID currentUserId = null;
+        String currentUserRole = null;
+
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            currentUserId = customUserDetails.getUserId();
+            currentUserRole = customUserDetails.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (currentUserId == null) throw new RuntimeException("User not authenticated");
+
+        RentalAreaResponse result = rentalAreaService.updateRentalAreaStatus(
+                rentalAreaId, request, currentUserId, currentUserRole
+        );
+
+        return ResponseEntity.ok(ApiResponse.<RentalAreaResponse>builder()
+                .code(200)
+                .message("Update rental area status successfully")
+                .result(result)
+                .build());
     }
 }
 

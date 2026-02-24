@@ -9,7 +9,6 @@ import {
   DollarOutlined,
   SettingOutlined,
   LogoutOutlined,
-  ReconciliationOutlined, // Dùng cho đơn hàng/hóa đơn
   StarOutlined,
 } from "@ant-design/icons";
 import type { UserResponse } from "../../services/usersService";
@@ -68,29 +67,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       getItem(
         <Link to="/admin/bookings/calendar">Lịch phòng (Calendar)</Link>,
         "/admin/bookings/calendar",
-      ), // Xem dạng lịch
+      ),
       getItem(
         <Link to="/admin/bookings/list">Danh sách đơn đặt</Link>,
         "/admin/bookings/list",
-      ), // Xem dạng bảng (Table)
+      ),
       getItem(
         <Link to="/admin/bookings/check-in">Check-in/Check-out</Link>,
         "/admin/bookings/check-in",
-      ), // Xử lý khách đến/đi
-    ]),
-
-    // 3. Quản lý Tài nguyên (Phòng ốc)
-    getItem("Quản lý Phòng & Cơ sở", "sub_room", <ShopOutlined />, [
-      getItem(<Link to="/admin/rooms">Danh sách Phòng</Link>, "/admin/rooms"),
-      getItem(
-        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
-        "/admin/amenities",
-      ), // Máy chiếu, loa đài...
-      getItem(
-        <Link to="/admin/room-types">Loại phòng & Giá</Link>,
-        "/admin/room-types",
       ),
     ]),
+
+    // 3. Quản lý Tài nguyên (Phòng ốc) -> BỎ HẾT CHILD
+    getItem(
+      <Link to="/admin/rooms">Quản lý Phòng & Cơ sở</Link>,
+      "/admin/rooms",
+      <ShopOutlined />,
+    ),
 
     // 4. Khách hàng
     getItem(
@@ -118,12 +111,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       <StarOutlined />,
     ),
 
-    // 7. Cài đặt hệ thống
-    getItem(
-      <Link to="/admin/settings">Cài đặt hệ thống</Link>,
-      "/admin/settings",
-      <SettingOutlined />,
-    ),
+    // 7. Cài đặt hệ thống -> THÊM CHILD
+    getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
+      getItem(
+        <Link to="/admin/room-types">Loại phòng</Link>,
+        "/admin/room-types",
+      ),
+      getItem(
+        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
+        "/admin/amenities",
+      ),
+      getItem(
+        <Link to="/admin/settings">Cài đặt chung</Link>,
+        "/admin/settings",
+      ),
+    ]),
 
     // Logout
     getItem("Đăng xuất", "logout", <LogoutOutlined />),

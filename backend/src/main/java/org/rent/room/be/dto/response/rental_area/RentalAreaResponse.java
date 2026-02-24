@@ -18,5 +18,7 @@ public class RentalAreaResponse {
     String contactName;
     String contactPhone;
     String status;
+    Long cityId;
+    String cityName;
     List<RentalAreaImageResponse> images;
 }

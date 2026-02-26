@@ -1,9 +1,9 @@
-# EduRoom
+# Elingo
 
 ```
-SBA301_FE_ROOM/
+EXE201_Elingo_System /
 ├── frontend/          # Frontend (React + TypeScript + Vite)
-├── backend/           # Backend Application ()
+├── backend/           # Backend Application (Spring boot + Mongo + Postgres)
 ├── .gitignore
 └── README.md
 ```

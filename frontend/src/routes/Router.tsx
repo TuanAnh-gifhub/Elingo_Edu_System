@@ -1,7 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "../layouts/RootLayout";
 import LandingPage from "../pages/Customer/LandingPage/LandingPage";
-import RoomDetailPage from "../pages/Customer/RoomDetailPage/RoomDetailPage";
 import ChatBoxHome from "../pages/Customer/ChatBox/ChatBoxHome";
 import WalletPage from "../pages/Customer/WalletPage/WalletPage";
 import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
@@ -11,14 +10,9 @@ import AdminPage from "../pages/Admin/AdminPage";
 import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
 import AboutUs from "../pages/Customer/AboutUs/AboutUs";
-import ReportPage from "../pages/Admin/ReportAdmin/ReportPage";
-import ReportForm from "../pages/Customer/ReportPage/ReportForm";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
-import ManagePage from "../pages/Customer/ManagePage/ManagePage";
 import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
-import AmenityManagementPage from "../pages/Admin/AmenityManagement/AmenityManagementPage";
-import CategoryManagementPage from "../pages/Admin/CategoryManagement/CategoryManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -40,11 +34,6 @@ export const router = createBrowserRouter([
         path: "landing",
         element: <LandingPage />,
         handle: { breadcrumb: "Trang chủ" },
-      },
-      {
-        path: "product/:id",
-        element: <RoomDetailPage />,
-        handle: { breadcrumb: "Chi tiết phòng" },
       },
       {
         path: "chat",
@@ -72,11 +61,6 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Đặt lại mật khẩu" },
       },
       {
-        path: "manage-posts",
-        element: <ManagePage />,
-        handle: { breadcrumb: "Quản lý cá nhân" },
-      },
-      {
         path: "*",
         element: <NotFound />,
         handle: { breadcrumb: "Không tìm thấy" },
@@ -95,11 +79,6 @@ export const router = createBrowserRouter([
         path: "about-us",
         element: <AboutUs />,
         handle: { breadcrumb: "Về chúng tôi" },
-      },
-      {
-        path: "report-form",
-        element: <ReportForm />,
-        handle: { breadcrumb: "Báo cáo vi phạm" },
       },
     ],
   },
@@ -135,18 +114,6 @@ export const router = createBrowserRouter([
       {
         path: "customers",
         element: <UserManagement />,
-      },
-      {
-        path: "reports",
-        element: <ReportPage />,
-      },
-      {
-        path: "amenities",
-        element: <AmenityManagementPage />,
-      },
-      {
-        path: "room-types",
-        element: <CategoryManagementPage />,
       },
     ],
   },

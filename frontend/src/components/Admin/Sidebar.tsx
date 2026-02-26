@@ -165,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 isDark ? "text-white" : "text-gray-800"
               }`}
             >
-              EduRoom
+             Elingo
             </div>
           )}
         </div>

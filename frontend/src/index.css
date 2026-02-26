@@ -89,3 +89,12 @@ body[data-theme="dark"] .admin-sider .ant-layout-sider-children {
     color: #66b3ff;
   }
 }
+
+/* Ẩn placeholder mm/dd/yyyy của input type="date" khi chưa chọn ngày */
+.date-input::-webkit-datetime-edit {
+  color: #111827; /* text-gray-900 */
+}
+
+.date-input:not(:focus):invalid::-webkit-datetime-edit {
+  color: transparent;
+}

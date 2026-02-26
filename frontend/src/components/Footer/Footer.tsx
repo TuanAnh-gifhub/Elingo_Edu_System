@@ -18,20 +18,20 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ isDarkMode }, ref) => {
       <div className="max-w-screen-2xl mx-auto px-4 md:px-8 py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 lg:gap-8 mb-8">
-          {/* Column 1: EduRoom Branding and Social Media */}
+         {/* Column 1: Elingo Branding and Social Media */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-[#4da6ff] rounded-lg flex items-center justify-center">
                 <FaHome className="text-white text-xl" />
               </div>
-              <h3 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-black"}`}>EduRoom</h3>
+             <h3 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-black"}`}>Elingo</h3>
             </div>
             <p
               className={`text-sm leading-relaxed ${
                 isDarkMode ? "text-white" : "text-black"
               }`}
             >
-              Nền tảng cho thuê phòng học hàng đầu, mang đến không gian học tập lý tưởng cho mọi người.
+              Elingo là nền tảng kết nối giáo viên mở lớp học trực tiếp, quản lý và học tập dễ dàng.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
@@ -194,7 +194,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ isDarkMode }, ref) => {
         {/* Copyright Section */}
         <div className={`border-t pt-6 ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}>
           <p className={`text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-            © 2026 EduRoom. All rights reserved.
+           © 2026 Elingo. All rights reserved.
           </p>
         </div>
       </div>

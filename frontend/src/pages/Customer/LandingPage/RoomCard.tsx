@@ -24,51 +24,51 @@ interface RoomCardProps {
 const TEMPLATE_ROOMS: Omit<RoomCardProps, 'onClick'>[] = [
   {
     id: 1,
-    title: "Innovators Suite",
-    location: "North Wing, Level 3",
-    capacity: "8-12 people",
-    price: 45,
-    feature: { icon: FaDesktop, label: "Equipped" },
+    title: "Lớp Tiếng Anh Giao Tiếp 1-1",
+    location: "Online hoặc Quận 1, TP.HCM",
+    capacity: "1-2 học viên",
+    price: 15,
+    feature: { icon: FaDesktop, label: "Lịch học linh hoạt" },
   },
   {
     id: 2,
-    title: "Main Auditorium",
-    location: "Central Campus, Building B",
-    capacity: "50-100 people",
-    price: 120,
-    feature: { icon: FaMicrophone, label: "Pro Audio" },
+    title: "Lớp Luyện Thi IELTS Nhóm Nhỏ",
+    location: "Quận 3, TP.HCM",
+    capacity: "4-8 học viên",
+    price: 45,
+    feature: { icon: FaMicrophone, label: "Giáo viên 8.0+ IELTS" },
   },
   {
     id: 3,
-    title: "The Pod - Private",
-    location: "Library Annex, Level 1",
-    capacity: "1-2 people",
-    price: 15,
-    feature: { icon: FaWifi, label: "High-speed" },
+    title: "Khóa Kỹ Năng Thuyết Trình",
+    location: "Trung tâm kỹ năng, Quận 10",
+    capacity: "10-20 học viên",
+    price: 60,
+    feature: { icon: FaWifi, label: "Workshop tương tác" },
   },
   {
     id: 4,
-    title: "Tech Lab C",
-    location: "Science Block, Ground Floor",
-    capacity: "15-20 people",
-    price: 60,
-    feature: { icon: FaDesktop, label: "PC Included" },
+    title: "Lớp Lập Trình Web Cơ Bản",
+    location: "Online qua Zoom",
+    capacity: "8-15 học viên",
+    price: 35,
+    feature: { icon: FaDesktop, label: "Dự án thực hành" },
   },
   {
     id: 5,
-    title: "Zen Conference Room",
-    location: "East Tower, Level 8",
-    capacity: "6-8 people",
-    price: 35,
-    feature: { icon: FaLeaf, label: "Eco-friendly" },
+    title: "Lớp Toán Tư Duy Cho Trẻ",
+    location: "Quận Bình Thạnh, TP.HCM",
+    capacity: "6-10 học viên",
+    price: 20,
+    feature: { icon: FaLeaf, label: "Giáo trình trực quan" },
   },
   {
     id: 6,
-    title: "Workshop Studio 2",
-    location: "Creative Arts Hub, Level 2",
-    capacity: "20-25 people",
-    price: 55,
-    feature: { icon: FaPalette, label: "Creative Kits" },
+    title: "Khóa Kỹ Năng Mềm Cho Nhân Sự",
+    location: "Doanh nghiệp, in-house",
+    capacity: "15-25 học viên",
+    price: 120,
+    feature: { icon: FaPalette, label: "Thiết kế riêng cho DN" },
   },
 ];
 
@@ -199,7 +199,7 @@ const RoomCard = ({
                 }}
                 className="text-sm font-medium underline hover:no-underline opacity-90 hover:opacity-100 transition-opacity"
               >
-                View all rooms
+                Xem tất cả lớp học
               </button>
             </div>
           )}

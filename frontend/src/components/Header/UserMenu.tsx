@@ -98,7 +98,7 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick, isHeaderTrans
           >
             <div className="px-4 py-3 border-b border-gray-50 mb-1">
               <p className="text-sm font-bold text-gray-800 truncate">{displayName}</p>
-              <p className="text-xs text-gray-500">Thành viên EduRoom</p>
+             <p className="text-xs text-gray-500">Thành viên Elingo</p>
             </div>
 
             <Link

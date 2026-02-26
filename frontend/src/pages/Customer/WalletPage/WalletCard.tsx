@@ -32,7 +32,7 @@ const WalletCard = ({
 
                     {/* Background Pattern - Enhanced */}
                     <div className="absolute top-0 right-0 w-48 h-40 opacity-15">
-                        <div className="absolute top-4 right-4 text-5xl font-black text-white/30 drop-shadow-lg tracking-tighter">EduRoom</div>
+                       <div className="absolute top-4 right-4 text-5xl font-black text-white/30 drop-shadow-lg tracking-tighter">Elingo</div>
                     </div>
 
                     {/* Decorative circles */}
@@ -59,7 +59,7 @@ const WalletCard = ({
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-4xl font-black text-white/30 mb-2 drop-shadow-2xl tracking-tight">EduRoom</div>
+                               <div className="text-4xl font-black text-white/30 mb-2 drop-shadow-2xl tracking-tight">Elingo</div>
                                 <div className="relative">
                                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg border-2 border-white/30 transform group-hover:scale-110 transition-transform duration-300">
                                         <svg className="w-7 h-7 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>

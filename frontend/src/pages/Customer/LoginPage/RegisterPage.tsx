@@ -205,15 +205,15 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 
             {/* Thông tin thương hiệu trên video */}
             <div className="absolute bottom-4 right-4 text-white hidden md:block text-right">
-              <div className="text-lg font-semibold">EduRoom</div>
-              <div className="text-xs text-white/90">
-                Đăng ký ngay để bắt đầu.
+              <div className="text-lg font-semibold">Elingo</div>
+              <div className="text-sm text-white/90">
+                Nền tảng kết nối giáo viên mở lớp học trực tiếp, quản lý và học tập dễ dàng.
               </div>
             </div>
 
             {/* Thẻ form đè bên trái video */}
             <div className="relative z-10 flex h-full items-center justify-start px-4 sm:px-6">
-              <div className="w-full max-w-sm bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs">
+              <div className="w-full max-w-sm bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col overflow-hidden text-sm">
                 {/* Header */}
                 <div className="relative bg-linear-to-br from-[#4da6ff] to-blue-500 px-5 py-3.5 text-white">
                   <div className="flex justify-center mb-2">
@@ -232,7 +232,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                     </div>
                   </div>
                   <h2 className="text-xl font-bold text-center">Tạo Tài Khoản</h2>
-                  <p className="text-center text-white/80 text-xs">
+                  <p className="text-center text-white/80 text-sm">
                     Đăng ký ngay để bắt đầu
                   </p>
                 </div>
@@ -240,14 +240,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                 <div className="px-5 py-2.5 flex-1 overflow-y-auto">
                   {/* Alert lỗi */}
                   {errorMessage && (
-                    <div className="mb-2 p-1.5 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
+                    <div className="mb-2 p-1.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg text-center font-medium">
                       {errorMessage}
                     </div>
                   )}
 
                   {/* Alert thành công */}
                   {successMessage && (
-                    <div className="mb-2 p-1.5 bg-green-50 border border-green-200 text-green-600 text-xs rounded-lg text-center font-medium">
+                    <div className="mb-2 p-1.5 bg-green-50 border border-green-200 text-green-600 text-sm rounded-lg text-center font-medium">
                       {successMessage}
                     </div>
                   )}
@@ -256,29 +256,26 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                     {/* Họ và tên + SĐT */}
                     <div className="grid grid-cols-12 gap-2">
                       <div className="col-span-7">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          Họ và tên
-                        </label>
                         <div className="relative">
                           <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                            <FaUser className="w-4 h-4 text-gray-400" />
+                            <FaUser className="w-4 h-4 text-blue-600/70" />
                           </div>
                           <input
                             type="text"
                             value={formValues.userName}
                             onChange={handleChange("userName")}
-                            placeholder="Họ tên"
-                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            placeholder=" "
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                             disabled={loading}
                             required
                           />
+                          <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
+                            Họ và tên
+                          </label>
                         </div>
                       </div>
 
                       <div className="col-span-5">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          SĐT
-                        </label>
                         <div className="relative">
                           <div className="absolute left-2 top-1/2 -translate-y-1/2">
                             <FaPhone className="w-4 h-4 text-gray-400" />
@@ -287,11 +284,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                             type="tel"
                             value={formValues.phone}
                             onChange={handleChange("phone")}
-                            placeholder="Số điện thoại"
-                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            placeholder=" "
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                             disabled={loading}
                             pattern="^0\\d{9,10}$"
                           />
+                          <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
+                            SĐT
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -299,40 +299,42 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                     {/* Ngày sinh + Giới tính */}
                     <div className="grid grid-cols-12 gap-2">
                       <div className="col-span-7">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          Ngày sinh
-                        </label>
-                        <input
-                          type="date"
-                          value={formValues.dateOfBirth}
-                          onChange={handleChange("dateOfBirth")}
-                          className="w-full px-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
-                          disabled={loading}
-                          required
-                        />
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={formValues.dateOfBirth}
+                            onChange={handleChange("dateOfBirth")}
+                            placeholder=" "
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm px-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
+                            disabled={loading}
+                            required
+                          />
+                          <label className="pointer-events-none absolute left-3 top-0 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-700 z-10 transition-all duration-150 peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600">
+                            Ngày sinh
+                          </label>
+                        </div>
                       </div>
 
                       <div className="col-span-5">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          Giới tính
-                        </label>
-                        <select
-                          value={formValues.gender}
-                          onChange={handleChange("gender")}
-                          className="w-full px-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
-                          disabled={loading}
-                        >
-                          <option value="MALE">Nam</option>
-                          <option value="FEMALE">Nữ</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={formValues.gender}
+                            onChange={handleChange("gender")}
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm px-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
+                            disabled={loading}
+                          >
+                            <option value="MALE">Nam</option>
+                            <option value="FEMALE">Nữ</option>
+                          </select>
+                          <label className="pointer-events-none absolute left-3 top-0 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-700 z-10 transition-all duration-150 peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600">
+                            Giới tính
+                          </label>
+                        </div>
                       </div>
                     </div>
 
                     {/* Email */}
                     <div>
-                      <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                        Email
-                      </label>
                       <div className="relative">
                         <div className="absolute left-2 top-1/2 -translate-y-1/2">
                           <FaEnvelope className="w-4 h-4 text-gray-400" />
@@ -341,20 +343,20 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                           type="email"
                           value={formValues.email}
                           onChange={handleChange("email")}
-                          placeholder="email@example.com"
-                          className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                          placeholder=" "
+                          className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                           disabled={loading}
                           required
                         />
+                        <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
+                          Email
+                        </label>
                       </div>
                     </div>
 
                     {/* Mật khẩu + Nhập lại mật khẩu */}
                     <div className="grid grid-cols-12 gap-2">
                       <div className="col-span-6">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          Mật khẩu
-                        </label>
                         <div className="relative">
                           <div className="absolute left-2 top-1/2 -translate-y-1/2">
                             <FaLock className="w-4 h-4 text-gray-400" />
@@ -363,19 +365,19 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                             type="password"
                             value={formValues.password}
                             onChange={handleChange("password")}
-                            placeholder="••••••••"
-                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            placeholder=" "
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                             disabled={loading}
                             required
                             minLength={8}
                           />
+                          <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
+                            Mật khẩu
+                          </label>
                         </div>
                       </div>
 
                       <div className="col-span-6">
-                        <label className="block text-left text-xs font-medium text-gray-800 mb-1">
-                          Nhập lại mật khẩu
-                        </label>
                         <div className="relative">
                           <div className="absolute left-2 top-1/2 -translate-y-1/2">
                             <FaLock className="w-4 h-4 text-gray-400" />
@@ -384,12 +386,15 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                             type="password"
                             value={formValues.confirmPassword}
                             onChange={handleChange("confirmPassword")}
-                            placeholder="••••••••"
-                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4da6ff] focus:border-transparent"
+                            placeholder=" "
+                            className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                             disabled={loading}
                             required
                             minLength={8}
                           />
+                          <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
+                            Nhập lại mật khẩu
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -398,20 +403,20 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                     <button
                       type="submit"
                       disabled={loading}
-                      className={`w-full bg-[#4da6ff] hover:bg-[#3d8cff] text-white font-semibold py-1.5 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg text-xs mt-1 ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`w-full bg-[#4da6ff] hover:bg-[#3d8cff] text-white font-semibold py-1.5 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg text-sm mt-1 ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
                     >
                       {loading ? "Đang xử lý..." : "Tiếp tục"}
                     </button>
 
                     {/* Đã có tài khoản? */}
                     <div className="mt-2 text-center">
-                      <span className="text-xs text-gray-700">
+                      <span className="text-sm text-gray-700">
                         Đã có tài khoản?{" "}
                       </span>
                       <button
                         type="button"
                         onClick={onSwitchToLogin}
-                        className="text-xs text-[#4da6ff] hover:text-blue-600 font-semibold focus:outline-none"
+                        className="text-sm text-[#4da6ff] hover:text-blue-600 font-semibold focus:outline-none"
                       >
                         Đăng nhập
                       </button>

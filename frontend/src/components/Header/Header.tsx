@@ -7,14 +7,13 @@ import { motion } from "framer-motion";
 // Import components
 import LoginPage from "../../pages/Customer/LoginPage/LoginPage";
 import ScrambleText from "./ScrambleText";
-import AnimatedNavText from "./AnimatedNavText";
 import UserMenu from "./UserMenu";
 
 // --- QUAN TRỌNG: Import Hook từ AuthContext ---
 import { useAuth } from "../../context/AuthContext";
 
 const logo =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%234da6ff'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' font-weight='bold' fill='white'%3EEduRoom%3C/text%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%234da6ff'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' font-weight='bold' fill='white'%3EElingo%3C/text%3E%3C/svg%3E";
 
 const useScrollspy = () => ({ activeSection: "hero" });
 
@@ -93,10 +92,18 @@ const Header = () => {
   // Make header transparent when user is at the very top (hero/video area on landing page)
   useEffect(() => {
     const isHome = location.pathname === "/";
+    
+    // Compute desired transparency state
+    const shouldBeTransparent = isHome && window.scrollY < 40;
+    
+    // Update state in next tick to avoid cascading renders
+    const timeoutId = setTimeout(() => {
+      setIsHeaderTransparent(shouldBeTransparent);
+    }, 0);
+
+    // Only add scroll listener if on home page
     if (!isHome) {
-      // Khi KHÔNG ở trang chủ thì luôn đảm bảo header là dạng bình thường (không trong suốt)
-      setIsHeaderTransparent(false);
-      return;
+      return () => clearTimeout(timeoutId);
     }
 
     const onScroll = () => {
@@ -104,9 +111,11 @@ const Header = () => {
       setIsHeaderTransparent(window.scrollY < 40);
     };
 
-    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [location.pathname]);
 
   // Chuẩn bị dữ liệu hiển thị cho UserMenu
@@ -144,7 +153,7 @@ const Header = () => {
               >
                 <img
                   src={logo}
-                  alt="EduRoom Logo"
+                 alt="Elingo Logo"
                   className={`${logoSizeClass} object-contain border-2 border-[#4da6ff] rounded-lg bg-white`}
                 />
                 {activeSection === "hero" ? (
@@ -164,7 +173,7 @@ const Header = () => {
                     </motion.span>
                     <span className="relative z-10 inline-block">
                       <ScrambleText
-                        text="EduRoom"
+                       text="Elingo"
                         triggerKey={activeSection}
                         className="inline-block"
                       />
@@ -189,7 +198,7 @@ const Header = () => {
                       fontWeight: 900,
                     }}
                   >
-                    EduRoom
+                   Elingo
                   </span>
                 )}
               </Link>

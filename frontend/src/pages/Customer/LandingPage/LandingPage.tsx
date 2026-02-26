@@ -14,14 +14,14 @@ import AboutUs from "../AboutUs/AboutUs";
 const useScrollspy = () => ({ setActiveSection: (_section: string) => { void _section; } });
 
 const SIDEBAR_CATEGORIES = [
-  { key: 'all', label: 'Tất cả', icon: FaChalkboardTeacher, type: 'Tất cả Phòng học' },
-  { key: 'classroom', label: 'Phòng học', icon: FaChalkboardTeacher, type: 'Phòng học' },
-  { key: 'lab', label: 'Phòng lab', icon: FaLaptop, type: 'Phòng lab' },
-  { key: 'group', label: 'Phòng nhóm', icon: FaUsers, type: 'Phòng nhóm' },
-  { key: 'presentation', label: 'Phòng thuyết trình', icon: FaMicrophone, type: 'Phòng thuyết trình' },
-  { key: 'library', label: 'Thư viện', icon: FaBook, type: 'Thư viện' },
-  { key: 'experiment', label: 'Phòng thí nghiệm', icon: FaFlask, type: 'Phòng thí nghiệm' },
-  { key: 'meeting', label: 'Phòng họp', icon: FaBuilding, type: 'Phòng họp' },
+  { key: 'all', label: 'Tất cả', icon: FaChalkboardTeacher, type: 'Tất cả lớp học' },
+  { key: 'classroom', label: 'Lớp học 1-1', icon: FaChalkboardTeacher, type: 'Lớp học 1-1' },
+  { key: 'lab', label: 'Lớp học nhóm', icon: FaLaptop, type: 'Lớp học nhóm' },
+  { key: 'group', label: 'Lớp kỹ năng / workshop', icon: FaUsers, type: 'Lớp kỹ năng / workshop' },
+  { key: 'presentation', label: 'Lớp ngoại ngữ', icon: FaMicrophone, type: 'Lớp ngoại ngữ' },
+  { key: 'library', label: 'Lớp luyện thi', icon: FaBook, type: 'Lớp luyện thi' },
+  { key: 'experiment', label: 'Lớp trực tuyến', icon: FaFlask, type: 'Lớp trực tuyến' },
+  { key: 'meeting', label: 'Khóa học doanh nghiệp', icon: FaBuilding, type: 'Khóa học doanh nghiệp' },
 ];
 
 interface ListingItem {
@@ -215,29 +215,29 @@ const LandingPage = () => {
           setRoomCategories(allCategories);
           console.log('✅ Room categories loaded from API:', allCategories);
         } else {
-          console.warn('⚠️ No room categories data from API, using default');
+          console.warn('⚠️ No class categories data from API, using default');
           setRoomCategories([
-            { id: "all", name: "Tất cả" },
-            { id: "phong-hoc", name: "Phòng học" },
-            { id: "phong-lab", name: "Phòng lab" },
-            { id: "phong-nhom", name: "Phòng nhóm" },
-            { id: "phong-thuyet-trinh", name: "Phòng thuyết trình" },
-            { id: "thu-vien", name: "Thư viện" },
-            { id: "phong-thi-nghiem", name: "Phòng thí nghiệm" },
-            { id: "phong-hop", name: "Phòng họp" }
+            { id: "all", name: "Tất cả lớp học" },
+            { id: "lop-1-1", name: "Lớp học 1-1" },
+            { id: "lop-nhom", name: "Lớp học nhóm" },
+            { id: "lop-ky-nang", name: "Lớp kỹ năng / workshop" },
+            { id: "lop-ngoai-ngu", name: "Lớp ngoại ngữ" },
+            { id: "lop-luyen-thi", name: "Lớp luyện thi" },
+            { id: "lop-truc-tuyen", name: "Lớp trực tuyến" },
+            { id: "lop-doanh-nghiep", name: "Khóa học doanh nghiệp" }
           ]);
         }
       } catch (error) {
-        console.error('❌ Error fetching room categories:', error);
+        console.error('❌ Error fetching class categories:', error);
         setRoomCategories([
-          { id: "all", name: "Tất cả" },
-          { id: "phong-hoc", name: "Phòng học" },
-          { id: "phong-lab", name: "Phòng lab" },
-          { id: "phong-nhom", name: "Phòng nhóm" },
-          { id: "phong-thuyet-trinh", name: "Phòng thuyết trình" },
-          { id: "thu-vien", name: "Thư viện" },
-          { id: "phong-thi-nghiem", name: "Phòng thí nghiệm" },
-          { id: "phong-hop", name: "Phòng họp" }
+          { id: "all", name: "Tất cả lớp học" },
+          { id: "lop-1-1", name: "Lớp học 1-1" },
+          { id: "lop-nhom", name: "Lớp học nhóm" },
+          { id: "lop-ky-nang", name: "Lớp kỹ năng / workshop" },
+          { id: "lop-ngoai-ngu", name: "Lớp ngoại ngữ" },
+          { id: "lop-luyen-thi", name: "Lớp luyện thi" },
+          { id: "lop-truc-tuyen", name: "Lớp trực tuyến" },
+          { id: "lop-doanh-nghiep", name: "Khóa học doanh nghiệp" }
         ]);
       }
     };
@@ -510,7 +510,7 @@ const LandingPage = () => {
             <div className="mb-8 w-full">
               <div className="text-center mb-12">
                 <h1 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
-                  <ScrambleText text="Phòng học mới nhất" triggerKey={decodeLatestListings} />
+                  <ScrambleText text="Lớp học mới nhất" triggerKey={decodeLatestListings} />
                 </h1>
               </div>
 
@@ -660,22 +660,22 @@ const LandingPage = () => {
         <div id="official-stores" ref={officialStoresRef} className="max-w-7xl mx-auto p-8">
           <div className="text-center mb-12">
             <h1 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
-              <ScrambleText text="Đặt Phòng Học Trực Tuyến" triggerKey={decodeOfficialStores} />
+              <ScrambleText text="Đặt Lớp Học Trực Tuyến" triggerKey={decodeOfficialStores} />
             </h1>
           </div>
 
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="flex items-center text-blue-600">
               <FaCheck className="w-4 h-4 mr-2" />
-              <span className="text-sm">Hủy đặt phòng miễn phí</span>
+              <span className="text-sm">Hoàn hủy khóa học linh hoạt</span>
             </div>
             <div className="flex items-center text-blue-600">
               <FaCheck className="w-4 h-4 mr-2" />
-              <span className="text-sm">Phòng học chất lượng cao</span>
+              <span className="text-sm">Giáo viên uy tín, lớp học chất lượng cao</span>
             </div>
             <div className="flex items-center text-blue-600">
               <FaCheck className="w-4 h-4 mr-2" />
-              <span className="text-sm">Hỗ trợ đặt phòng linh hoạt</span>
+              <span className="text-sm">Hỗ trợ học trực tuyến và trực tiếp linh hoạt</span>
             </div>
           </div>
 
@@ -760,9 +760,7 @@ const LandingPage = () => {
             </Link>
           </div>
 
-          <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Đang hiển thị {showAllStores ? stores.length : Math.min(stores.length, 6)} / {stores.length} địa điểm
-          </div>
+          {/* Removed "Đang hiển thị X / Y địa điểm" text for cleaner UI */}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {stores.slice(0, showAllStores ? stores.length : 6).map((store, idx) => (
@@ -876,116 +874,6 @@ const LandingPage = () => {
               </button>
             </div>
           )}
-        </div>
-
-        <div id="featured-stores" ref={featuredStoresRef} className="max-w-7xl mx-auto p-8">
-          <div className="text-center mb-12">
-            <h1 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
-              <ScrambleText text="Địa điểm cho thuê nổi bật" triggerKey={decodeFeaturedStores} />
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mb-6">
-            {roomCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(String(category.id))}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === String(category.id)
-                  ? isDarkMode ? 'bg-[#4da6ff] text-white border border-[#4da6ff]' : 'bg-[#4da6ff] text-white border border-[#4da6ff]'
-                  : isDarkMode ? 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-[#4da6ff] hover:text-[#4da6ff]' : 'bg-white text-gray-700 border border-gray-300 hover:border-[#4da6ff] hover:text-[#4da6ff]'
-                  }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="mb-8 w-full relative flex items-center">
-            <button
-              className={`hidden lg:block absolute left-0 z-10 rounded-full shadow p-2 -ml-6 border hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:scale-100 transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-gray-700 disabled:hover:text-gray-400' : 'bg-white border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-white disabled:hover:text-gray-400'}`}
-              onClick={() => setFeaturedStoresStart(s => Math.max(0, s - 1))}
-              disabled={featuredStoresStart === 0}
-              aria-label="Xem cửa hàng trước"
-              style={{ top: '50%', transform: 'translateY(-50%)' }}
-            >
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
-                <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 w-full px-4 lg:px-12">
-              {filteredStores.slice(featuredStoresStart, featuredStoresStart + 5).map((store, idx) => (
-                <motion.div
-                  key={store.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className={`w-full rounded-xl shadow-lg p-4 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group border border-gray-100 ${isDarkMode ? 'bg-gray-800/90 backdrop-blur-sm hover:shadow-[#4da6ff]/30 hover:border-[#4da6ff]' : 'bg-white/95 backdrop-blur-sm hover:shadow-[#4da6ff]/20 hover:border-[#4da6ff]/50'}`}
-                >
-                  <div className="flex flex-col items-center text-center h-full">
-                    <div className="relative mb-3">
-                      {store.image ? (
-                        <img
-                          src={store.image}
-                          alt={store.name}
-                          className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform duration-300 bg-gray-200"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <span className="text-white font-bold text-lg">
-                            {store.name ? store.name.charAt(0).toUpperCase() : 'S'}
-                          </span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 rounded-full bg-linear-to-t from-[#4da6ff]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <h3 className={`text-lg font-bold mb-2 transition-colors duration-300 ${isDarkMode ? 'text-white group-hover:text-[#4da6ff]' : 'text-gray-900 group-hover:text-[#4da6ff]'}`}>{store.name}</h3>
-
-                    <div className="flex items-center mb-2">
-                      <FaStar className="w-4 h-4 text-yellow-400 mr-1 group-hover:text-yellow-500 group-hover:scale-110 transition-all duration-200" />
-                      <span className={`text-sm transition-colors duration-300 ${isDarkMode ? 'text-gray-300 group-hover:text-gray-200' : 'text-gray-600 group-hover:text-gray-700'}`}>
-                        {store.rating || 0} ({store.reviewCount || 0} đánh giá)
-                      </span>
-                    </div>
-
-                    <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? 'text-gray-400 group-hover:text-[#4da6ff]' : 'text-gray-500 group-hover:text-[#4da6ff]'}`}>
-                      Đang cho thuê: {store.currentListings || 0} | Đã cho thuê: {store.soldItems || 0}
-                    </div>
-
-                    <div className={`text-xs mb-3 flex-1 transition-colors duration-300 ${isDarkMode ? 'text-gray-400 group-hover:text-[#4da6ff]' : 'text-gray-500 group-hover:text-[#4da6ff]'}`}>
-                      📍 {store.location}
-                    </div>
-
-                    <button className={`border px-4 py-1 rounded text-sm hover:scale-105 transition-all duration-300 group-hover:shadow-md ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]' : 'border-gray-300 bg-white text-gray-700 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]'}`}>
-                      Theo dõi
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <button
-              className={`hidden lg:block absolute right-0 z-10 rounded-full shadow p-2 -mr-6 border hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:scale-100 transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-gray-700 disabled:hover:text-gray-400' : 'bg-white border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-white disabled:hover:text-gray-400'}`}
-              onClick={() => setFeaturedStoresStart(s => Math.min(filteredStores.length - 5, s + 1))}
-              disabled={featuredStoresStart >= filteredStores.length - 5}
-              aria-label="Xem cửa hàng tiếp"
-              style={{ top: '50%', transform: 'translateY(-50%)' }}
-            >
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
-                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="flex justify-center">
-            <button className={`border px-6 py-2 rounded-lg hover:scale-105 hover:shadow-lg transition-all duration-300 font-medium ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]' : 'border-gray-300 bg-white text-gray-700 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]'}`}>
-              Xem thêm địa điểm cho thuê
-            </button>
-          </div>
         </div>
       </div>
 

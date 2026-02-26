@@ -87,11 +87,11 @@ const LoginAdmin: React.FC = () => {
           <div className="flex items-center mb-8">
             <FaShieldAlt className="text-5xl text-gray-800 mr-3" />
             <h1 className="text-3xl font-bold text-gray-800">
-              EduRoom Admin Portal
+             Elingo Admin Portal
             </h1>
           </div>
           <h2 className="text-2xl font-light text-gray-600 mb-6">
-            Hệ thống quản lý dành cho nhân viên EduRoom
+           Hệ thống quản lý dành cho nhân viên Elingo
           </h2>
           <p className="text-gray-500 mb-8">
             Truy cập vào bảng điều khiển để quản lý tin đăng, đấu giá, người
@@ -269,7 +269,7 @@ const LoginAdmin: React.FC = () => {
           </form>
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} EduRoom Administration Panel
+             © {new Date().getFullYear()} Elingo Administration Panel
             </p>
           </div>
         </motion.div>

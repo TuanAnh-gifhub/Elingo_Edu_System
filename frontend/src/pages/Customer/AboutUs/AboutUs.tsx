@@ -58,26 +58,26 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
   const features = [
     {
       icon: FaClock,
-      title: "Đặt Phòng Nhanh Chóng",
+      title: "Đặt Lớp Học Nhanh Chóng",
       description:
-        "Chỉ với vài thao tác đơn giản, bạn có thể đặt phòng học ngay lập tức",
+        "Chỉ với vài thao tác đơn giản, bạn có thể đặt lớp học và kết nối với giáo viên ngay lập tức",
     },
     {
       icon: FaShieldAlt,
       title: "Bảo Mật & An Toàn",
       description:
-        "Hệ thống bảo mật cao, đảm bảo thông tin cá nhân luôn được bảo vệ",
+        "Hệ thống bảo mật cao, đảm bảo thông tin cá nhân và dữ liệu học tập luôn được bảo vệ",
     },
     {
       icon: FaCreditCard,
       title: "Thanh Toán Linh Hoạt",
-      description: "Hỗ trợ nhiều hình thức thanh toán tiện lợi và an toàn",
+      description: "Hỗ trợ nhiều hình thức thanh toán tiện lợi và an toàn cho học viên và giáo viên",
     },
     {
       icon: FaHeadset,
       title: "Hỗ Trợ 24/7",
       description:
-        "Đội ngũ chăm sóc khách hàng luôn sẵn sàng hỗ trợ bạn mọi lúc",
+        "Đội ngũ chăm sóc khách hàng luôn sẵn sàng hỗ trợ bạn trong suốt quá trình học",
     },
   ];
 
@@ -85,23 +85,23 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
     {
       number: "01",
       icon: FaSearch,
-      title: "Tìm Kiếm Phòng",
+      title: "Tìm Kiếm Lớp Học & Giáo Viên",
       description:
-        "Tìm kiếm phòng học phù hợp với nhu cầu của bạn theo địa điểm, sức chứa và giá cả",
+        "Tìm lớp học và giáo viên phù hợp theo môn học, trình độ, khu vực hoặc hình thức học",
     },
     {
       number: "02",
       icon: FaCalendarCheck,
-      title: "Đặt Phòng & Thanh Toán",
+      title: "Đặt Lịch Học & Thanh Toán",
       description:
-        "Chọn thời gian phù hợp và thanh toán dễ dàng qua nhiều hình thức",
+        "Chọn thời gian học phù hợp và thanh toán dễ dàng qua nhiều hình thức",
     },
     {
       number: "03",
       icon: FaCheckCircle,
-      title: "Xác Nhận & Sử Dụng",
+      title: "Bắt Đầu Buổi Học",
       description:
-        "Nhận xác nhận ngay lập tức và bắt đầu sử dụng phòng học của bạn",
+        "Nhận xác nhận ngay lập tức và bắt đầu tham gia buổi học cùng giáo viên",
     },
   ];
 
@@ -110,7 +110,7 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
       name: "Nguyễn Minh Anh",
       occupation: "Sinh viên",
       rating: 5,
-      text: "Phòng học rất sạch sẽ, yên tĩnh và đầy đủ tiện nghi. Giá cả hợp lý, dịch vụ tốt. Tôi sẽ tiếp tục sử dụng!",
+      text: "Nhờ Elingo, mình dễ dàng tìm được giáo viên phù hợp và lịch học linh hoạt. Trải nghiệm học tập rất thoải mái và hiệu quả.",
       avatar:
         "https://ui-avatars.com/api/?name=Nguyen+Minh+Anh&background=4da6ff&color=fff&size=128",
     },
@@ -118,7 +118,7 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
       name: "Trần Hoàng Nam",
       occupation: "Freelancer",
       rating: 5,
-      text: "Không gian làm việc chuyên nghiệp, internet nhanh. Rất phù hợp cho những người làm việc tự do như tôi",
+      text: "Mình có thể dạy thêm ngoài giờ rất thuận tiện. Hệ thống quản lý lớp học và học viên rõ ràng, thanh toán minh bạch.",
       avatar:
         "https://ui-avatars.com/api/?name=Tran+Hoang+Nam&background=4da6ff&color=fff&size=128",
     },
@@ -126,7 +126,7 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
       name: "Lê Thị Hương",
       occupation: "Giáo viên",
       rating: 5,
-      text: "Đặt phòng nhanh chóng và tiện lợi. Phòng học có đầy đủ thiết bị cần thiết cho buổi dạy của tôi",
+      text: "Elingo giúp mình mở lớp nhanh chóng, quản lý lịch dạy và học viên dễ dàng. Học viên cũng phản hồi rất tích cực về trải nghiệm.",
       avatar:
         "https://ui-avatars.com/api/?name=Le+Thi+Huong&background=4da6ff&color=fff&size=128",
     },
@@ -147,14 +147,14 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
         >
           <div className="text-center mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
-              Tại Sao Chọn Chúng Tôi?
+              Tại Sao Chọn Elingo?
             </h2>
             <p
               className={`text-sm md:text-base ${
                 isDarkMode ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              Chúng tôi cam kết mang đến trải nghiệm thuê phòng học tốt nhất
+              Chúng tôi cam kết mang đến trải nghiệm kết nối giáo viên và học viên tốt nhất
             </p>
           </div>
 
@@ -218,7 +218,7 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
                 isDarkMode ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              Quy trình đặt phòng đơn giản chỉ với 3 bước
+              Quy trình đăng ký lớp học đơn giản chỉ với 3 bước
             </p>
           </div>
 
@@ -298,7 +298,7 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
                 isDarkMode ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              Hàng nghìn khách hàng hài lòng đã sử dụng dịch vụ của chúng tôi
+              Hàng nghìn học viên và giáo viên hài lòng đã sử dụng nền tảng của chúng tôi
             </p>
           </div>
 

@@ -1,4 +1,8 @@
-import axios from "axios";
+import axios, {
+  AxiosError,
+  type AxiosRequestHeaders,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 export const AXIOS_AUTH_ERROR_EVENT = "axios-auth-error";
 
@@ -11,7 +15,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -22,13 +26,14 @@ api.interceptors.request.use(
       typeof FormData !== "undefined" && config.data instanceof FormData;
 
     if (config.headers) {
+      const headers: AxiosRequestHeaders = config.headers;
       if (isFormData) {
         // Browser sẽ tự set multipart/form-data; boundary=...
-        delete (config.headers as any)["Content-Type"];
-        delete (config.headers as any)["content-type"];
+        delete headers["Content-Type"];
+        delete headers["content-type"];
       } else {
         // Các request JSON thông thường
-        (config.headers as any)["Content-Type"] = "application/json";
+        headers["Content-Type"] = "application/json";
       }
     }
 
@@ -86,13 +91,14 @@ api.interceptors.response.use(
 
       // FIX CHÍNH: Dùng axios(originalRequest) thay vì api(...) để ép nó dùng header mới này
       return axios(originalRequest);
-    } catch (refreshError: any) {
-      console.log("❌ REFRESH TOKEN FAIL:", refreshError.response?.status);
-      console.log("❌ REFRESH RESPONSE:", refreshError.response?.data);
+    } catch (refreshError) {
+      const axiosError = refreshError as AxiosError;
+      console.log("❌ REFRESH TOKEN FAIL:", axiosError.response?.status);
+      console.log("❌ REFRESH RESPONSE:", axiosError.response?.data);
 
       if (
-        refreshError.response?.status === 401 ||
-        refreshError.response?.status === 400
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 400
       ) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");

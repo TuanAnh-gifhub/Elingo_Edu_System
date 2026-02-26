@@ -46,9 +46,11 @@ spring:
 
 
 server:
-  port: ${SERVER_PORT}
+  # Dùng 8080 mặc định khi chạy local nếu SERVER_PORT chưa được set
+  port: ${SERVER_PORT:8080}
   servlet:
-    context-path: ${SERVER_SERVLET_CONTEXT_PATH}
+    # Mặc định context-path là "/" nếu SERVER_SERVLET_CONTEXT_PATH chưa được set
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/}
 
   tomcat:
     max-swallow-size: -1
@@ -58,9 +60,10 @@ cors:
   urls: ${CORS_URL}
 
 jwt:
-  secret-key: ${JWT_SECRET_KEY}
-  access-expiration: ${JWT_ACCESS_EXPIRATION}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+  # Nếu không có biến môi trường, dùng giá trị mặc định để chạy local
+  secret-key: ${JWT_SECRET_KEY:YXQtYmFzZTY0LXNpbXBsZS1zZWNyZXQtdGVzdC1rZXktMzJi}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000}       # 15 phút
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 ngày
 
 app:
   cookie:
@@ -71,17 +74,5 @@ google:
     id: ${GOOGLE_ID}
     secret: ${GOOGLE_SECRET}
     uri: ${GOOGLE_URI}
-
-sepay:
-  base-url: https://pgapi-sandbox.sepay.vn
-  merchant-id: your_merchant_id
-  secret-key: your_secret_key
-  webhook-path: /api/sepay/webhook
-
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
-  folder: ${CLOUDINARY_FOLDER:springboot_uploads}
 
 token_reset_password_expire_seconds: 900

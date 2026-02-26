@@ -7,7 +7,6 @@ import org.rent.room.be.base.BaseEntity;
 import org.rent.room.be.constant.AuthProvider;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -57,22 +56,4 @@ public class User extends BaseEntity {
 
     @Column(name = "is_active")
     boolean active;
-
-    @OneToMany(mappedBy = "recipient", fetch = FetchType.LAZY)
-    List<Notification> notifications;
-
-    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Conversation> conversation;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    List<Subscription> subscriptions;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    List<Payment> payments;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    Wallet wallet;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    List<Report> reports;
 }

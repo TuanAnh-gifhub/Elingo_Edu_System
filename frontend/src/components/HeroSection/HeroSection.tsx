@@ -9,14 +9,13 @@ import introLandingVideo from "../../assets/intro_landing_page.mp4";
 const CITIES = ["Tp Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Cần Thơ"] as const;
 
 const ROOM_TYPES = [
-  "Tất cả Phòng học",
-  "Phòng học",
-  "Phòng lab",
-  "Phòng nhóm",
-  "Phòng thuyết trình",
-  "Thư viện",
-  "Phòng thí nghiệm",
-  "Phòng họp",
+  "Tất cả lớp học",
+  "Lớp học 1-1",
+  "Lớp học nhóm",
+  "Lớp kỹ năng / workshop",
+  "Lớp ngoại ngữ",
+  "Lớp luyện thi",
+  "Lớp trực tuyến",
 ] as const;
 
 const HeroSection = () => {
@@ -273,7 +272,7 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        EduRoom
+       Elingo
       </motion.h1>
       <motion.p 
         className="text-lg md:text-xl mb-1 md:mb-1.5 font-medium drop-shadow-md text-center"
@@ -281,7 +280,7 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        Nền tảng cho thuê phòng học hàng đầu
+        Nền tảng kết nối giáo viên mở lớp học trực tiếp
       </motion.p>
       <motion.p 
         className="text-base md:text-lg opacity-95 drop-shadow-md text-center"
@@ -289,7 +288,7 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
       >
-        Tìm phòng học phù hợp cho mọi nhu cầu học tập
+        Quản lý và học tập dễ dàng, phù hợp mọi nhu cầu
       </motion.p>
 
       {/* Search bar: từ khóa + địa điểm + ngày nhận/trả (1 khung) + loại phòng + nút tìm */}
@@ -308,7 +307,7 @@ const HeroSection = () => {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Tìm phòng học..."
+              placeholder="Tìm giáo viên, lớp học trực tiếp..."
               className="w-full bg-transparent outline-none text-sm md:text-base placeholder:text-gray-400"
             />
           </div>
@@ -316,7 +315,7 @@ const HeroSection = () => {
           {/* Divider */}
           <div className="hidden md:block w-px bg-gray-200" />
 
-          {/* Địa điểm */}
+          {/* Khu vực / Địa điểm */}
           <div
             ref={cityRef}
             className="relative flex items-center gap-2 bg-white rounded-2xl px-3 py-2 border border-gray-200 flex-1 lg:flex-none lg:w-52 cursor-pointer hover:border-[#4da6ff] transition-colors"
@@ -325,7 +324,7 @@ const HeroSection = () => {
             <FiMapPin className="text-yellow-500 w-4 h-4 shrink-0" />
             <div className="flex flex-col flex-1">
               <span className="text-[11px] md:text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Địa điểm
+                Khu vực học
               </span>
               <span className="text-xs md:text-sm text-gray-800">
                 {city}
@@ -361,7 +360,7 @@ const HeroSection = () => {
             )}
           </div>
 
-          {/* Ngày nhận / trả phòng - trong 1 khung */}
+          {/* Thời gian học - trong 1 khung */}
           <div
             ref={dateRef}
             className="relative flex items-center gap-2 bg-white rounded-2xl px-3 py-2 border border-gray-200 flex-1 lg:flex-none lg:w-52 cursor-pointer hover:border-[#4da6ff] transition-colors"
@@ -370,7 +369,7 @@ const HeroSection = () => {
             <FiCalendar className="text-yellow-500 w-4 h-4 shrink-0" />
             <div className="flex flex-col">
               <span className="text-[11px] md:text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Nhận - Trả phòng
+                Thời gian học
               </span>
               <span className="text-xs md:text-sm text-gray-800">
                 {formatDateRangeLabel()}
@@ -474,13 +473,13 @@ const HeroSection = () => {
                     <div className="text-[10px] text-gray-700 space-y-0.5">
                       {checkIn && (
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">Ngày nhận:</span>
+                          <span className="font-semibold">Bắt đầu học từ:</span>
                           <span>{new Date(checkIn).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                         </div>
                       )}
                       {checkOut && (
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">Ngày trả:</span>
+                          <span className="font-semibold">Học đến hết:</span>
                           <span>{new Date(checkOut).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                         </div>
                       )}
@@ -534,7 +533,7 @@ const HeroSection = () => {
             )}
           </div>
 
-          {/* Loại phòng */}
+          {/* Loại lớp học */}
           <div
             ref={roomTypeRef}
             className="relative flex items-center gap-2 bg-white rounded-2xl px-3 py-2 border border-gray-200 flex-1 lg:flex-none lg:w-52 cursor-pointer hover:border-[#4da6ff] transition-colors"
@@ -543,7 +542,7 @@ const HeroSection = () => {
             <FaChalkboardTeacher className="text-yellow-500 w-4 h-4 shrink-0" />
             <div className="flex flex-col flex-1">
               <span className="text-[11px] md:text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Loại phòng
+                Loại lớp học
               </span>
               <span className="text-xs md:text-sm text-gray-800">
                 {roomType}
@@ -590,7 +589,7 @@ const HeroSection = () => {
             onClick={handleSearch}
             className="w-full md:w-auto md:min-w-[130px] h-11 md:h-12 rounded-2xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-sm md:text-base flex items-center justify-center shadow-md hover:shadow-lg transition-all"
           >
-            Tìm phòng
+            Tìm lớp học
           </button>
         </div>
       </motion.div>
@@ -603,13 +602,12 @@ const HeroSection = () => {
         transition={{ duration: 0.6, delay: 0.45 }}
       >
         {[
-          "Phòng học",
-          "Phòng lab",
-          "Phòng nhóm",
-          "Phòng thuyết trình",
-          "Thư viện",
-          "Phòng thí nghiệm",
-          "Phòng họp",
+          "Lớp học 1-1",
+          "Lớp học nhóm",
+          "Lớp kỹ năng / workshop",
+          "Lớp ngoại ngữ",
+          "Lớp luyện thi",
+          "Lớp trực tuyến",
         ].map((label) => (
           <button
             key={label}

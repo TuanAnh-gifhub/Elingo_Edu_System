@@ -13,6 +13,4 @@ public interface EmailService {
     CreateUsersRequest verifyAndGetPendingUser(String email, String otp);
 
     void deletePendingUser(String email);
-
-    void sendEmailToReporter(String userName, String reporterEmail, String content);
 }

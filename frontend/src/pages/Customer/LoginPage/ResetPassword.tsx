@@ -21,7 +21,12 @@ const ResetPassword = () => {
     }
   }, [token]);
 
-  const onFinish = async (values: any) => {
+  type ResetPasswordFormValues = {
+    password: string;
+    confirmPassword: string;
+  };
+
+  const onFinish = async (values: ResetPasswordFormValues) => {
     setApiError("");
     setSuccessMsg("");
     setIsLoading(true);
@@ -38,11 +43,26 @@ const ResetPassword = () => {
 
         setTimeout(() => navigate("/"), 2000);
       }
-    } catch (err: any) {
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        "Đã có lỗi xảy ra.";
+    } catch (err: unknown) {
+      let errorMsg = "Đã có lỗi xảy ra.";
+
+      if (typeof err === "object" && err !== null && "response" in err) {
+        type ErrorResponseData = { message?: string } | string;
+        const errorWithResponse = err as {
+          response?: { data?: ErrorResponseData };
+        };
+        const data = errorWithResponse.response?.data;
+
+        if (typeof data === "string") {
+          errorMsg = data;
+        } else if (data && typeof data === "object" && "message" in data) {
+          const messageFromData = (data as { message?: string }).message;
+          if (messageFromData) {
+            errorMsg = messageFromData;
+          }
+        }
+      }
+
       setApiError(errorMsg);
     } finally {
       setIsLoading(false);
@@ -75,7 +95,7 @@ const ResetPassword = () => {
           >
             Đặt lại mật khẩu
           </Title>
-          <Text type="secondary" style={{ fontSize: "13px" }}>
+          <Text type="secondary" style={{ fontSize: "14px" }}>
             Nhập mật khẩu mới cho tài khoản của bạn.
           </Text>
         </div>
@@ -105,9 +125,7 @@ const ResetPassword = () => {
           size="large"
           requiredMark={false} // Tắt dấu sao đỏ mặc định nếu muốn form sạch hơn (tuỳ chọn)
         >
-          {/* Mật khẩu mới - Giảm khoảng cách xuống 12px */}
           <Form.Item
-            label={<span style={styles.label}>Mật khẩu mới</span>}
             name="password"
             style={{ marginBottom: 12 }} // <--- CHỈNH Ở ĐÂY
             rules={[
@@ -115,12 +133,19 @@ const ResetPassword = () => {
               { min: 6, message: "Mật khẩu tối thiểu 6 ký tự." },
             ]}
           >
-            <Input.Password placeholder="••••••" style={styles.input} />
+            <div className="relative group">
+              <Input.Password
+                placeholder=" "
+                style={styles.input}
+                className="w-full !rounded-lg !border !border-gray-300 !bg-gray-100 focus-within:!border-blue-600 focus-within:!bg-white focus-within:shadow-[0_0_0_1px_#2563eb] transition-all duration-150"
+              />
+              <label className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 group-focus-within:top-0 group-focus-within:-translate-y-1/2 group-focus-within:text-[0.65rem] group-focus-within:text-blue-700 group-focus-within:font-semibold group-focus-within:border-t group-focus-within:border-blue-600 group-has-[input:not(:placeholder-shown)]:top-0 group-has-[input:not(:placeholder-shown)]:-translate-y-1/2 group-has-[input:not(:placeholder-shown)]:text-[0.65rem] group-has-[input:not(:placeholder-shown)]:text-blue-700 group-has-[input:not(:placeholder-shown)]:font-semibold">
+                Mật khẩu mới
+              </label>
+            </div>
           </Form.Item>
 
-          {/* Xác nhận mật khẩu - Giảm khoảng cách xuống 15px (để cách nút một chút) */}
           <Form.Item
-            label={<span style={styles.label}>Xác nhận mật khẩu</span>}
             name="confirmPassword"
             dependencies={["password"]}
             style={{ marginBottom: 20 }} // <--- CHỈNH Ở ĐÂY
@@ -136,7 +161,16 @@ const ResetPassword = () => {
               }),
             ]}
           >
-            <Input.Password placeholder="••••••" style={styles.input} />
+            <div className="relative group">
+              <Input.Password
+                placeholder=" "
+                style={styles.input}
+                className="w-full !rounded-lg !border !border-gray-300 !bg-gray-100 focus-within:!border-blue-600 focus-within:!bg-white focus-within:shadow-[0_0_0_1px_#2563eb] transition-all duration-150"
+              />
+              <label className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 group-focus-within:top-0 group-focus-within:-translate-y-1/2 group-focus-within:text-[0.65rem] group-focus-within:text-blue-700 group-focus-within:font-semibold group-focus-within:border-t group-focus-within:border-blue-600 group-has-[input:not(:placeholder-shown)]:top-0 group-has-[input:not(:placeholder-shown)]:-translate-y-1/2 group-has-[input:not(:placeholder-shown)]:text-[0.65rem] group-has-[input:not(:placeholder-shown)]:text-blue-700 group-has-[input:not(:placeholder-shown)]:font-semibold">
+                Xác nhận mật khẩu
+              </label>
+            </div>
           </Form.Item>
 
           {/* Nút Submit */}
@@ -179,11 +213,11 @@ const styles = {
   label: {
     fontWeight: 600,
     color: "#374151",
-    fontSize: "13px", // Giảm size chữ label 1 chút cho tinh tế
+    fontSize: "14px", // Tăng size chữ label
   },
   input: {
     borderRadius: "8px",
-    fontSize: "14px", // Chữ trong input vừa phải
+    fontSize: "15px", // Tăng chữ trong input
   },
   button: {
     backgroundColor: "#2563EB",
@@ -191,7 +225,7 @@ const styles = {
     borderRadius: "30px",
     height: "42px", // Giảm chiều cao nút 1 xíu
     fontWeight: 600,
-    fontSize: "15px",
+    fontSize: "16px", // Tăng size chữ button
     boxShadow: "0 2px 4px rgba(37, 99, 235, 0.2)",
   },
 };

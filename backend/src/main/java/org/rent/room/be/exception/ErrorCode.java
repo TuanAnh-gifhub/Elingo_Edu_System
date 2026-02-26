@@ -27,17 +27,6 @@ public enum ErrorCode {
     //Role
     ROLE_NOT_FOUND(3001,"Role not found", HttpStatus.NOT_FOUND),
 
-    // Page Errors
-    INVALID_PAGINATION(4001,"Invalid pagination parameters",HttpStatus.BAD_REQUEST),
-
-    // Package Errors
-    RENTPACKAGE_NOT_FOUND(4001, "Package not found", HttpStatus.NOT_FOUND),
-    INVALID_RENTPACKAGE(4002, "Invalid package data", HttpStatus.BAD_REQUEST),
-
-    //Rental Area
-    RENTAL_AREA_NOT_FOUND(4001, "Rental area not found", HttpStatus.NOT_FOUND),
-
-
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung
     ;

@@ -17,8 +17,8 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 
 # Copy folder đã build từ Stage 1 sang Nginx
-# LƯU Ý: Nếu project bạn dùng Vite, hãy sửa '/app/build' thành '/app/dist'
-COPY --from=builder /app/dist
+# Với Vite, thư mục output mặc định là 'dist'
+COPY --from=builder /app/dist .
 
 EXPOSE 80
 

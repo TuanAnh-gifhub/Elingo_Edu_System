@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useState } from "react";
 import { message } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,20 +14,50 @@ import authService, {
 } from "../../../services/auth/authService";
 import loginIntroVideo from "../../../assets/login_intro_video.mp4";
 
-interface RegisterPageProps {
+export interface RegisterPageProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToLogin: () => void;
 }
 
-type RegisterFormValues = {
+export type RegisterFormValues = {
   userName: string;
   email: string;
   password: string;
   confirmPassword: string;
   phone?: string;
-  gender: "MALE" | "FEMALE";
+  // Cho phép "" để LoginPage có thể dùng cùng type (ban đầu chưa chọn giới tính)
+  gender: "" | "MALE" | "FEMALE";
   dateOfBirth: string;
+};
+
+// Hàm validate dùng chung cho cả RegisterPage và LoginPage
+export const validateRegisterFormValues = (
+  values: RegisterFormValues,
+): string | null => {
+  if (!values.userName.trim()) return "Vui lòng nhập họ và tên.";
+  if (!values.email.trim()) return "Vui lòng nhập email.";
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(values.email)) return "Email không hợp lệ.";
+
+  if (values.phone && !/^0\d{9,10}$/.test(values.phone)) {
+    return "Số điện thoại không hợp lệ.";
+  }
+
+  if (!values.dateOfBirth) return "Vui lòng chọn ngày sinh.";
+  if (!values.gender) return "Vui lòng chọn giới tính.";
+
+  if (!values.password) return "Vui lòng nhập mật khẩu.";
+  if (values.password.length < 8) {
+    return "Mật khẩu tối thiểu 8 ký tự.";
+  }
+
+  if (!values.confirmPassword) return "Vui lòng nhập lại mật khẩu.";
+  if (values.password !== values.confirmPassword) {
+    return "Mật khẩu nhập lại không khớp.";
+  }
+
+  return null;
 };
 
 const RegisterPage: React.FC<RegisterPageProps> = ({
@@ -55,31 +86,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
         setFormValues((prev) => ({ ...prev, [field]: value }));
       };
 
-  const validateForm = (): string | null => {
-    if (!formValues.userName.trim()) return "Vui lòng nhập họ và tên.";
-    if (!formValues.email.trim()) return "Vui lòng nhập email.";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formValues.email)) return "Email không hợp lệ.";
-
-    if (formValues.phone && !/^0\d{9,10}$/.test(formValues.phone)) {
-      return "Số điện thoại không hợp lệ.";
-    }
-
-    if (!formValues.dateOfBirth) return "Vui lòng chọn ngày sinh.";
-    if (!formValues.gender) return "Vui lòng chọn giới tính.";
-
-    if (!formValues.password) return "Vui lòng nhập mật khẩu.";
-    if (formValues.password.length < 8) {
-      return "Mật khẩu tối thiểu 8 ký tự.";
-    }
-
-    if (!formValues.confirmPassword) return "Vui lòng nhập lại mật khẩu.";
-    if (formValues.password !== formValues.confirmPassword) {
-      return "Mật khẩu nhập lại không khớp.";
-    }
-
-    return null;
-  };
+  const validateForm = (): string | null => validateRegisterFormValues(formValues);
 
   const resetStates = () => {
     setErrorMessage("");
@@ -205,9 +212,9 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 
             {/* Thông tin thương hiệu trên video */}
             <div className="absolute bottom-4 right-4 text-white hidden md:block text-right">
-              <div className="text-lg font-semibold">Elingo</div>
+              <div className="text-lg font-semibold">EduRoom</div>
               <div className="text-sm text-white/90">
-                Nền tảng kết nối giáo viên mở lớp học trực tiếp, quản lý và học tập dễ dàng.
+                Đăng ký ngay để bắt đầu.
               </div>
             </div>
 
@@ -287,7 +294,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
                             placeholder=" "
                             className="peer w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-900 text-sm pl-8 pr-3 pt-3.5 pb-1.5 transition-all duration-150 focus:outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_1px_#2563eb]"
                             disabled={loading}
-                            pattern="^0\\d{9,10}$"
+                            pattern="^0\d{9,10}$"
                           />
                           <label className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 px-1 text-sm text-gray-600 z-10 transition-all duration-150 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-[0.65rem] peer-focus:text-blue-700 peer-focus:font-semibold peer-focus:border-t peer-focus:border-blue-600 peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-[0.65rem] peer-[&:not(:placeholder-shown)]:text-blue-700 peer-[&:not(:placeholder-shown)]:font-semibold">
                             SĐT

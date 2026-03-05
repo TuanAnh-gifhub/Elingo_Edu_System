@@ -22,7 +22,7 @@ services:
       - "5433:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: code2lazy
       POSTGRES_DB: elingo_edu_db
     volumes:
       - postgres_data:/var/lib/postgresql/data

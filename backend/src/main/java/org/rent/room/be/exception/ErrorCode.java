@@ -24,6 +24,17 @@ public enum ErrorCode {
     USER_NOT_AUTHENTICATED(2003,"User not authenticated", HttpStatus.UNAUTHORIZED),
     EMAIL_NOT_FOUND(2004,"Email not found", HttpStatus.NOT_FOUND),
 
+    //ClassRoom
+    CLASS_NOT_FOUND(4001,"Class not found", HttpStatus.NOT_FOUND),
+
+    //Course
+    COURSE_NOT_FOUND(4002,"Course not found", HttpStatus.NOT_FOUND),
+    FILE_NOT_FOUND(4003,"File not found in course", HttpStatus.NOT_FOUND),
+    FILE_DOWNLOAD_ERROR(4004,"Error downloading file", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    //Post
+    POST_NOT_FOUND(5001,"Post not found", HttpStatus.NOT_FOUND),
+
     //Role
     ROLE_NOT_FOUND(3001,"Role not found", HttpStatus.NOT_FOUND),
 

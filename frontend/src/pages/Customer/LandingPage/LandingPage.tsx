@@ -7,9 +7,13 @@ import ParallaxBackground from "./ParallaxBackground";
 import HeroSection from "../../../components/HeroSection/HeroSection";
 import { FaStar } from "react-icons/fa";
 import ScrambleText from "../../../components/Header/ScrambleText";
-import RoomCard, { TEMPLATE_ROOMS } from "./RoomCard";
+import RoomCard from "./RoomCard";
 import Footer from "../../../components/Footer/Footer";
 import AboutUs from "../AboutUs/AboutUs";
+import {
+  classRoomService,
+  type ClassRoomDto,
+} from "../../../services/classes/classRoomService";
 
 const useScrollspy = () => ({ setActiveSection: (_section: string) => { void _section; } });
 
@@ -51,6 +55,7 @@ interface Room {
   description?: string;
   price: number;
   location: string;
+  capacity?: string;
   timeAgo?: string;
   products?: Array<{ name: string; price: number }>;
   name: string;
@@ -61,6 +66,10 @@ interface Room {
   reviewCount?: number;
   currentListings?: number;
   soldItems?: number;
+  feature?: {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+  };
 }
 
 interface RoomCategory {
@@ -251,34 +260,31 @@ const LandingPage = () => {
         setLoading(true);
         setError(null);
 
-        const response = {
-          success: true,
-          data: [] as Listing[]
-        };
+        const page = await classRoomService.getClasses(1, 8);
+        const data = (page.data || []) as ClassRoomDto[];
 
-        if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
-          const listings = response.data as Listing[];
+        const mappedRooms: Room[] = data.map((c) => ({
+          id: c.classId,
+          title: c.className,
+          description: c.description,
+          price: Number(c.price || 0),
+          location: c.schedule || "Lớp học trực tuyến",
+          capacity: `${c.currentStudents ?? 0}-${c.maxStudents ?? 0} học viên`,
+          name: c.className,
+          image: c.poster || null,
+          products: [],
+        }));
 
-          const transformedRooms = listings
-            .map(transformListingToRoom)
-            .filter((item): item is Room => item !== null);
-
-          setRooms(transformedRooms);
-          setTotalItems(transformedRooms.length);
-          setStores(transformedRooms);
-          setFeaturedStores(transformedRooms);
-
-        } else {
-          console.log('ℹ️ No listings data - showing template with empty state');
-          setRooms([]);
-          setTotalItems(0);
-          setStores([]);
-          setFeaturedStores([]);
-        }
+        setRooms(mappedRooms);
+        setStores(mappedRooms);
+        setFeaturedStores(mappedRooms);
+        setTotalItems(data.length);
       } catch (error) {
-        console.error("❌ LandingPage - Error fetching rooms:", error);
-        setError("Không thể tải danh sách phòng học");
+        console.error("❌ LandingPage - Error fetching classes:", error);
+        setError("Không thể tải danh sách lớp học");
         setRooms([]);
+        setStores([]);
+        setFeaturedStores([]);
         setTotalItems(0);
       } finally {
         setLoading(false);
@@ -520,28 +526,18 @@ const LandingPage = () => {
 
                   {(() => {
                     const room = rooms[latestListingsStart];
-                    const template = TEMPLATE_ROOMS[0];
-                    if (!room && rooms.length === 0) {
-                      return (
-                        <RoomCard
-                          key={template.id}
-                          {...template}
-                          variant="large"
-                          showOverlay={true}
-                        />
-                      );
-                    }
+                    if (!room) return null;
                     return (
                       <RoomCard
-                        key={room?.id || template.id}
-                        id={room?.id || template.id}
-                        listingId={room?.listingId}
-                        title={room?.title || template.title}
-                        location={room?.location || template.location}
-                        capacity={template.capacity}
-                        price={room ? Math.round(room.price / 23000) : template.price}
+                        key={room.id}
+                        id={room.id}
+                        listingId={room.listingId}
+                        title={room.title}
+                        location={room.location}
+                        capacity={room.capacity || "Lớp học"}
+                        price={room.price}
                         image={room?.image}
-                        feature={template.feature}
+                        feature={room.feature}
                         variant="large"
                         showOverlay={true}
                       />
@@ -554,27 +550,18 @@ const LandingPage = () => {
                   {/* Wide card on top */}
                   {(() => {
                     const room = rooms[latestListingsStart + 1];
-                    const template = TEMPLATE_ROOMS[1];
-                    if (!room && rooms.length === 0) {
-                      return (
-                        <RoomCard
-                          key={template.id}
-                          {...template}
-                          variant="wide"
-                        />
-                      );
-                    }
+                    if (!room) return null;
                     return (
                       <RoomCard
-                        key={room?.id || template.id}
-                        id={room?.id || template.id}
-                        listingId={room?.listingId}
-                        title={room?.title || template.title}
-                        location={room?.location || template.location}
-                        capacity={template.capacity}
-                        price={room ? Math.round(room.price / 23000) : template.price}
+                        key={room.id}
+                        id={room.id}
+                        listingId={room.listingId}
+                        title={room.title}
+                        location={room.location}
+                        capacity={room.capacity || "Lớp học"}
+                        price={room.price}
                         image={room?.image}
-                        feature={template.feature}
+                        feature={room.feature}
                         variant="wide"
                       />
                     );
@@ -583,31 +570,19 @@ const LandingPage = () => {
                   {/* 2 small cards below in grid */}
                   <div className="grid grid-cols-2 gap-5">
                     {[2, 3].map((offset) => {
-                      const roomIndex = latestListingsStart + offset;
-                      const room = rooms[roomIndex];
-                      const templateIndex = offset;
-                      const template = TEMPLATE_ROOMS[templateIndex] || TEMPLATE_ROOMS[0];
-
-                      if (!room && rooms.length === 0) {
-                        return (
-                          <RoomCard
-                            key={template.id}
-                            {...template}
-                            variant="compact"
-                          />
-                        );
-                      }
+                      const room = rooms[latestListingsStart + offset];
+                      if (!room) return null;
                       return (
                         <RoomCard
-                          key={room?.id || template.id}
-                          id={room?.id || template.id}
-                          listingId={room?.listingId}
-                          title={room?.title || template.title}
-                          location={room?.location || template.location}
-                          capacity={template.capacity}
-                          price={room ? Math.round(room.price / 23000) : template.price}
+                          key={room.id}
+                          id={room.id}
+                          listingId={room.listingId}
+                          title={room.title}
+                          location={room.location}
+                          capacity={room.capacity || "Lớp học"}
+                          price={room.price}
                           image={room?.image}
-                          feature={template.feature}
+                          feature={room.feature}
                           variant="compact"
                         />
                       );
@@ -695,19 +670,7 @@ const LandingPage = () => {
                 ))}
               </div>
             </div>
-          ) : rooms.length === 0 ? (
-            // Show template rooms when no data
-            <div className="mb-8 w-full relative flex items-center">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full px-0">
-                {TEMPLATE_ROOMS.slice(0, 4).map((room) => (
-                  <RoomCard
-                    key={room.id}
-                    {...room}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
+          ) : rooms.length > 0 ? (
             <div className="mb-8 w-full relative flex items-center">
               <button
                 className={`hidden lg:block absolute left-0 z-10 rounded-full shadow p-2 -ml-6 border hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:scale-100 transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-gray-700 disabled:hover:text-gray-400' : 'bg-white border-[#4da6ff] hover:bg-[#4da6ff] hover:text-white disabled:hover:bg-white disabled:hover:text-gray-400'}`}
@@ -749,7 +712,7 @@ const LandingPage = () => {
                 </svg>
               </button>
             </div>
-          )}
+          ) : null}
 
           <div className="flex justify-center mt-4 mb-8">
             <Link

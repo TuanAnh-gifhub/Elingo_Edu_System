@@ -31,7 +31,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedUsers() {
         Role adminRole = createRoleIfNotExist("ADMIN", "Quản trị hệ thống");
-        Role ownerRole = createRoleIfNotExist("TECHER", "Giáo viên");
+        Role ownerRole = createRoleIfNotExist("TEACHER", "Giáo viên");
         Role renterRole = createRoleIfNotExist("STUDENT", "Học sinh");
 
         if (userRepository.count() > 0) return;

@@ -1,0 +1,112 @@
+import axios, {
+  AxiosError,
+  type AxiosRequestHeaders,
+  type InternalAxiosRequestConfig,
+} from "axios";
+
+export const AXIOS_AUTH_ERROR_EVENT = "axios-auth-error";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  // ❌ KHÔNG set Content-Type mặc định ở đây
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
+});
+
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    // ✅ FIX multipart: nếu là FormData thì KHÔNG ép Content-Type
+    const isFormData =
+      typeof FormData !== "undefined" && config.data instanceof FormData;
+
+    if (config.headers) {
+      const headers: AxiosRequestHeaders = config.headers;
+      if (isFormData) {
+        // Browser sẽ tự set multipart/form-data; boundary=...
+        delete headers["Content-Type"];
+        delete headers["content-type"];
+      } else {
+        // Các request JSON thông thường
+        headers["Content-Type"] = "application/json";
+      }
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
+
+    const url = originalRequest.url || "";
+    if (url.startsWith("/auth")) return Promise.reject(error);
+
+    // Nếu không phải 401 thì bỏ qua
+    if (error.response?.status !== 401) return Promise.reject(error);
+
+    // Tránh loop vô hạn
+    if (originalRequest._retry) return Promise.reject(error);
+    originalRequest._retry = true;
+
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) throw new Error("No refresh token");
+
+      // Gọi API refresh
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/refresh`,
+        null,
+        { headers: { Authorization: `Bearer ${refreshToken}` } },
+      );
+
+      const { accessToken, refreshToken: newRefreshToken } = res.data.result;
+
+      // Lưu token mới
+      localStorage.setItem("accessToken", accessToken);
+      if (newRefreshToken)
+        localStorage.setItem("refreshToken", newRefreshToken);
+
+      // FIX CHÍNH: Ép token mới vào header của request bị lỗi
+      originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
+      // ✅ FIX thêm: nếu request cũ là FormData thì không được ép JSON
+      const isFormData =
+        typeof FormData !== "undefined" &&
+        originalRequest.data instanceof FormData;
+
+      if (isFormData) {
+        delete originalRequest.headers["Content-Type"];
+        delete originalRequest.headers["content-type"];
+      }
+
+      // FIX CHÍNH: Dùng axios(originalRequest) thay vì api(...) để ép nó dùng header mới này
+      return axios(originalRequest);
+    } catch (refreshError) {
+      const axiosError = refreshError as AxiosError;
+      console.log("❌ REFRESH TOKEN FAIL:", axiosError.response?.status);
+      console.log("❌ REFRESH RESPONSE:", axiosError.response?.data);
+
+      if (
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 400
+      ) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.dispatchEvent(new CustomEvent(AXIOS_AUTH_ERROR_EVENT));
+      }
+      return Promise.reject(refreshError);
+    }
+  },
+);
+
+export default api;

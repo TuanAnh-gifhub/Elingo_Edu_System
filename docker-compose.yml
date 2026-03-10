@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  elingo-mongodb:
+    image: mongo:7
+    container_name: elingo-mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: elingo_edu_db
+    volumes:
+      - mongo_data:/data/db
+
+  elingo-postgres:
+    image: postgres:16-alpine
+    container_name: elingo-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: elingo_edu_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  mongo_data:
+  postgres_data:

@@ -14,7 +14,6 @@ import java.util.UUID;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class CreatePostRequest {
 
-    UUID userId;
     String content;
     List<String> images;
     List<String> videos;

@@ -17,10 +17,8 @@ import java.util.UUID;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class CreateCommentRequest {
 
-    @NotNull
     UUID postId;
 
-    UUID parentCommentId;
 
     @NotBlank
     @Size(min = 1, max = 2000)

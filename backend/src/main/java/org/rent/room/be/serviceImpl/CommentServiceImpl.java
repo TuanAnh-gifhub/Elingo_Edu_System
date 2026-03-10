@@ -31,54 +31,56 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponse createComment(CreateCommentRequest request, UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        Post post = postRepository.findByIdAndActiveTrue(request.getPostId()).orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+    public CommentResponse createComment(CreateCommentRequest request, String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        Comment parent = null;
-        if (request.getParentCommentId() != null) {
-            parent = commentRepository.findById(request.getParentCommentId())
-                    .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
+        Post post = null;
+        if (request.getPostId() != null) {
+            post = postRepository.findByIdAndActiveTrue(request.getPostId()).orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
         }
 
-        Comment comment = Comment.builder()
+        Comment.CommentBuilder commentBuilder = Comment.builder()
                 .author(user)
-                .post(post)
-                .parentComment(parent)
                 .content(request.getContent())
-                .images(request.getImages() != null ? request.getImages() : new java.util.ArrayList<>())
-                .videos(request.getVideos() != null ? request.getVideos() : new java.util.ArrayList<>())
+                .images(request.getImages() != null ? request.getImages().stream().filter(s -> !s.equals("string")).collect(java.util.stream.Collectors.toList()) : new java.util.ArrayList<>())
+                .videos(request.getVideos() != null ? request.getVideos().stream().filter(s -> !s.equals("string")).collect(java.util.stream.Collectors.toList()) : new java.util.ArrayList<>())
                 .active(true)
-                .likeCount(0)
-                .build();
+                .likeCount(0);
+
+        if (post != null) {
+            commentBuilder.post(post);
+        }
+
+        Comment comment = commentBuilder.build();
 
         Comment saved = commentRepository.save(comment);
 
-        // update post comment count
-        post.setCommentCount(post.getCommentCount() + 1);
-        postRepository.save(post);
+        if (post != null) {
+            // update post comment count
+            post.setCommentCount(post.getCommentCount() + 1);
+            postRepository.save(post);
+        }
 
         return commentMapper.toResponse(saved);
     }
 
     @Override
-    public List<CommentResponse> getCommentsByPost(UUID postId) {
-        Post post = postRepository.findByIdAndActiveTrue(postId).orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
-        List<Comment> comments = commentRepository.findByPostAndParentCommentIsNullAndActiveTrueOrderByCreatedAtAsc(post);
+    public List<CommentResponse> getAllComments() {
+        List<Comment> comments = commentRepository.findAllByParentCommentIsNullAndActiveTrueOrderByCreatedAtAsc();
         return commentMapper.toResponseList(comments);
     }
 
     @Override
     @Transactional
-    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, UUID userId) {
+    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, String email) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
         if (!comment.isActive()) {
             throw new AppException(ErrorCode.COMMENT_NOT_FOUND);
         }
 
-        if (!comment.getAuthor().getUserId().equals(userId)) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (!comment.getAuthor().getUserId().equals(user.getUserId())) {
             // allow admin - check role
-            User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
             boolean isAdmin = user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().getRoleName());
             if (!isAdmin) {
                 throw new AppException(ErrorCode.FORBIDDEN);
@@ -94,14 +96,14 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void deleteComment(UUID commentId, UUID userId) {
+    public void deleteComment(UUID commentId, String email) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
         if (!comment.isActive()) {
             throw new AppException(ErrorCode.COMMENT_NOT_FOUND);
         }
 
-        if (!comment.getAuthor().getUserId().equals(userId)) {
-            User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (!comment.getAuthor().getUserId().equals(user.getUserId())) {
             boolean isAdmin = user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().getRoleName());
             if (!isAdmin) {
                 throw new AppException(ErrorCode.FORBIDDEN);

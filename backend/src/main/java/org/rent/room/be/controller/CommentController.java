@@ -1,6 +1,7 @@
 package org.rent.room.be.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -11,10 +12,10 @@ import org.rent.room.be.dto.response.comment.CommentResponse;
 import org.rent.room.be.service.CommentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,15 +28,27 @@ public class CommentController {
 
     CommentService commentService;
 
+    private String getEmailFromAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalStateException("Authentication object is null. User might not be authenticated.");
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        } else if (principal instanceof String) {
+            return (String) principal;
+        }
+        throw new IllegalStateException("Unsupported principal type: " + principal.getClass().getName());
+    }
+
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
     @PostMapping
     public ResponseEntity<ApiResponse<CommentResponse>> createComment(
             @Valid @RequestBody CreateCommentRequest request,
-            Principal principal
+            Authentication authentication
     ) {
-        // assuming principal name contains userId (UUID string)
-        UUID userId = UUID.fromString(principal.getName());
-        CommentResponse response = commentService.createComment(request, userId);
+        String email = getEmailFromAuthentication(authentication);
+        CommentResponse response = commentService.createComment(request, email);
         return ResponseEntity.ok(
                 ApiResponse.<CommentResponse>builder()
                         .code(201)
@@ -46,28 +59,26 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CommentResponse>>> getCommentsByPost(
-            @RequestParam UUID postId
-    ) {
-        List<CommentResponse> responses = commentService.getCommentsByPost(postId);
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getAllComments() {
+        List<CommentResponse> responses = commentService.getAllComments();
         return ResponseEntity.ok(
                 ApiResponse.<List<CommentResponse>>builder()
                         .code(200)
-                        .message("Get comments successfully")
+                        .message("Get all comments successfully")
                         .result(responses)
                         .build()
         );
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PutMapping("/{commentId}")
     public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
             @PathVariable UUID commentId,
             @Valid @RequestBody UpdateCommentRequest request,
-            Principal principal
+            Authentication authentication
     ) {
-        UUID userId = UUID.fromString(principal.getName());
-        CommentResponse response = commentService.updateComment(commentId, request, userId);
+        String email = getEmailFromAuthentication(authentication);
+        CommentResponse response = commentService.updateComment(commentId, request, email);
         return ResponseEntity.ok(
                 ApiResponse.<CommentResponse>builder()
                         .code(200)
@@ -77,14 +88,14 @@ public class CommentController {
         );
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable UUID commentId,
-            Principal principal
+            Authentication authentication
     ) {
-        UUID userId = UUID.fromString(principal.getName());
-        commentService.deleteComment(commentId, userId);
+        String email = getEmailFromAuthentication(authentication);
+        commentService.deleteComment(commentId, email);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .code(200)

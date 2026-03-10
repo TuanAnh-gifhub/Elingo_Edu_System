@@ -9,10 +9,10 @@ import java.util.UUID;
 
 public interface PostService {
 
-    PostResponse createPost(CreatePostRequest request);
+    PostResponse createPost(CreatePostRequest request, String email);
 
     PostResponse getPost(UUID postId);
-
+//... existing code ...
     PageResponse<PostResponse> getPosts(int page, int size);
 
     PageResponse<PostResponse> getPostsByUser(UUID userId, int page, int size);

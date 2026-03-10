@@ -13,6 +13,8 @@ import AboutUs from "../pages/Customer/AboutUs/AboutUs";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
 import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
+import ClassListPage from "../pages/Customer/ClassRoom/ClassListPage";
+import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -79,6 +81,16 @@ export const router = createBrowserRouter([
         path: "about-us",
         element: <AboutUs />,
         handle: { breadcrumb: "Về chúng tôi" },
+      },
+      {
+        path: "classes",
+        element: <ClassListPage />,
+        handle: { breadcrumb: "Danh sách lớp học" },
+      },
+      {
+        path: "classes/:classId",
+        element: <ClassDetailPage />,
+        handle: { breadcrumb: "Chi tiết lớp học" },
       },
     ],
   },

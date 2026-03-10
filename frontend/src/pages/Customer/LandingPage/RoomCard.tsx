@@ -3,7 +3,7 @@ import { FaUsers, FaWifi, FaDesktop, FaLeaf, FaPalette, FaMicrophone, FaHeart, F
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-interface RoomCardProps {
+export interface RoomCardProps {
   id: string | number;
   title: string;
   location: string;
@@ -93,9 +93,8 @@ const RoomCard = ({
     if (onClick) {
       onClick();
     } else {
-      // Ưu tiên sử dụng listingId nếu có, nếu không thì dùng id
-      const navigateId = listingId || id;
-      navigate(`/product/${navigateId}`);
+      // Điều hướng đến trang chi tiết lớp học theo id lớp
+      navigate(`/classes/${id}`);
     }
   };
 

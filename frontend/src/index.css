@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #4da6ff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #0080ff;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Theme (used by Admin via body[data-theme]) */
+body[data-theme="light"] {
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+}
+
+body[data-theme="dark"] {
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+}
+
+/*
+  Ant Design's `.ant-layout-header` background can override Tailwind classes depending on CSS load order.
+  Force Admin header colors to follow the current theme.
+*/
+body[data-theme="light"] .admin-header {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+body[data-theme="dark"] .admin-header {
+  background-color: #1e3a8a !important; /* blue-900 */
+  color: #ffffff !important;
+  border-color: #1e40af !important; /* blue-800 */
+}
+
+/* Same issue for Ant Design Sider: it sets a default dark background. Force it per theme. */
+body[data-theme="light"] .admin-sider,
+body[data-theme="light"] .admin-sider .ant-layout-sider-children {
+  background-color: #ffffff !important;
+}
+
+body[data-theme="dark"] .admin-sider,
+body[data-theme="dark"] .admin-sider .ant-layout-sider-children {
+  background-color: #1e3a8a !important; /* blue-900 */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Removed global h1 styles to allow Tailwind CSS classes to work properly */
+/* h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+} */
+
+/* Removed global button styles to allow Tailwind CSS classes to work properly */
+/* If you need default button styles, use Tailwind utility classes instead */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #66b3ff;
+  }
+}
+
+/* Ẩn placeholder mm/dd/yyyy của input type="date" khi chưa chọn ngày */
+.date-input::-webkit-datetime-edit {
+  color: #111827; /* text-gray-900 */
+}
+
+.date-input:not(:focus):invalid::-webkit-datetime-edit {
+  color: transparent;
+}

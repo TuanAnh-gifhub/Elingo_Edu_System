@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: BE
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  mongodb:
+    uri: ${SPRING_DATA_MONGODB_URI}
+    auto-index-creation: true
+
+
+
+server:
+  # Dùng 8080 mặc định khi chạy local nếu SERVER_PORT chưa được set
+  port: ${SERVER_PORT:8080}
+  servlet:
+    # Mặc định context-path là "/" nếu SERVER_SERVLET_CONTEXT_PATH chưa được set
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/}
+
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
+
+cors:
+  urls: ${CORS_URL}
+
+jwt:
+  # Nếu không có biến môi trường, dùng giá trị mặc định để chạy local
+  secret-key: ${JWT_SECRET_KEY:YXQtYmFzZTY0LXNpbXBsZS1zZWNyZXQtdGVzdC1rZXktMzJi}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000}       # 15 phút
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 ngày
+
+app:
+  cookie:
+    secure: false
+
+google:
+  client:
+    id: ${GOOGLE_ID}
+    secret: ${GOOGLE_SECRET}
+    uri: ${GOOGLE_URI}
+
+token_reset_password_expire_seconds: 900
+
+payos:
+  client-id: ${PAYOS_CLIENT_ID:}
+  api-key: ${PAYOS_API_KEY:}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:}
+  base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/deposit-result}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/deposit-result}

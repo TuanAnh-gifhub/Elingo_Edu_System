@@ -1,5 +1,6 @@
 package org.rent.room.be.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.payment.CheckoutRequest;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
+@Tag(name = "7. Payment")
 public class PaymentController {
     @Autowired
     private PaymentService paymentService;

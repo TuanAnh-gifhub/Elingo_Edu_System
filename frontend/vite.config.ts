@@ -11,11 +11,14 @@ export default defineConfig({
       transform(_code, id) {
         // Bỏ qua các file CSS từ node_modules khỏi PostCSS processing
         if (id.includes('node_modules') && id.endsWith('.css')) {
-          return null;
+          return null
         }
       },
     },
   ],
+  define: {
+    global: 'window',
+  },
   resolve: {
     alias: {},
   },
@@ -23,6 +26,6 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   optimizeDeps: {
-    include: ['antd', '@ant-design/icons'],
+    include: ['antd', '@ant-design/icons', 'sockjs-client', 'stompjs'],
   },
 })

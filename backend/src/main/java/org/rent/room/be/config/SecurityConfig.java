@@ -41,6 +41,7 @@ public class SecurityConfig {
             "/posts/**",
             "/courses",
             "/courses/**",
+            "/api/v1/files/**"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;

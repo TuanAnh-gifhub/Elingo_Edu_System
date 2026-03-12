@@ -64,9 +64,10 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toResponse(saved);
     }
 
+
     @Override
-    public List<CommentResponse> getAllComments() {
-        List<Comment> comments = commentRepository.findAllByParentCommentIsNullAndActiveTrueOrderByCreatedAtAsc();
+    public List<CommentResponse> getAllCommentsByPostId(UUID postId) {
+        List<Comment> comments = commentRepository.findAllByPostPostIdAndParentCommentIsNullAndActiveTrueOrderByCreatedAtAsc(postId);
         return commentMapper.toResponseList(comments);
     }
 

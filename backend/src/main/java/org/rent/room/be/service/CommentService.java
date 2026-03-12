@@ -12,10 +12,10 @@ public interface CommentService {
 
     CommentResponse createComment(CreateCommentRequest request, String email);
 
-    List<CommentResponse> getAllComments();
+
+    List<CommentResponse> getAllCommentsByPostId(UUID postId);
 
     CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, String email);
 
     void deleteComment(UUID commentId, String email);
 }
-

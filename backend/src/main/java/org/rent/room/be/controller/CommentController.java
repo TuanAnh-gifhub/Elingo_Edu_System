@@ -59,8 +59,8 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CommentResponse>>> getAllComments() {
-        List<CommentResponse> responses = commentService.getAllComments();
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getAllComments(@RequestParam UUID postId) {
+        List<CommentResponse> responses = commentService.getAllCommentsByPostId(postId);
         return ResponseEntity.ok(
                 ApiResponse.<List<CommentResponse>>builder()
                         .code(200)
@@ -104,4 +104,3 @@ public class CommentController {
         );
     }
 }
-

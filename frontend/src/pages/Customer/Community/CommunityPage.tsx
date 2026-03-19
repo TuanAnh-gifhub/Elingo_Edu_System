@@ -429,7 +429,9 @@ function shouldShowHeadline(post: CommunityPost) {
   const normalizedHeadline = post.headline.trim();
   const normalizedContent = post.content.trim();
 
-  return Boolean(normalizedHeadline) && normalizedHeadline !== normalizedContent;
+  return (
+    Boolean(normalizedHeadline) && normalizedHeadline !== normalizedContent
+  );
 }
 
 function parseMediaInput(value: string) {
@@ -484,14 +486,20 @@ function CommunityPage() {
   const [submittingCommentPostId, setSubmittingCommentPostId] = useState<
     string | null
   >(null);
-  const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editCommentContent, setEditCommentContent] = useState("");
-  const [updatingCommentId, setUpdatingCommentId] = useState<string | null>(null);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(
+  const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(
     null,
   );
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [updatingCommentId, setUpdatingCommentId] = useState<string | null>(
+    null,
+  );
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null,
+  );
+  const [activeCommentsPostId, setActiveCommentsPostId] = useState<
+    string | null
+  >(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isUploadingVideos, setIsUploadingVideos] = useState(false);
   const contentInputRef = useRef<HTMLTextAreaElement>(null);
@@ -762,7 +770,9 @@ function CommunityPage() {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa bài đăng này không?");
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn xóa bài đăng này không?",
+    );
     if (!confirmed) {
       return;
     }
@@ -922,7 +932,10 @@ function CommunityPage() {
     setEditCommentContent("");
   };
 
-  const updateCommentInPosts = (commentId: string, updater: (comment: PostComment) => PostComment) => {
+  const updateCommentInPosts = (
+    commentId: string,
+    updater: (comment: PostComment) => PostComment,
+  ) => {
     setPosts((currentPosts) =>
       currentPosts.map((currentPost) => ({
         ...currentPost,
@@ -983,10 +996,14 @@ function CommunityPage() {
         throw new Error(response.message || "Không thể cập nhật bình luận.");
       }
 
-      const updatedComment = mapCreatedCommentToFeed(response.result, user?.role, {
-        content: trimmedContent,
-        authorName: comment.author,
-      });
+      const updatedComment = mapCreatedCommentToFeed(
+        response.result,
+        user?.role,
+        {
+          content: trimmedContent,
+          authorName: comment.author,
+        },
+      );
 
       updateCommentInPosts(comment.id, () => updatedComment);
       cancelEditingComment();
@@ -1005,7 +1022,9 @@ function CommunityPage() {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa bình luận này không?");
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn xóa bình luận này không?",
+    );
     if (!confirmed) {
       return;
     }
@@ -1295,235 +1314,252 @@ function CommunityPage() {
                 const isMenuOpen = openPostMenuId === post.id;
 
                 return (
-              <div className="p-4 md:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <Avatar
-                      name={post.author}
-                      tone={mediaCardTones[postIndex % mediaCardTones.length]}
-                    />
-                    <div className="min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-semibold text-slate-900">
-                          {post.author}
-                        </h2>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
-                        >
-                          {post.role}
-                        </span>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
-                        >
-                          {post.postType}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                        <span>{post.subject}</span>
-                        <span className="flex items-center gap-1">
-                          <FiClock className="text-slate-400" />
-                          {post.time}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FiGlobe className="text-slate-400" />
-                          {post.visibility}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {canEditPost ? (
-                      <div className="relative" data-post-menu-root="true">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenPostMenuId((currentMenuId) =>
-                              currentMenuId === post.id ? null : String(post.id),
-                            )
+                  <div className="p-4 md:p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <Avatar
+                          name={post.author}
+                          tone={
+                            mediaCardTones[postIndex % mediaCardTones.length]
                           }
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                        >
-                          <FiMoreHorizontal />
-                        </button>
+                        />
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="font-semibold text-slate-900">
+                              {post.author}
+                            </h2>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
+                            >
+                              {post.role}
+                            </span>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
+                            >
+                              {post.postType}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                            <span>{post.subject}</span>
+                            <span className="flex items-center gap-1">
+                              <FiClock className="text-slate-400" />
+                              {post.time}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <FiGlobe className="text-slate-400" />
+                              {post.visibility}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                        {isMenuOpen ? (
-                          <div className="absolute right-0 top-12 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                      <div className="flex items-center gap-2">
+                        {canEditPost ? (
+                          <div className="relative" data-post-menu-root="true">
                             <button
                               type="button"
                               onClick={() =>
-                                isEditingPost
-                                  ? cancelEditingPost()
-                                  : startEditingPost(post)
+                                setOpenPostMenuId((currentMenuId) =>
+                                  currentMenuId === post.id
+                                    ? null
+                                    : String(post.id),
+                                )
                               }
-                              disabled={isDeletingPost}
-                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                             >
-                              <FiEdit3 className="text-slate-500" />
-                              {isEditingPost ? "Đóng chỉnh sửa" : "Chỉnh sửa bài viết"}
+                              <FiMoreHorizontal />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => void deletePost(post)}
-                              disabled={isDeletingPost || isUpdatingPost}
-                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <FiTrash2 className="text-rose-500" />
-                              {isDeletingPost ? "Đang xóa bài viết" : "Xóa bài viết"}
-                            </button>
+
+                            {isMenuOpen ? (
+                              <div className="absolute right-0 top-12 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    isEditingPost
+                                      ? cancelEditingPost()
+                                      : startEditingPost(post)
+                                  }
+                                  disabled={isDeletingPost}
+                                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <FiEdit3 className="text-slate-500" />
+                                  {isEditingPost
+                                    ? "Đóng chỉnh sửa"
+                                    : "Chỉnh sửa bài viết"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void deletePost(post)}
+                                  disabled={isDeletingPost || isUpdatingPost}
+                                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <FiTrash2 className="text-rose-500" />
+                                  {isDeletingPost
+                                    ? "Đang xóa bài viết"
+                                    : "Xóa bài viết"}
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  {isEditingPost ? (
-                    <div className="space-y-4 rounded-[26px] border border-sky-100 bg-sky-50/60 p-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">
-                          Nội dung bài viết
-                        </label>
-                        <textarea
-                          value={editContent}
-                          onChange={(event) => setEditContent(event.target.value)}
-                          rows={5}
-                          className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                        />
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">
-                            URL ảnh
-                          </label>
-                          <textarea
-                            value={editImagesInput}
-                            onChange={(event) => setEditImagesInput(event.target.value)}
-                            rows={4}
-                            placeholder="Mỗi URL một dòng hoặc ngăn cách bằng dấu phẩy"
-                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">
-                            URL video
-                          </label>
-                          <textarea
-                            value={editVideosInput}
-                            onChange={(event) => setEditVideosInput(event.target.value)}
-                            rows={4}
-                            placeholder="Mỗi URL một dòng hoặc ngăn cách bằng dấu phẩy"
-                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={cancelEditingPost}
-                          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void submitPostUpdate(post)}
-                          disabled={isUpdatingPost}
-                          className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {isUpdatingPost ? "Đang lưu..." : "Lưu thay đổi"}
-                        </button>
-                      </div>
                     </div>
-                  ) : (
-                    <div>
-                      {shouldShowHeadline(post) ? (
-                        <h3 className="text-xl font-bold tracking-tight text-slate-900">
-                          {post.headline}
-                        </h3>
-                      ) : null}
-                      <p className={`${shouldShowHeadline(post) ? "mt-3" : "mt-0"} text-sm leading-7 text-slate-700 md:text-[15px]`}>
-                        {post.content}
-                      </p>
-                    </div>
-                  )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {post.media.length > 0 ? (
-                    <div
-                      className={`grid gap-3 ${post.media.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}
-                    >
-                      {post.media.map((mediaItem, mediaIndex) => {
-                        if (mediaItem.type === "image") {
-                          return (
-                            <div
-                              key={mediaItem.id}
-                              className="overflow-hidden rounded-[26px] border border-slate-200 bg-slate-100"
-                            >
-                              <img
-                                src={mediaItem.value}
-                                alt="Ảnh bài đăng"
-                                className="h-72 w-full object-cover"
+                    <div className="mt-5 space-y-4">
+                      {isEditingPost ? (
+                        <div className="space-y-4 rounded-[26px] border border-sky-100 bg-sky-50/60 p-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">
+                              Nội dung bài viết
+                            </label>
+                            <textarea
+                              value={editContent}
+                              onChange={(event) =>
+                                setEditContent(event.target.value)
+                              }
+                              rows={5}
+                              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                            />
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <label className="text-sm font-semibold text-slate-700">
+                                URL ảnh
+                              </label>
+                              <textarea
+                                value={editImagesInput}
+                                onChange={(event) =>
+                                  setEditImagesInput(event.target.value)
+                                }
+                                rows={4}
+                                placeholder="Mỗi URL một dòng hoặc ngăn cách bằng dấu phẩy"
+                                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
                               />
                             </div>
-                          );
-                        }
-
-                        if (mediaItem.type === "video") {
-                          return (
-                            <div
-                              key={mediaItem.id}
-                              className="overflow-hidden rounded-[26px] border border-slate-200 bg-slate-950"
-                            >
-                              <video
-                                src={mediaItem.value}
-                                controls
-                                className="h-72 w-full object-cover"
-                              >
-                                Trình duyệt không hỗ trợ phát video.
-                              </video>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div
-                            key={mediaItem.id}
-                            className={`rounded-[26px] bg-linear-to-br ${mediaCardTones[(postIndex + mediaIndex) % mediaCardTones.length]} p-5 text-white shadow-inner`}
-                          >
-                            <div className="flex min-h-45 flex-col justify-between">
-                              <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-                                <FiImage />
-                                Preview
-                              </div>
-                              <div>
-                                <div className="text-lg font-bold">
-                                  {mediaItem.value}
-                                </div>
-                                <div className="mt-2 max-w-xs text-sm text-white/85">
-                                  Bố cục media placeholder để sau này nối ảnh,
-                                  thumbnail video hoặc poster khóa học thật.
-                                </div>
-                              </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-semibold text-slate-700">
+                                URL video
+                              </label>
+                              <textarea
+                                value={editVideosInput}
+                                onChange={(event) =>
+                                  setEditVideosInput(event.target.value)
+                                }
+                                rows={4}
+                                placeholder="Mỗi URL một dòng hoặc ngăn cách bằng dấu phẩy"
+                                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                              />
                             </div>
                           </div>
-                        );
-                      })}
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={cancelEditingPost}
+                              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
+                            >
+                              Hủy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void submitPostUpdate(post)}
+                              disabled={isUpdatingPost}
+                              className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {isUpdatingPost ? "Đang lưu..." : "Lưu thay đổi"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {shouldShowHeadline(post) ? (
+                            <h3 className="text-xl font-bold tracking-tight text-slate-900">
+                              {post.headline}
+                            </h3>
+                          ) : null}
+                          <p
+                            className={`${shouldShowHeadline(post) ? "mt-3" : "mt-0"} text-sm leading-7 text-slate-700 md:text-[15px]`}
+                          >
+                            {post.content}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        {post.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {post.media.length > 0 ? (
+                        <div
+                          className={`grid gap-3 ${post.media.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}
+                        >
+                          {post.media.map((mediaItem, mediaIndex) => {
+                            if (mediaItem.type === "image") {
+                              return (
+                                <div
+                                  key={mediaItem.id}
+                                  className="overflow-hidden rounded-[26px] border border-slate-200 bg-slate-100"
+                                >
+                                  <img
+                                    src={mediaItem.value}
+                                    alt="Ảnh bài đăng"
+                                    className="h-72 w-full object-cover"
+                                  />
+                                </div>
+                              );
+                            }
+
+                            if (mediaItem.type === "video") {
+                              return (
+                                <div
+                                  key={mediaItem.id}
+                                  className="overflow-hidden rounded-[26px] border border-slate-200 bg-slate-950"
+                                >
+                                  <video
+                                    src={mediaItem.value}
+                                    controls
+                                    className="h-72 w-full object-cover"
+                                  >
+                                    Trình duyệt không hỗ trợ phát video.
+                                  </video>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={mediaItem.id}
+                                className={`rounded-[26px] bg-linear-to-br ${mediaCardTones[(postIndex + mediaIndex) % mediaCardTones.length]} p-5 text-white shadow-inner`}
+                              >
+                                <div className="flex min-h-45 flex-col justify-between">
+                                  <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+                                    <FiImage />
+                                    Preview
+                                  </div>
+                                  <div>
+                                    <div className="text-lg font-bold">
+                                      {mediaItem.value}
+                                    </div>
+                                    <div className="mt-2 max-w-xs text-sm text-white/85">
+                                      Bố cục media placeholder để sau này nối
+                                      ảnh, thumbnail video hoặc poster khóa học
+                                      thật.
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              </div>
+                  </div>
                 );
               })()}
 
@@ -1583,36 +1619,39 @@ function CommunityPage() {
               </div>
 
               <div className="space-y-4 bg-slate-50/70 px-4 py-4 md:px-6">
-                {post.commentsPreview.slice(0, 2).map((comment, commentIndex) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar
-                      name={comment.author}
-                      tone={
-                        mediaCardTones[
-                          (postIndex + commentIndex + 1) % mediaCardTones.length
-                        ]
-                      }
-                    />
-                    <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-slate-900">
-                          {comment.author}
-                        </span>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
-                        >
-                          {comment.role}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {comment.time}
-                        </span>
+                {post.commentsPreview
+                  .slice(0, 2)
+                  .map((comment, commentIndex) => (
+                    <div key={comment.id} className="flex gap-3">
+                      <Avatar
+                        name={comment.author}
+                        tone={
+                          mediaCardTones[
+                            (postIndex + commentIndex + 1) %
+                              mediaCardTones.length
+                          ]
+                        }
+                      />
+                      <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900">
+                            {comment.author}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
+                          >
+                            {comment.role}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {comment.time}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {comment.content}
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {comment.content}
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 {post.commentsPreview.length > 2 ? (
                   <button
                     type="button"
@@ -1743,8 +1782,10 @@ function CommunityPage() {
                   </p>
 
                   {activeCommentsPost.media.length > 0 ? (
-                    <div className={`grid gap-3 ${activeCommentsPost.media.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}>
-                      {activeCommentsPost.media.map((mediaItem) => (
+                    <div
+                      className={`grid gap-3 ${activeCommentsPost.media.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}
+                    >
+                      {activeCommentsPost.media.map((mediaItem) =>
                         mediaItem.type === "image" ? (
                           <div
                             key={mediaItem.id}
@@ -1769,8 +1810,8 @@ function CommunityPage() {
                               Trình duyệt không hỗ trợ phát video.
                             </video>
                           </div>
-                        ) : null
-                      ))}
+                        ) : null,
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -1783,117 +1824,147 @@ function CommunityPage() {
 
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
                   {activeCommentsPost.commentsPreview.length > 0 ? (
-                    activeCommentsPost.commentsPreview.map((comment, commentIndex) => {
-                      const canManageComment =
-                        typeof comment.id === "string" &&
-                        Boolean(user?.userId) &&
-                        comment.authorId === user?.userId;
-                      const isCommentMenuOpen = openCommentMenuId === comment.id;
-                      const isEditingComment = editingCommentId === comment.id;
-                      const isUpdatingComment = updatingCommentId === comment.id;
-                      const isDeletingComment = deletingCommentId === comment.id;
+                    activeCommentsPost.commentsPreview.map(
+                      (comment, commentIndex) => {
+                        const canManageComment =
+                          typeof comment.id === "string" &&
+                          Boolean(user?.userId) &&
+                          comment.authorId === user?.userId;
+                        const isCommentMenuOpen =
+                          openCommentMenuId === comment.id;
+                        const isEditingComment =
+                          editingCommentId === comment.id;
+                        const isUpdatingComment =
+                          updatingCommentId === comment.id;
+                        const isDeletingComment =
+                          deletingCommentId === comment.id;
 
-                      return (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar
-                          name={comment.author}
-                          tone={mediaCardTones[commentIndex % mediaCardTones.length]}
-                        />
-                        <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-slate-900">
-                                {comment.author}
-                              </span>
-                              <span
-                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
-                              >
-                                {comment.role}
-                              </span>
-                              <span className="text-xs text-slate-400">
-                                {comment.time}
-                              </span>
-                            </div>
+                        return (
+                          <div key={comment.id} className="flex gap-3">
+                            <Avatar
+                              name={comment.author}
+                              tone={
+                                mediaCardTones[
+                                  commentIndex % mediaCardTones.length
+                                ]
+                              }
+                            />
+                            <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold text-slate-900">
+                                    {comment.author}
+                                  </span>
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
+                                  >
+                                    {comment.role}
+                                  </span>
+                                  <span className="text-xs text-slate-400">
+                                    {comment.time}
+                                  </span>
+                                </div>
 
-                            {canManageComment ? (
-                              <div className="relative shrink-0" data-comment-menu-root="true">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setOpenCommentMenuId((currentMenuId) =>
-                                      currentMenuId === comment.id ? null : String(comment.id),
-                                    )
-                                  }
-                                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                                >
-                                  <FiMoreHorizontal />
-                                </button>
-
-                                {isCommentMenuOpen ? (
-                                  <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                                {canManageComment ? (
+                                  <div
+                                    className="relative shrink-0"
+                                    data-comment-menu-root="true"
+                                  >
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        isEditingComment
-                                          ? cancelEditingComment()
-                                          : startEditingComment(comment)
+                                        setOpenCommentMenuId((currentMenuId) =>
+                                          currentMenuId === comment.id
+                                            ? null
+                                            : String(comment.id),
+                                        )
                                       }
-                                      disabled={isDeletingComment}
-                                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                                     >
-                                      <FiEdit3 className="text-slate-500" />
-                                      {isEditingComment ? "Đóng chỉnh sửa" : "Chỉnh sửa bình luận"}
+                                      <FiMoreHorizontal />
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => void deleteComment(comment)}
-                                      disabled={isDeletingComment || isUpdatingComment}
-                                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                      <FiTrash2 className="text-rose-500" />
-                                      {isDeletingComment ? "Đang xóa bình luận" : "Xóa bình luận"}
-                                    </button>
+
+                                    {isCommentMenuOpen ? (
+                                      <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            isEditingComment
+                                              ? cancelEditingComment()
+                                              : startEditingComment(comment)
+                                          }
+                                          disabled={isDeletingComment}
+                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          <FiEdit3 className="text-slate-500" />
+                                          {isEditingComment
+                                            ? "Đóng chỉnh sửa"
+                                            : "Chỉnh sửa bình luận"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void deleteComment(comment)
+                                          }
+                                          disabled={
+                                            isDeletingComment ||
+                                            isUpdatingComment
+                                          }
+                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          <FiTrash2 className="text-rose-500" />
+                                          {isDeletingComment
+                                            ? "Đang xóa bình luận"
+                                            : "Xóa bình luận"}
+                                        </button>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ) : null}
                               </div>
-                            ) : null}
-                          </div>
 
-                          {isEditingComment ? (
-                            <div className="mt-3 space-y-3">
-                              <textarea
-                                value={editCommentContent}
-                                onChange={(event) => setEditCommentContent(event.target.value)}
-                                rows={3}
-                                className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                              />
-                              <div className="flex flex-wrap justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={cancelEditingComment}
-                                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
-                                >
-                                  Hủy
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void submitCommentUpdate(comment)}
-                                  disabled={isUpdatingComment}
-                                  className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  {isUpdatingComment ? "Đang lưu..." : "Lưu thay đổi"}
-                                </button>
-                              </div>
+                              {isEditingComment ? (
+                                <div className="mt-3 space-y-3">
+                                  <textarea
+                                    value={editCommentContent}
+                                    onChange={(event) =>
+                                      setEditCommentContent(event.target.value)
+                                    }
+                                    rows={3}
+                                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                  />
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={cancelEditingComment}
+                                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
+                                    >
+                                      Hủy
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void submitCommentUpdate(comment)
+                                      }
+                                      disabled={isUpdatingComment}
+                                      className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {isUpdatingComment
+                                        ? "Đang lưu..."
+                                        : "Lưu thay đổi"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                  {comment.content}
+                                </p>
+                              )}
                             </div>
-                          ) : (
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              {comment.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                    })
+                          </div>
+                        );
+                      },
+                    )
                   ) : (
                     <div className="rounded-3xl bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
                       Chưa có bình luận nào cho bài viết này.
@@ -1908,10 +1979,15 @@ function CommunityPage() {
                       <input
                         ref={modalCommentInputRef}
                         type="text"
-                        value={commentDrafts[String(activeCommentsPost.id)] || ""}
+                        value={
+                          commentDrafts[String(activeCommentsPost.id)] || ""
+                        }
                         onChange={(event) => {
                           if (typeof activeCommentsPost.id === "string") {
-                            updateCommentDraft(activeCommentsPost.id, event.target.value);
+                            updateCommentDraft(
+                              activeCommentsPost.id,
+                              event.target.value,
+                            );
                           }
                         }}
                         onKeyDown={(event) => {
@@ -1926,7 +2002,9 @@ function CommunityPage() {
                       <button
                         type="button"
                         onClick={() => void submitComment(activeCommentsPost)}
-                        disabled={submittingCommentPostId === activeCommentsPost.id}
+                        disabled={
+                          submittingCommentPostId === activeCommentsPost.id
+                        }
                         className="rounded-full bg-sky-600 p-2 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <FiSend />

@@ -75,9 +75,9 @@ const commentService = {
   deleteComment: async (
     commentId: string,
   ): Promise<ApiResponse<DeleteCommunityCommentResponse>> => {
-    const response = await api.delete<ApiResponse<DeleteCommunityCommentResponse>>(
-      `/comments/${commentId}`,
-    );
+    const response = await api.delete<
+      ApiResponse<DeleteCommunityCommentResponse>
+    >(`/comments/${commentId}`);
 
     return response.data;
   },

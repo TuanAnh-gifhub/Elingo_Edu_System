@@ -46,6 +46,7 @@ public class PostServiceImpl implements PostService {
         Post post = Post.builder()
                 .author(author)
 //... existing code ...
+            .content(request.getContent())
                 .images(request.getImages() != null ? request.getImages() : new java.util.ArrayList<>())
                 .videos(request.getVideos() != null ? request.getVideos() : new java.util.ArrayList<>())
                 .likeCount(0)

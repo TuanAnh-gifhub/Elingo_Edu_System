@@ -24,7 +24,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequestMapping("/comments")
 @Tag(name = "6. Comment")
-public class CommentController {
+public class    CommentController {
 
     CommentService commentService;
 

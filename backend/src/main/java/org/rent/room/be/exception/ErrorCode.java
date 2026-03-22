@@ -26,6 +26,9 @@ public enum ErrorCode {
 
     //ClassRoom
     CLASS_NOT_FOUND(4001,"Class not found", HttpStatus.NOT_FOUND),
+    CLASS_FULL(4005,"Class is full", HttpStatus.BAD_REQUEST),
+    CLASS_INACTIVE(4006,"Class is not active", HttpStatus.BAD_REQUEST),
+    STUDENT_ALREADY_ENROLLED(4007,"Student already enrolled in this class", HttpStatus.BAD_REQUEST),
 
     //Course
     COURSE_NOT_FOUND(4002,"Course not found", HttpStatus.NOT_FOUND),
@@ -34,6 +37,21 @@ public enum ErrorCode {
 
     //Post
     POST_NOT_FOUND(5001,"Post not found", HttpStatus.NOT_FOUND),
+
+    //Quiz
+    QUIZ_NOT_FOUND(6001,"Quiz not found", HttpStatus.NOT_FOUND),
+    INVALID_EXCEL_FORMAT(6003, "Invalid Excel format", HttpStatus.BAD_REQUEST),
+    EXCEL_IMPORT_ERROR(6004, "Excel import error", HttpStatus.BAD_REQUEST),
+    QUIZ_ACCESS_DENIED(6005, "You are not enrolled in this class or cannot access this quiz", HttpStatus.FORBIDDEN),
+    INVALID_QUIZ_SUBMISSION(6006, "Invalid quiz submission: wrong question count, duplicate ids, or invalid option ids", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPTS_EXHAUSTED(6007, "You have used all allowed attempts for this quiz", HttpStatus.BAD_REQUEST),
+    QUIZ_INVALID_MAX_ATTEMPTS(6008, "maxAttempts must be at least 1", HttpStatus.BAD_REQUEST),
+
+    //Question
+    QUESTION_NOT_FOUND(6101, "Question not found", HttpStatus.NOT_FOUND),
+
+    //QuestionOption
+    QUESTION_OPTION_NOT_FOUND(6201, "Question option not found", HttpStatus.NOT_FOUND),
 
     //Role
     ROLE_NOT_FOUND(3001,"Role not found", HttpStatus.NOT_FOUND),

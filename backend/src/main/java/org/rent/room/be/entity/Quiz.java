@@ -11,23 +11,23 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "courses")
+@Table(name = "quizzes")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Course extends BaseEntity {
+public class Quiz extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "course_id")
-    UUID courseId;
+    @Column(name = "quiz_id")
+    UUID quizId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id", nullable = false)
-    ClassRoom classRoom;
+    @JoinColumn(name = "course_id", nullable = false)
+    Course course;
 
     @Column(name = "title", nullable = false, length = 255)
     String title;
@@ -35,24 +35,15 @@ public class Course extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     String description;
 
-    @Column(name = "order_index")
-    Integer orderIndex;
+    /** Số lần tối đa học sinh được làm bài (do giáo viên quy định). null hoặc nhỏ hơn 1 được coi là 1. */
+    @Column(name = "max_attempts")
+    Integer maxAttempts;
 
-
-    @ElementCollection
-    @CollectionTable(
-            name = "course_files",
-            joinColumns = @JoinColumn(name = "course_id")
-    )
-    @Column(name = "file_url", nullable = false, length = 2048)
-    List<String> fileUrls;
     @OneToMany(
-            mappedBy = "course",
+            mappedBy = "quiz",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    List<Quiz> quizzes;
-
+    List<Question> questions;
 }
-

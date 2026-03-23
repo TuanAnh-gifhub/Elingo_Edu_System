@@ -37,6 +37,7 @@ export interface CommunityPostResponse {
   videos: string[];
   likeCount: number;
   commentCount: number;
+  isLiked?: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -99,6 +100,16 @@ const communityService = {
   ): Promise<ApiResponse<DeleteCommunityPostResponse>> => {
     const response = await api.delete<ApiResponse<DeleteCommunityPostResponse>>(
       `/posts/${postId}`,
+    );
+
+    return response.data;
+  },
+
+  likePost: async (
+    postId: string,
+  ): Promise<ApiResponse<void>> => {
+    const response = await api.post<ApiResponse<void>>(
+      `/posts/${postId}/like`,
     );
 
     return response.data;

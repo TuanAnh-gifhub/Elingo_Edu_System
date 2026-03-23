@@ -20,4 +20,6 @@ public interface PostService {
     PostResponse updatePost(UUID postId, UpdatePostRequest request);
 
     void deletePost(UUID postId);
+
+    void likePost(UUID postId, String email);
 }

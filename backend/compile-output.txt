@@ -1,0 +1,684 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for org.rent.room:BE:jar:0.0.1-SNAPSHOT
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.springframework.boot:spring-boot-starter-mail:jar -> version (?) vs 4.0.0 @ line 123, column 21
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] 
+[INFO] --------------------------< org.rent.room:BE >--------------------------
+[INFO] Building BE 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ BE ---
+[INFO] Deleting /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ BE ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ BE ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 161 source files with javac [debug parameters release 21] to target/classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[11,41] cannot access org.rent.room.be.dto.request.auth.LoginGoogleRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/LoginGoogleRequest.java
+    file does not contain class org.rent.room.be.dto.request.auth.LoginGoogleRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[12,41] cannot access org.rent.room.be.dto.request.auth.LoginRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/LoginRequest.java
+    file does not contain class org.rent.room.be.dto.request.auth.LoginRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[13,41] cannot access org.rent.room.be.dto.request.auth.ResetPasswordRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/ResetPasswordRequest.java
+    file does not contain class org.rent.room.be.dto.request.auth.ResetPasswordRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[17,32] cannot access org.rent.room.be.service.AuthGoogleService
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/AuthGoogleService.java
+    file does not contain class org.rent.room.be.service.AuthGoogleService
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[9,44] cannot access org.rent.room.be.dto.request.comment.CreateCommentRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/comment/CreateCommentRequest.java
+    file does not contain class org.rent.room.be.dto.request.comment.CreateCommentRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[10,44] cannot access org.rent.room.be.dto.request.comment.UpdateCommentRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/comment/UpdateCommentRequest.java
+    file does not contain class org.rent.room.be.dto.request.comment.UpdateCommentRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CourseController.java:[9,43] cannot access org.rent.room.be.dto.request.course.CreateCourseRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/course/CreateCourseRequest.java
+    file does not contain class org.rent.room.be.dto.request.course.CreateCourseRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/EnrollmentController.java:[8,47] cannot access org.rent.room.be.dto.request.enrollment.CreateEnrollmentRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/enrollment/CreateEnrollmentRequest.java
+    file does not contain class org.rent.room.be.dto.request.enrollment.CreateEnrollmentRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/PostController.java:[9,41] cannot access org.rent.room.be.dto.request.post.CreatePostRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/post/CreatePostRequest.java
+    file does not contain class org.rent.room.be.dto.request.post.CreatePostRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[8,45] cannot access org.rent.room.be.dto.request.question.CreateQuestionRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/question/CreateQuestionRequest.java
+    file does not contain class org.rent.room.be.dto.request.question.CreateQuestionRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[9,45] cannot access org.rent.room.be.dto.request.question.UpdateQuestionRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/question/UpdateQuestionRequest.java
+    file does not contain class org.rent.room.be.dto.request.question.UpdateQuestionRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[10,46] cannot access org.rent.room.be.dto.response.question.QuestionResponse
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/question/QuestionResponse.java
+    file does not contain class org.rent.room.be.dto.response.question.QuestionResponse
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionOptionController.java:[10,51] cannot access org.rent.room.be.dto.request.questionOption.UpdateQuestionOptionRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/questionOption/UpdateQuestionOptionRequest.java
+    file does not contain class org.rent.room.be.dto.request.questionOption.UpdateQuestionOptionRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuizController.java:[10,41] cannot access org.rent.room.be.dto.request.quiz.UpdateQuizRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/quiz/UpdateQuizRequest.java
+    file does not contain class org.rent.room.be.dto.request.quiz.UpdateQuizRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/ReviewController.java:[9,43] cannot access org.rent.room.be.dto.request.review.CreateReviewRequest
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/review/CreateReviewRequest.java
+    file does not contain class org.rent.room.be.dto.request.review.CreateReviewRequest
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[6,35] cannot access org.rent.room.be.properties.ClientProperties
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/properties/ClientProperties.java
+    file does not contain class org.rent.room.be.properties.ClientProperties
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ClassRoomServiceImpl.java:[12,31] cannot access org.rent.room.be.mapper.ClassRoomMapper
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/ClassRoomMapper.java
+    file does not contain class org.rent.room.be.mapper.ClassRoomMapper
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[13,35] cannot access org.rent.room.be.repository.QuestionOptionRepository
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/QuestionOptionRepository.java
+    file does not contain class org.rent.room.be.repository.QuestionOptionRepository
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[14,35] cannot access org.rent.room.be.repository.QuestionRepository
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/QuestionRepository.java
+    file does not contain class org.rent.room.be.repository.QuestionRepository
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[16,35] cannot access org.rent.room.be.repository.ReviewRepository
+  bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/ReviewRepository.java
+    file does not contain class org.rent.room.be.repository.ReviewRepository
+    Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[33,5] cannot find symbol
+  symbol:   class AuthGoogleService
+  location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[38,74] cannot find symbol
+  symbol:   class LoginRequest
+  location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[49,26] cannot find symbol
+  symbol:   class LoginGoogleRequest
+  location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[122,70] cannot find symbol
+  symbol:   class ResetPasswordRequest
+  location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/UserService.java:[28,31] cannot find symbol
+  symbol:   class ResetPasswordRequest
+  location: interface org.rent.room.be.service.UserService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/AuthService.java:[9,25] cannot find symbol
+  symbol:   class LoginRequest
+  location: interface org.rent.room.be.service.AuthService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[47,33] cannot find symbol
+  symbol:   class CreateCommentRequest
+  location: class org.rent.room.be.controller.CommentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[77,33] cannot find symbol
+  symbol:   class UpdateCommentRequest
+  location: class org.rent.room.be.controller.CommentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CommentService.java:[13,35] cannot find symbol
+  symbol:   class CreateCommentRequest
+  location: interface org.rent.room.be.service.CommentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CommentService.java:[18,51] cannot find symbol
+  symbol:   class UpdateCommentRequest
+  location: interface org.rent.room.be.service.CommentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CourseController.java:[35,26] cannot find symbol
+  symbol:   class CreateCourseRequest
+  location: class org.rent.room.be.controller.CourseController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CourseService.java:[12,33] cannot find symbol
+  symbol:   class CreateCourseRequest
+  location: interface org.rent.room.be.service.CourseService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/EnrollmentController.java:[25,26] cannot find symbol
+  symbol:   class CreateEnrollmentRequest
+  location: class org.rent.room.be.controller.EnrollmentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/EnrollmentService.java:[10,41] cannot find symbol
+  symbol:   class CreateEnrollmentRequest
+  location: interface org.rent.room.be.service.EnrollmentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/PostController.java:[46,26] cannot find symbol
+  symbol:   class CreatePostRequest
+  location: class org.rent.room.be.controller.PostController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/PostService.java:[12,29] cannot find symbol
+  symbol:   class CreatePostRequest
+  location: interface org.rent.room.be.service.PostService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[29,26] cannot find symbol
+  symbol:   class CreateQuestionRequest
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[28,39] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[42,39] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[56,44] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[72,26] cannot find symbol
+  symbol:   class UpdateQuestionRequest
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[70,39] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[11,37] cannot find symbol
+  symbol:   class CreateQuestionRequest
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[11,5] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[13,5] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[15,10] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[17,54] cannot find symbol
+  symbol:   class UpdateQuestionRequest
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[17,5] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionOptionController.java:[74,26] cannot find symbol
+  symbol:   class UpdateQuestionOptionRequest
+  location: class org.rent.room.be.controller.QuestionOptionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionOptionService.java:[17,56] cannot find symbol
+  symbol:   class UpdateQuestionOptionRequest
+  location: interface org.rent.room.be.service.QuestionOptionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuizController.java:[77,26] cannot find symbol
+  symbol:   class UpdateQuizRequest
+  location: class org.rent.room.be.controller.QuizController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuizService.java:[20,42] cannot find symbol
+  symbol:   class UpdateQuizRequest
+  location: interface org.rent.room.be.service.QuizService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/ReviewController.java:[35,33] cannot find symbol
+  symbol:   class CreateReviewRequest
+  location: class org.rent.room.be.controller.ReviewController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/ReviewService.java:[13,60] cannot find symbol
+  symbol:   class CreateReviewRequest
+  location: interface org.rent.room.be.service.ReviewService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/QuestionMapper.java:[15,5] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.mapper.QuestionMapper
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/QuestionMapper.java:[17,10] cannot find symbol
+  symbol:   class QuestionResponse
+  location: interface org.rent.room.be.mapper.QuestionMapper
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[20,47] cannot find symbol
+  symbol: class AuthGoogleService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[23,19] cannot find symbol
+  symbol:   class ClientProperties
+  location: class org.rent.room.be.serviceImpl.AuthGoogleServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ClassRoomServiceImpl.java:[33,19] cannot find symbol
+  symbol:   class ClassRoomMapper
+  location: class org.rent.room.be.serviceImpl.ClassRoomServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CommentServiceImpl.java:[34,42] cannot find symbol
+  symbol:   class CreateCommentRequest
+  location: class org.rent.room.be.serviceImpl.CommentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CommentServiceImpl.java:[76,58] cannot find symbol
+  symbol:   class UpdateCommentRequest
+  location: class org.rent.room.be.serviceImpl.CommentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CourseServiceImpl.java:[44,40] cannot find symbol
+  symbol:   class CreateCourseRequest
+  location: class org.rent.room.be.serviceImpl.CourseServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/EnrollmentServiceImpl.java:[32,48] cannot find symbol
+  symbol:   class CreateEnrollmentRequest
+  location: class org.rent.room.be.serviceImpl.EnrollmentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/PostServiceImpl.java:[44,36] cannot find symbol
+  symbol:   class CreatePostRequest
+  location: class org.rent.room.be.serviceImpl.PostServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[29,19] cannot find symbol
+  symbol:   class QuestionOptionRepository
+  location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[30,19] cannot find symbol
+  symbol:   class QuestionRepository
+  location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[81,63] cannot find symbol
+  symbol:   class UpdateQuestionOptionRequest
+  location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[25,19] cannot find symbol
+  symbol:   class QuestionRepository
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[31,44] cannot find symbol
+  symbol:   class CreateQuestionRequest
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[31,12] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[47,12] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[55,17] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[67,61] cannot find symbol
+  symbol:   class UpdateQuestionRequest
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[67,12] cannot find symbol
+  symbol:   class QuestionResponse
+  location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[31,19] cannot find symbol
+  symbol:   class ReviewRepository
+  location: class org.rent.room.be.serviceImpl.ReviewServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[38,67] cannot find symbol
+  symbol:   class CreateReviewRequest
+  location: class org.rent.room.be.serviceImpl.ReviewServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/StudentQuizServiceImpl.java:[32,19] cannot find symbol
+  symbol:   class QuestionRepository
+  location: class org.rent.room.be.serviceImpl.StudentQuizServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/UserServiceImpl.java:[132,38] cannot find symbol
+  symbol:   class ResetPasswordRequest
+  location: class org.rent.room.be.serviceImpl.UserServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/config/JwtConfig.java:[30,38] cannot find symbol
+  symbol:   method getSecretKey()
+  location: variable jwtProperties of type org.rent.room.be.properties.JwtProperties
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/config/JwtConfig.java:[40,38] cannot find symbol
+  symbol:   method getSecretKey()
+  location: variable jwtProperties of type org.rent.room.be.properties.JwtProperties
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[58,13] cannot find symbol
+  symbol:   variable log
+  location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[86,13] cannot find symbol
+  symbol:   variable log
+  location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[91,9] cannot find symbol
+  symbol:   variable log
+  location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[25,37] cannot find symbol
+  symbol:   method getHttpStatusCode()
+  location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[28,49] cannot find symbol
+  symbol:   method builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[29,32] cannot find symbol
+  symbol:   method getCode()
+  location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[30,35] cannot find symbol
+  symbol:   method getMessage()
+  location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/CustomUserDetailsService.java:[26,16] constructor CustomUserDetails in class org.rent.room.be.security.CustomUserDetails cannot be applied to given types;
+  required: no arguments
+  found:    org.rent.room.be.entity.User
+  reason: actual and formal argument lists differ in length
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[40,45] cannot find symbol
+  symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[54,27] cannot find symbol
+  symbol:   method getEmail()
+  location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[55,27] cannot find symbol
+  symbol:   method getName()
+  location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[56,27] cannot find symbol
+  symbol:   method getId()
+  location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[59,45] cannot find symbol
+  symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[72,45] cannot find symbol
+  symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[86,28] cannot find symbol
+  symbol:   method <java.lang.Void>builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[103,28] cannot find symbol
+  symbol:   method <java.lang.Void>builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[114,28] cannot find symbol
+  symbol:   method builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[125,28] cannot find symbol
+  symbol:   method builder()
+  location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/UserResponse.java:[36,27] cannot find symbol
+  symbol:   method builder()
+  location: class org.rent.room.be.dto.response.UserResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/UserResponse.java:[37,27] cannot find symbol
+  symbol:   method getEmail()
+  location: variable user of type org.rent.room.be.entity.User
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.184 s
+[INFO] Finished at: 2026-03-24T00:48:36+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project BE: Compilation failure: Compilation failure: 
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[11,41] cannot access org.rent.room.be.dto.request.auth.LoginGoogleRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/LoginGoogleRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.auth.LoginGoogleRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[12,41] cannot access org.rent.room.be.dto.request.auth.LoginRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/LoginRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.auth.LoginRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[13,41] cannot access org.rent.room.be.dto.request.auth.ResetPasswordRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/auth/ResetPasswordRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.auth.ResetPasswordRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[17,32] cannot access org.rent.room.be.service.AuthGoogleService
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/AuthGoogleService.java
+[ERROR]     file does not contain class org.rent.room.be.service.AuthGoogleService
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[9,44] cannot access org.rent.room.be.dto.request.comment.CreateCommentRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/comment/CreateCommentRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.comment.CreateCommentRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[10,44] cannot access org.rent.room.be.dto.request.comment.UpdateCommentRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/comment/UpdateCommentRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.comment.UpdateCommentRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CourseController.java:[9,43] cannot access org.rent.room.be.dto.request.course.CreateCourseRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/course/CreateCourseRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.course.CreateCourseRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/EnrollmentController.java:[8,47] cannot access org.rent.room.be.dto.request.enrollment.CreateEnrollmentRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/enrollment/CreateEnrollmentRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.enrollment.CreateEnrollmentRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/PostController.java:[9,41] cannot access org.rent.room.be.dto.request.post.CreatePostRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/post/CreatePostRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.post.CreatePostRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[8,45] cannot access org.rent.room.be.dto.request.question.CreateQuestionRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/question/CreateQuestionRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.question.CreateQuestionRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[9,45] cannot access org.rent.room.be.dto.request.question.UpdateQuestionRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/question/UpdateQuestionRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.question.UpdateQuestionRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[10,46] cannot access org.rent.room.be.dto.response.question.QuestionResponse
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/question/QuestionResponse.java
+[ERROR]     file does not contain class org.rent.room.be.dto.response.question.QuestionResponse
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionOptionController.java:[10,51] cannot access org.rent.room.be.dto.request.questionOption.UpdateQuestionOptionRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/questionOption/UpdateQuestionOptionRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.questionOption.UpdateQuestionOptionRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuizController.java:[10,41] cannot access org.rent.room.be.dto.request.quiz.UpdateQuizRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/quiz/UpdateQuizRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.quiz.UpdateQuizRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/ReviewController.java:[9,43] cannot access org.rent.room.be.dto.request.review.CreateReviewRequest
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/request/review/CreateReviewRequest.java
+[ERROR]     file does not contain class org.rent.room.be.dto.request.review.CreateReviewRequest
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[6,35] cannot access org.rent.room.be.properties.ClientProperties
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/properties/ClientProperties.java
+[ERROR]     file does not contain class org.rent.room.be.properties.ClientProperties
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ClassRoomServiceImpl.java:[12,31] cannot access org.rent.room.be.mapper.ClassRoomMapper
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/ClassRoomMapper.java
+[ERROR]     file does not contain class org.rent.room.be.mapper.ClassRoomMapper
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[13,35] cannot access org.rent.room.be.repository.QuestionOptionRepository
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/QuestionOptionRepository.java
+[ERROR]     file does not contain class org.rent.room.be.repository.QuestionOptionRepository
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[14,35] cannot access org.rent.room.be.repository.QuestionRepository
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/QuestionRepository.java
+[ERROR]     file does not contain class org.rent.room.be.repository.QuestionRepository
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[16,35] cannot access org.rent.room.be.repository.ReviewRepository
+[ERROR]   bad source file: /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/repository/ReviewRepository.java
+[ERROR]     file does not contain class org.rent.room.be.repository.ReviewRepository
+[ERROR]     Please remove or make sure it appears in the correct subdirectory of the sourcepath.
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[33,5] cannot find symbol
+[ERROR]   symbol:   class AuthGoogleService
+[ERROR]   location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[38,74] cannot find symbol
+[ERROR]   symbol:   class LoginRequest
+[ERROR]   location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[49,26] cannot find symbol
+[ERROR]   symbol:   class LoginGoogleRequest
+[ERROR]   location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[122,70] cannot find symbol
+[ERROR]   symbol:   class ResetPasswordRequest
+[ERROR]   location: class org.rent.room.be.controller.AuthController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/UserService.java:[28,31] cannot find symbol
+[ERROR]   symbol:   class ResetPasswordRequest
+[ERROR]   location: interface org.rent.room.be.service.UserService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/AuthService.java:[9,25] cannot find symbol
+[ERROR]   symbol:   class LoginRequest
+[ERROR]   location: interface org.rent.room.be.service.AuthService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[47,33] cannot find symbol
+[ERROR]   symbol:   class CreateCommentRequest
+[ERROR]   location: class org.rent.room.be.controller.CommentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CommentController.java:[77,33] cannot find symbol
+[ERROR]   symbol:   class UpdateCommentRequest
+[ERROR]   location: class org.rent.room.be.controller.CommentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CommentService.java:[13,35] cannot find symbol
+[ERROR]   symbol:   class CreateCommentRequest
+[ERROR]   location: interface org.rent.room.be.service.CommentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CommentService.java:[18,51] cannot find symbol
+[ERROR]   symbol:   class UpdateCommentRequest
+[ERROR]   location: interface org.rent.room.be.service.CommentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/CourseController.java:[35,26] cannot find symbol
+[ERROR]   symbol:   class CreateCourseRequest
+[ERROR]   location: class org.rent.room.be.controller.CourseController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/CourseService.java:[12,33] cannot find symbol
+[ERROR]   symbol:   class CreateCourseRequest
+[ERROR]   location: interface org.rent.room.be.service.CourseService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/EnrollmentController.java:[25,26] cannot find symbol
+[ERROR]   symbol:   class CreateEnrollmentRequest
+[ERROR]   location: class org.rent.room.be.controller.EnrollmentController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/EnrollmentService.java:[10,41] cannot find symbol
+[ERROR]   symbol:   class CreateEnrollmentRequest
+[ERROR]   location: interface org.rent.room.be.service.EnrollmentService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/PostController.java:[46,26] cannot find symbol
+[ERROR]   symbol:   class CreatePostRequest
+[ERROR]   location: class org.rent.room.be.controller.PostController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/PostService.java:[12,29] cannot find symbol
+[ERROR]   symbol:   class CreatePostRequest
+[ERROR]   location: interface org.rent.room.be.service.PostService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[29,26] cannot find symbol
+[ERROR]   symbol:   class CreateQuestionRequest
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[28,39] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[42,39] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[56,44] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[72,26] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionRequest
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionController.java:[70,39] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.controller.QuestionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[11,37] cannot find symbol
+[ERROR]   symbol:   class CreateQuestionRequest
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[11,5] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[13,5] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[15,10] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[17,54] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionRequest
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionService.java:[17,5] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.service.QuestionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuestionOptionController.java:[74,26] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionOptionRequest
+[ERROR]   location: class org.rent.room.be.controller.QuestionOptionController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuestionOptionService.java:[17,56] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionOptionRequest
+[ERROR]   location: interface org.rent.room.be.service.QuestionOptionService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/QuizController.java:[77,26] cannot find symbol
+[ERROR]   symbol:   class UpdateQuizRequest
+[ERROR]   location: class org.rent.room.be.controller.QuizController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/QuizService.java:[20,42] cannot find symbol
+[ERROR]   symbol:   class UpdateQuizRequest
+[ERROR]   location: interface org.rent.room.be.service.QuizService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/ReviewController.java:[35,33] cannot find symbol
+[ERROR]   symbol:   class CreateReviewRequest
+[ERROR]   location: class org.rent.room.be.controller.ReviewController
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/service/ReviewService.java:[13,60] cannot find symbol
+[ERROR]   symbol:   class CreateReviewRequest
+[ERROR]   location: interface org.rent.room.be.service.ReviewService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/QuestionMapper.java:[15,5] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.mapper.QuestionMapper
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/mapper/QuestionMapper.java:[17,10] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: interface org.rent.room.be.mapper.QuestionMapper
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[20,47] cannot find symbol
+[ERROR]   symbol: class AuthGoogleService
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/AuthGoogleServiceImpl.java:[23,19] cannot find symbol
+[ERROR]   symbol:   class ClientProperties
+[ERROR]   location: class org.rent.room.be.serviceImpl.AuthGoogleServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ClassRoomServiceImpl.java:[33,19] cannot find symbol
+[ERROR]   symbol:   class ClassRoomMapper
+[ERROR]   location: class org.rent.room.be.serviceImpl.ClassRoomServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CommentServiceImpl.java:[34,42] cannot find symbol
+[ERROR]   symbol:   class CreateCommentRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.CommentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CommentServiceImpl.java:[76,58] cannot find symbol
+[ERROR]   symbol:   class UpdateCommentRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.CommentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/CourseServiceImpl.java:[44,40] cannot find symbol
+[ERROR]   symbol:   class CreateCourseRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.CourseServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/EnrollmentServiceImpl.java:[32,48] cannot find symbol
+[ERROR]   symbol:   class CreateEnrollmentRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.EnrollmentServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/PostServiceImpl.java:[44,36] cannot find symbol
+[ERROR]   symbol:   class CreatePostRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.PostServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[29,19] cannot find symbol
+[ERROR]   symbol:   class QuestionOptionRepository
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[30,19] cannot find symbol
+[ERROR]   symbol:   class QuestionRepository
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionOptionServiceImpl.java:[81,63] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionOptionRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionOptionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[25,19] cannot find symbol
+[ERROR]   symbol:   class QuestionRepository
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[31,44] cannot find symbol
+[ERROR]   symbol:   class CreateQuestionRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[31,12] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[47,12] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[55,17] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[67,61] cannot find symbol
+[ERROR]   symbol:   class UpdateQuestionRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/QuestionServiceImpl.java:[67,12] cannot find symbol
+[ERROR]   symbol:   class QuestionResponse
+[ERROR]   location: class org.rent.room.be.serviceImpl.QuestionServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[31,19] cannot find symbol
+[ERROR]   symbol:   class ReviewRepository
+[ERROR]   location: class org.rent.room.be.serviceImpl.ReviewServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/ReviewServiceImpl.java:[38,67] cannot find symbol
+[ERROR]   symbol:   class CreateReviewRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.ReviewServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/StudentQuizServiceImpl.java:[32,19] cannot find symbol
+[ERROR]   symbol:   class QuestionRepository
+[ERROR]   location: class org.rent.room.be.serviceImpl.StudentQuizServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/serviceImpl/UserServiceImpl.java:[132,38] cannot find symbol
+[ERROR]   symbol:   class ResetPasswordRequest
+[ERROR]   location: class org.rent.room.be.serviceImpl.UserServiceImpl
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/config/JwtConfig.java:[30,38] cannot find symbol
+[ERROR]   symbol:   method getSecretKey()
+[ERROR]   location: variable jwtProperties of type org.rent.room.be.properties.JwtProperties
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/config/JwtConfig.java:[40,38] cannot find symbol
+[ERROR]   symbol:   method getSecretKey()
+[ERROR]   location: variable jwtProperties of type org.rent.room.be.properties.JwtProperties
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[58,13] cannot find symbol
+[ERROR]   symbol:   variable log
+[ERROR]   location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[86,13] cannot find symbol
+[ERROR]   symbol:   variable log
+[ERROR]   location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationFilter.java:[91,9] cannot find symbol
+[ERROR]   symbol:   variable log
+[ERROR]   location: class org.rent.room.be.security.JwtAuthenticationFilter
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[25,37] cannot find symbol
+[ERROR]   symbol:   method getHttpStatusCode()
+[ERROR]   location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[28,49] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[29,32] cannot find symbol
+[ERROR]   symbol:   method getCode()
+[ERROR]   location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/JwtAuthenticationEntryPoint.java:[30,35] cannot find symbol
+[ERROR]   symbol:   method getMessage()
+[ERROR]   location: variable errorCode of type org.rent.room.be.exception.ErrorCode
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/security/CustomUserDetailsService.java:[26,16] constructor CustomUserDetails in class org.rent.room.be.security.CustomUserDetails cannot be applied to given types;
+[ERROR]   required: no arguments
+[ERROR]   found:    org.rent.room.be.entity.User
+[ERROR]   reason: actual and formal argument lists differ in length
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[40,45] cannot find symbol
+[ERROR]   symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[54,27] cannot find symbol
+[ERROR]   symbol:   method getEmail()
+[ERROR]   location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[55,27] cannot find symbol
+[ERROR]   symbol:   method getName()
+[ERROR]   location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[56,27] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable googleInfo of type org.rent.room.be.dto.response.auth.LoginGoogleResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[59,45] cannot find symbol
+[ERROR]   symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[72,45] cannot find symbol
+[ERROR]   symbol:   method <org.rent.room.be.dto.response.auth.LoginResponse>builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[86,28] cannot find symbol
+[ERROR]   symbol:   method <java.lang.Void>builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[103,28] cannot find symbol
+[ERROR]   symbol:   method <java.lang.Void>builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[114,28] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/controller/AuthController.java:[125,28] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class org.rent.room.be.base.ApiResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/UserResponse.java:[36,27] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class org.rent.room.be.dto.response.UserResponse
+[ERROR] /Users/lamy/Desktop/EXE202/Elingo_Edu_System/backend/src/main/java/org/rent/room/be/dto/response/UserResponse.java:[37,27] cannot find symbol
+[ERROR]   symbol:   method getEmail()
+[ERROR]   location: variable user of type org.rent.room.be.entity.User
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

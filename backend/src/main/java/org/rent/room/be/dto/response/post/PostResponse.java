@@ -32,4 +32,5 @@ public class PostResponse {
 
     // Thêm danh sách comments
     List<CommentResponse> comments;
+    Boolean isLiked;
 }

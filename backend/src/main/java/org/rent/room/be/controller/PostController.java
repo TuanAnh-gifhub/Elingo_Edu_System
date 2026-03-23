@@ -92,6 +92,21 @@ public class PostController {
     }
 
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<ApiResponse<Void>> likePost(
+            @PathVariable UUID postId, Authentication authentication
+    ) {
+        String email = getEmailFromAuthentication(authentication);
+        postService.likePost(postId, email);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(200)
+                        .message("Like/Unlike post successfully")
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponse>> updatePost(
             @PathVariable UUID postId,

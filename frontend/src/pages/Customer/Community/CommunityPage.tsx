@@ -76,6 +76,7 @@ interface CommunityPost {
     shares: number;
   };
   commentsPreview: PostComment[];
+  hasLiked?: boolean;
 }
 
 const communityStats = [
@@ -415,6 +416,7 @@ function mapCreatedPostToFeed(
       shares: 0,
     },
     commentsPreview: safeComments.slice(0, 2).map(mapCommentFromApi),
+    hasLiked: post.isLiked ?? false,
   };
 }
 
@@ -1057,6 +1059,60 @@ function CommunityPage() {
     (post) => typeof post.id === "string" && post.id === activeCommentsPostId,
   );
 
+  const toggleLikePost = async (post: CommunityPost) => {
+    if (typeof post.id !== "string") {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.info("Bạn cần đăng nhập để thả tim bài viết.");
+      return;
+    }
+
+    // Optimistic UI update
+    const isCurrentlyLiked = post.hasLiked ?? false;
+    const delta = isCurrentlyLiked ? -1 : 1;
+
+    setPosts((currentPosts) =>
+      currentPosts.map((p) => {
+        if (p.id !== post.id) return p;
+        return {
+          ...p,
+          hasLiked: !isCurrentlyLiked,
+          stats: {
+            ...p.stats,
+            likes: Math.max(0, p.stats.likes + delta),
+          },
+        };
+      })
+    );
+
+    try {
+      const response = await communityService.likePost(post.id);
+      if (!SUCCESS_CODES.has(response.code)) {
+        throw new Error(response.message || "Không thể tải tương tác.");
+      }
+    } catch (error) {
+       // Revert optimistic update
+       setPosts((currentPosts) =>
+         currentPosts.map((p) => {
+           if (p.id !== post.id) return p;
+           return {
+             ...p,
+             hasLiked: isCurrentlyLiked,
+             stats: {
+               ...p.stats,
+               likes: Math.max(0, p.stats.likes - delta),
+             },
+           };
+         })
+       );
+       const message =
+         error instanceof Error ? error.message : "Thao tác thả tim thất bại.";
+       toast.error(message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef6ff_0%,#f8fbff_18%,#ffffff_100%)] text-slate-900">
       <section className="border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
@@ -1591,9 +1647,15 @@ function CommunityPage() {
 
               <div className="border-y border-slate-100 px-4 py-2 md:px-6">
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                  <button className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-sky-700">
-                    <FiHeart />
-                    Thích
+                  <button
+                    type="button"
+                    onClick={() => void toggleLikePost(post)}
+                    className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-slate-50 ${
+                      post.hasLiked ? "text-rose-500 hover:text-rose-600" : "text-slate-600 hover:text-rose-500"
+                    }`}
+                  >
+                    <FiHeart className={post.hasLiked ? "fill-rose-500" : ""} />
+                    {post.hasLiked ? "Đã thích" : "Thích"}
                   </button>
                   <button
                     type="button"

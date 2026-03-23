@@ -23,9 +23,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.rent.room.be.repository.PostLikeRepository;
+import org.rent.room.be.entity.PostLike;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +42,22 @@ public class PostServiceImpl implements PostService {
     private final CommentRepository commentRepository;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
+    private final PostLikeRepository postLikeRepository;
+
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
+        String email = auth.getName();
+        Object principal = auth.getPrincipal();
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else if (principal instanceof String) {
+            email = (String) principal;
+        }
+        return userRepository.findByEmail(email).orElse(null);
+    }
 //... existing code ...
     @Override
     @Transactional
@@ -69,6 +91,13 @@ public class PostServiceImpl implements PostService {
         PostResponse response = postMapper.toResponse(post);
         response.setComments(commentResponses);
 
+        User currentUser = getCurrentUser();
+        if (currentUser != null) {
+            response.setIsLiked(postLikeRepository.existsByUserAndPost(currentUser, post));
+        } else {
+            response.setIsLiked(false);
+        }
+
         return response;
     }
 
@@ -79,14 +108,21 @@ public class PostServiceImpl implements PostService {
 
         Page<Post> pageData = postRepository.findAllActive(pageable);
         // Không load comments trong getPosts để tối ưu performance
-        Page<PostResponse> responsePage = pageData.map(postMapper::toResponse);
+        User currentUser = getCurrentUser();
+        List<PostLike> userLikes = currentUser != null ? postLikeRepository.findByUserAndPostIn(currentUser, pageData.getContent()) : java.util.Collections.emptyList();
+        
+        List<PostResponse> responseList = pageData.getContent().stream().map(post -> {
+            PostResponse res = postMapper.toResponse(post);
+            res.setIsLiked(userLikes.stream().anyMatch(like -> like.getPost().getPostId().equals(post.getPostId())));
+            return res;
+        }).collect(Collectors.toList());
 
         return PageResponse.<PostResponse>builder()
                 .currentPage(page + 1)
                 .totalPages(pageData.getTotalPages())
                 .pageSize(pageData.getSize())
                 .totalElements(pageData.getTotalElements())
-                .data(responsePage.getContent())
+                .data(responseList)
                 .build();
     }
 
@@ -101,14 +137,21 @@ public class PostServiceImpl implements PostService {
 
         Page<Post> pageData = postRepository.findByAuthor_UserIdAndActiveTrue(userId, pageable);
         // Không load comments trong getPostsByUser để tối ưu performance
-        Page<PostResponse> responsePage = pageData.map(postMapper::toResponse);
+        User currentUser = getCurrentUser();
+        List<PostLike> userLikes = currentUser != null ? postLikeRepository.findByUserAndPostIn(currentUser, pageData.getContent()) : java.util.Collections.emptyList();
+
+        List<PostResponse> responseList = pageData.getContent().stream().map(post -> {
+            PostResponse res = postMapper.toResponse(post);
+            res.setIsLiked(userLikes.stream().anyMatch(like -> like.getPost().getPostId().equals(post.getPostId())));
+            return res;
+        }).collect(Collectors.toList());
 
         return PageResponse.<PostResponse>builder()
                 .currentPage(page + 1)
                 .totalPages(pageData.getTotalPages())
                 .pageSize(pageData.getSize())
                 .totalElements(pageData.getTotalElements())
-                .data(responsePage.getContent())
+                .data(responseList)
                 .build();
     }
 
@@ -139,6 +182,28 @@ public class PostServiceImpl implements PostService {
 
         // Soft delete: set active = false
         post.setActive(false);
+        postRepository.save(post);
+    }
+
+    @Override
+    @Transactional
+    public void likePost(UUID postId, String email) {
+        Post post = postRepository.findByIdAndActiveTrue(postId)
+                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        postLikeRepository.findByUserAndPost(user, post).ifPresentOrElse(
+                like -> {
+                    postLikeRepository.delete(like);
+                    post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+                },
+                () -> {
+                    PostLike like = PostLike.builder().user(user).post(post).build();
+                    postLikeRepository.save(like);
+                    post.setLikeCount(post.getLikeCount() + 1);
+                }
+        );
         postRepository.save(post);
     }
 }

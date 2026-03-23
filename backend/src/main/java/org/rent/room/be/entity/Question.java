@@ -5,54 +5,47 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.QuestionType;
 
 import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "courses")
+@Table(name = "questions")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Course extends BaseEntity {
+public class Question extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "course_id")
-    UUID courseId;
+    @Column(name = "question_id")
+    UUID questionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id", nullable = false)
-    ClassRoom classRoom;
+    @JoinColumn(name = "quiz_id", nullable = false)
+    Quiz quiz;
 
-    @Column(name = "title", nullable = false, length = 255)
-    String title;
+    @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
+    String questionText;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    String description;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_type", nullable = false)
+    QuestionType questionType;
 
     @Column(name = "order_index")
     Integer orderIndex;
 
-
-    @ElementCollection
-    @CollectionTable(
-            name = "course_files",
-            joinColumns = @JoinColumn(name = "course_id")
-    )
-    @Column(name = "file_url", nullable = false, length = 2048)
-    List<String> fileUrls;
     @OneToMany(
-            mappedBy = "course",
+            mappedBy = "question",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    List<Quiz> quizzes;
-
+    @OrderBy("orderIndex ASC, createdAt ASC")
+    List<QuestionOption> options;
 }
-

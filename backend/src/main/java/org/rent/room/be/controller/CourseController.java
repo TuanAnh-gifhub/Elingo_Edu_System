@@ -30,7 +30,6 @@ public class CourseController {
 
     CourseService courseService;
     @PreAuthorize("hasRole('TEACHER')")
-
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
             @RequestBody CreateCourseRequest request

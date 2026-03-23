@@ -33,7 +33,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -76,3 +76,6 @@ google:
     uri: ${GOOGLE_URI}
 
 token_reset_password_expire_seconds: 900
+
+file:
+  upload-dir: ./uploads

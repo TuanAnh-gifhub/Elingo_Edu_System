@@ -12,6 +12,8 @@ import org.rent.room.be.dto.response.post.PostResponse;
 import org.rent.room.be.service.PostService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,12 +27,26 @@ public class PostController {
 
     PostService postService;
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    private String getEmailFromAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalStateException("Authentication object is null. User might not be authenticated.");
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        } else if (principal instanceof String) {
+            return (String) principal;
+        }
+        throw new IllegalStateException("Unsupported principal type: " + principal.getClass().getName());
+    }
+
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<PostResponse>> createPost(
-            @RequestBody CreatePostRequest request
+            @RequestBody CreatePostRequest request, Authentication authentication
     ) {
-        PostResponse response = postService.createPost(request);
+        String email = getEmailFromAuthentication(authentication);
+        PostResponse response = postService.createPost(request, email);
         return ResponseEntity.ok(
                 ApiResponse.<PostResponse>builder()
                         .code(201)
@@ -75,7 +91,7 @@ public class PostController {
         );
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponse>> updatePost(
             @PathVariable UUID postId,
@@ -91,7 +107,7 @@ public class PostController {
         );
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @DeleteMapping("/{postId}")
     public ResponseEntity<ApiResponse<Void>> deletePost(
             @PathVariable UUID postId

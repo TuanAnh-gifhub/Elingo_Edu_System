@@ -13,7 +13,7 @@ function RootLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <HeaderComponent />
-      <main className="flex-1">
+      <main className="flex-1 [view-transition-name:page-content]">
         <Outlet />
       </main>
       <ChatBubble />

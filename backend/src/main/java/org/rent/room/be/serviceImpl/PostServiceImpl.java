@@ -36,16 +36,17 @@ public class PostServiceImpl implements PostService {
     private final CommentRepository commentRepository;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
-
+//... existing code ...
     @Override
     @Transactional
-    public PostResponse createPost(CreatePostRequest request) {
-        User author = userRepository.findById(request.getUserId())
+    public PostResponse createPost(CreatePostRequest request, String email) {
+        User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Post post = Post.builder()
                 .author(author)
-                .content(request.getContent())
+//... existing code ...
+            .content(request.getContent())
                 .images(request.getImages() != null ? request.getImages() : new java.util.ArrayList<>())
                 .videos(request.getVideos() != null ? request.getVideos() : new java.util.ArrayList<>())
                 .likeCount(0)

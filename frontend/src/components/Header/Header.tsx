@@ -44,6 +44,19 @@ const PRIMARY_BUTTON_CLASS =
 const BUTTON_TEXT_HOVER_CLASS =
   "text-[11px] md:text-xs whitespace-nowrap inline-block hover:scale-110 transition-transform duration-300 ease-in-out";
 
+const NAV_LINKS = [
+  { to: "/", label: "Trang chủ" },
+  { to: "/classes", label: "Lớp học" },
+  { to: "/community", label: "Cộng đồng" },
+];
+
+const NAV_PILL_TRANSITION = {
+  type: "spring",
+  stiffness: 380,
+  damping: 34,
+  mass: 0.9,
+} as const;
+
 const Header = () => {
   // --- 1. LẤY DATA TỪ CONTEXT ---
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -53,10 +66,14 @@ const Header = () => {
   const { unreadCount } = useUnreadMessages();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isHeaderTransparent, setIsHeaderTransparent] = useState<boolean>(false);
+  const [isHeaderTransparent, setIsHeaderTransparent] =
+    useState<boolean>(false);
+  const [isNavPointerDown, setIsNavPointerDown] = useState(false);
 
   // --- 2. CÁC STATE UI (Giao diện) ---
-  const [headerHeight, setHeaderHeight] = useState<number>(HEADER_CONFIG.MIN_HEIGHT);
+  const [headerHeight, setHeaderHeight] = useState<number>(
+    HEADER_CONFIG.MIN_HEIGHT,
+  );
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -92,10 +109,10 @@ const Header = () => {
   // Make header transparent when user is at the very top (hero/video area on landing page)
   useEffect(() => {
     const isHome = location.pathname === "/";
-    
+
     // Compute desired transparency state
     const shouldBeTransparent = isHome && window.scrollY < 40;
-    
+
     // Update state in next tick to avoid cascading renders
     const timeoutId = setTimeout(() => {
       setIsHeaderTransparent(shouldBeTransparent);
@@ -118,21 +135,56 @@ const Header = () => {
     };
   }, [location.pathname]);
 
+  useEffect(() => {
+    const handlePointerRelease = () => setIsNavPointerDown(false);
+
+    window.addEventListener("mouseup", handlePointerRelease);
+    window.addEventListener("blur", handlePointerRelease);
+
+    return () => {
+      window.removeEventListener("mouseup", handlePointerRelease);
+      window.removeEventListener("blur", handlePointerRelease);
+    };
+  }, []);
+
+  const isNavItemActive = (path: string) => {
+    if (path === "/") {
+      return (
+        location.pathname === "/" ||
+        location.pathname === "/home" ||
+        location.pathname === "/landing"
+      );
+    }
+
+    return location.pathname.startsWith(path);
+  };
+
+  const handleNavPointerEnter = (path: string) => {
+    if (!isNavPointerDown || isNavItemActive(path)) {
+      return;
+    }
+
+    navigate(path, { viewTransition: true });
+  };
+
   // Chuẩn bị dữ liệu hiển thị cho UserMenu
   // UserResponse currently exposes userName (no fullName)
-  const displayUser = user ? {
-    name: user.userName || "User",
-    // avatar: user.avatar // Nếu sau này có avatar thì thêm vào
-  } : null;
+  const displayUser = user
+    ? {
+        name: user.userName || "User",
+        // avatar: user.avatar // Nếu sau này có avatar thì thêm vào
+      }
+    : null;
 
   return (
     <>
       <header
         ref={headerRef}
-        className={`w-full fixed top-0 left-0 right-0 z-50 text-[#0e0e0e] text-base leading-[1.4] transition-colors duration-300 ${isHeaderTransparent
-          ? "border-b-0 shadow-none bg-transparent"
-          : "border-b-2 border-[#4da6ff] shadow-sm bg-[rgba(228,228,228,0.82)] backdrop-blur-[2px]"
-          }`}
+        className={`w-full fixed top-0 left-0 right-0 z-50 text-[#0e0e0e] text-base leading-[1.4] transition-colors duration-300 ${
+          isHeaderTransparent
+            ? "border-b-0 shadow-none bg-transparent"
+            : "border-b-2 border-[#4da6ff] shadow-sm bg-[rgba(228,228,228,0.82)] backdrop-blur-[2px]"
+        }`}
         style={{ minHeight: `${HEADER_CONFIG.MIN_HEIGHT}px` }}
       >
         <div
@@ -153,7 +205,7 @@ const Header = () => {
               >
                 <img
                   src={logo}
-                 alt="Elingo Logo"
+                  alt="Elingo Logo"
                   className={`${logoSizeClass} object-contain border-2 border-[#4da6ff] rounded-lg bg-white`}
                 />
                 {activeSection === "hero" ? (
@@ -173,7 +225,7 @@ const Header = () => {
                     </motion.span>
                     <span className="relative z-10 inline-block">
                       <ScrambleText
-                       text="Elingo"
+                        text="Elingo"
                         triggerKey={activeSection}
                         className="inline-block"
                       />
@@ -198,11 +250,60 @@ const Header = () => {
                       fontWeight: 900,
                     }}
                   >
-                   Elingo
+                    Elingo
                   </span>
                 )}
               </Link>
             </div>
+
+            <nav
+              className="hidden md:flex flex-1 justify-center px-4"
+              onMouseDown={() => setIsNavPointerDown(true)}
+              onMouseLeave={() => setIsNavPointerDown(false)}
+            >
+              <div
+                className={`inline-flex items-center rounded-full border px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md ${
+                  isHeaderTransparent
+                    ? "border-white/25 bg-white/10"
+                    : "border-slate-200/80 bg-white/80"
+                }`}
+              >
+                {NAV_LINKS.map((item) => {
+                  const isActive = isNavItemActive(item.to);
+
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      viewTransition
+                      onMouseEnter={() => handleNavPointerEnter(item.to)}
+                      className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-200 select-none ${
+                        isActive
+                          ? "text-white drop-shadow-[0_1px_1px_rgba(3,37,84,0.28)]"
+                          : isHeaderTransparent
+                            ? "text-slate-900 hover:text-slate-950"
+                            : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {isActive ? (
+                        <motion.span
+                          layoutId="header-nav-pill"
+                          transition={NAV_PILL_TRANSITION}
+                          className="absolute inset-0 rounded-full border border-[#0c69db]/40 bg-[linear-gradient(135deg,#2f9bff_0%,#0f6fe8_52%,#0957c7_100%)] shadow-[0_12px_26px_rgba(16,94,205,0.34)]"
+                        />
+                      ) : null}
+                      <motion.span
+                        whileHover={{ y: -0.5 }}
+                        transition={{ duration: 0.18 }}
+                        className="relative z-10"
+                      >
+                        {item.label}
+                      </motion.span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
 
             {/* RIGHT ACTIONS */}
             <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
@@ -224,7 +325,10 @@ const Header = () => {
                       onClick={() => {
                         setIsDarkMode((prev) => {
                           const newValue = !prev;
-                          localStorage.setItem("landing_dark_mode", String(newValue));
+                          localStorage.setItem(
+                            "landing_dark_mode",
+                            String(newValue),
+                          );
                           window.dispatchEvent(
                             new CustomEvent("darkModeChanged", {
                               detail: { isDarkMode: newValue },
@@ -233,12 +337,13 @@ const Header = () => {
                           return newValue;
                         });
                       }}
-                      className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none ${isHeaderTransparent
-                        ? "bg-white/10 hover:bg-white/15"
-                        : isDarkMode
-                          ? "bg-slate-700"
-                          : "bg-gray-300"
-                        }`}
+                      className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none ${
+                        isHeaderTransparent
+                          ? "bg-white/10 hover:bg-white/15"
+                          : isDarkMode
+                            ? "bg-slate-700"
+                            : "bg-gray-300"
+                      }`}
                     >
                       <span
                         className={`inline-flex items-center justify-center h-6 w-6 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${isDarkMode ? "translate-x-7" : "translate-x-1"}`}
@@ -290,7 +395,11 @@ const Header = () => {
                       className={`${PRIMARY_BUTTON_CLASS} inline-flex items-center justify-center h-10 md:h-11 px-3 md:px-5 py-2 md:py-2.5 bg-[#4da6ff]/70 hover:bg-[#4da6ff]/90 text-white border-[#4da6ff]/50 hover:border-[#4da6ff]`}
                       title="Đăng tin"
                     >
-                      <span className={`${BUTTON_TEXT_HOVER_CLASS} leading-none`}>Đăng phòng</span>
+                      <span
+                        className={`${BUTTON_TEXT_HOVER_CLASS} leading-none`}
+                      >
+                        Đăng phòng
+                      </span>
                     </button>
 
                     {/* --- 5. USER MENU MỚI --- */}

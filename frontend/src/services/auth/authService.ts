@@ -61,12 +61,19 @@ const authService = {
     return response.data;
   },
 
-  loginGoogle: async (code: string): Promise<ApiResponse<LoginGoogleResponse>> => {
+  loginGoogle: async (code: string): Promise<ApiResponse<LoginResponse>> => {
     const payload: LoginGoogleRequest = { code };
-    const response = await api.post<ApiResponse<LoginGoogleResponse>>(
+    const response = await api.post<ApiResponse<LoginResponse>>(
       "/auth/google",
       payload,
     );
+
+    if (response.data && response.data.code === 200) {
+      const { accessToken, refreshToken } = response.data.result;
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+    }
+
     return response.data;
   },
 

@@ -17,7 +17,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import authService, {
   type ApiResponse as AuthApiResponse,
   type LoginResponse,
-  type LoginGoogleResponse,
   type CreateUsersRequest,
 } from "../../../services/auth/authService";
 import {
@@ -294,7 +293,7 @@ const LoginPage = ({ isOpen, onClose }: LoginPageProps) => {
       setIsLoading(true);
       setErrorMessage("");
       try {
-        const res: AuthApiResponse<LoginGoogleResponse> =
+        const res: AuthApiResponse<LoginResponse> =
           await authService.loginGoogle(codeResponse.code);
         if (res && res.code === 200) {
           const meResponse = await authService.getCurrentUser();

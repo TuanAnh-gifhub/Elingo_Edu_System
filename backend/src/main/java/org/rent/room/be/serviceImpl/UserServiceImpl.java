@@ -55,7 +55,16 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        Role role = roleRepository.findByRoleName(createUser.getRoleName())
+        String normalizedRoleName = createUser.getRoleName() == null
+                ? ""
+                : createUser.getRoleName().trim().toUpperCase();
+
+        // Keep backward compatibility for old registration payloads.
+        if ("RENTER".equals(normalizedRoleName)) {
+            normalizedRoleName = "STUDENT";
+        }
+
+        Role role = roleRepository.findByRoleName(normalizedRoleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         User user = User.builder()

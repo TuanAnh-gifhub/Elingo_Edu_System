@@ -112,7 +112,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
         phone: formValues.phone ?? "",
         gender: formValues.gender,
         dateOfBirth: formValues.dateOfBirth,
-        roleName: "RENTER",
+        roleName: "STUDENT",
       };
 
       const response = await authService.registerRequest(payload);

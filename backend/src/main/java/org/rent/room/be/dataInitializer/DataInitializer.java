@@ -46,9 +46,9 @@ public class DataInitializer implements CommandLineRunner {
                 .active(true).build();
 
         User user2 = User.builder()
-                .userName("TecherName")
+                .userName("TeacherName")
                 .gender("Female")
-                .email("techer@gmail.com")
+                .email("teacher@gmail.com")
                 .passwordHash(passwordEncoder.encode("12345678"))
                 .phone("0123456789")
                 .dateOfBirth(LocalDate.of(1990, 1, 2))

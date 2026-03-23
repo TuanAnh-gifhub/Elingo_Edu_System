@@ -94,7 +94,7 @@ public class EmailServiceImpl implements EmailService {
                 <body>
                     <div class="email-container">
                         <h1>Xin chào, %s!</h1>
-                        <p>Cảm ơn bạn đã đăng ký thành viên tại <strong>RentRoom</strong>.</p>
+                        <p>Cảm ơn bạn đã đăng ký thành viên tại <strong>Elingo</strong>.</p>
                         <p>Vui lòng nhấn vào nút bên dưới để hoàn tất quá trình xác thực tài khoản:</p>
                \s
                         <div style="text-align: center;">
@@ -105,7 +105,7 @@ public class EmailServiceImpl implements EmailService {
                         <p style="word-break: break-all; color: #4da6ff;">%s</p>
                \s
                         <p>Lưu ý: Liên kết này sẽ hết hạn sau <strong>5 phút</strong>.</p>
-                        <div class="footer">© 2026 RentRoom - Kết nối tri thức 💗</div>
+                        <div class="footer">© 2026 Elingo - Kết nối tri thức 💗</div>
                     </div>
                 </body>
                 </html>

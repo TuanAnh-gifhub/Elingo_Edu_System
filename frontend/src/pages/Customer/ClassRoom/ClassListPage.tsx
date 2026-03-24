@@ -1,13 +1,99 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { classRoomService, type ClassRoomDto } from "../../../services/classes/classRoomService";
+import {
+  classRoomService,
+  type ClassRoomDto,
+  type CreateClassRoomRequest,
+  type UpdateClassRoomRequest,
+} from "../../../services/classes/classRoomService";
+import {
+  courseService,
+  type CourseDto,
+  type CreateCourseRequest,
+  type UpdateCourseRequest,
+} from "../../../services/courses/courseService";
+import { useAuth } from "../../../context/AuthContext";
 import RoomCard, { type RoomCardProps } from "../LandingPage/RoomCard";
+import TeacherClassDashboard from "./TeacherClassDashboard";
+
+const isTeacherRole = (role?: string): boolean => {
+  if (!role) {
+    return false;
+  }
+
+  const normalizedRole = role.toUpperCase();
+  return (
+    normalizedRole.includes("TEACHER") ||
+    normalizedRole.includes("INSTRUCTOR") ||
+    normalizedRole.includes("LECTURER")
+  );
+};
 
 const ClassListPage = () => {
   const [classes, setClasses] = useState<ClassRoomDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isTeacher = isTeacherRole(user?.role);
+
+  const handleCreateClass = async (
+    payload: CreateClassRoomRequest,
+  ): Promise<ClassRoomDto> => {
+    const createdClass = await classRoomService.createClass(payload);
+    setClasses((prev) => {
+      const deduped = prev.filter(
+        (item) => item.classId !== createdClass.classId,
+      );
+      return [createdClass, ...deduped];
+    });
+    return createdClass;
+  };
+
+  const handleUpdateClass = async (
+    classId: string,
+    payload: UpdateClassRoomRequest,
+  ): Promise<ClassRoomDto> => {
+    const updatedClass = await classRoomService.updateClass(classId, payload);
+    setClasses((prev) =>
+      prev.map((item) =>
+        item.classId === updatedClass.classId ? updatedClass : item,
+      ),
+    );
+    return updatedClass;
+  };
+
+  const handleDeleteClass = async (classId: string): Promise<string> => {
+    const message = await classRoomService.deleteClass(classId);
+    setClasses((prev) => prev.filter((item) => item.classId !== classId));
+    return message;
+  };
+
+  const handleCreateCourse = async (
+    payload: CreateCourseRequest,
+  ): Promise<CourseDto> => {
+    return courseService.createCourse(payload);
+  };
+
+  const handleUpdateCourse = async (
+    courseId: string,
+    payload: UpdateCourseRequest,
+  ): Promise<CourseDto> => {
+    return courseService.updateCourse(courseId, payload);
+  };
+
+  const handleDeleteCourse = async (courseId: string): Promise<string> => {
+    return courseService.deleteCourse(courseId);
+  };
+
+  const handleLoadCourses = useCallback(
+    async (classId: string): Promise<CourseDto[]> => {
+      const page = await courseService.getCourses(1, 100, classId);
+      const courses = page.data || [];
+      return courses.filter((course) => course.classId === classId);
+    },
+    [],
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -36,6 +122,24 @@ const ClassListPage = () => {
     feature: { icon: () => null, label: c.description || "Lớp học" },
   });
 
+  if (isTeacher) {
+    return (
+      <TeacherClassDashboard
+        classes={classes}
+        loading={loading}
+        error={error}
+        teacherId={user?.userId ?? ""}
+        onCreateClass={handleCreateClass}
+        onUpdateClass={handleUpdateClass}
+        onDeleteClass={handleDeleteClass}
+        onCreateCourse={handleCreateCourse}
+        onUpdateCourse={handleUpdateCourse}
+        onDeleteCourse={handleDeleteCourse}
+        onLoadCourses={handleLoadCourses}
+      />
+    );
+  }
+
   if (loading) return <div className="p-6">Đang tải danh sách lớp học…</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
@@ -60,4 +164,3 @@ const ClassListPage = () => {
 };
 
 export default ClassListPage;
-

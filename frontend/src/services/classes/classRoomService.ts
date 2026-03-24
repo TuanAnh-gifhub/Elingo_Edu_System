@@ -4,12 +4,41 @@ export interface ClassRoomDto {
   classId: string;
   className: string;
   description?: string;
+  teacherId?: string;
+  teacherName?: string;
+  teacherEmail?: string;
   price: number;
+  startDate?: string;
+  endDate?: string;
   maxStudents?: number;
   currentStudents?: number;
   schedule?: string;
   active: boolean;
   poster?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateClassRoomRequest {
+  className: string;
+  description: string;
+  teacherId: string;
+  price: number;
+  startDate: string;
+  endDate: string;
+  maxStudents: number;
+  schedule: string;
+}
+
+export interface UpdateClassRoomRequest {
+  className: string;
+  description: string;
+  teacherId: string;
+  price: number;
+  startDate: string;
+  endDate: string;
+  maxStudents: number;
+  schedule: string;
 }
 
 export interface ClassRoomPageResponse {
@@ -30,5 +59,22 @@ export const classRoomService = {
     const res = await api.get(`/classes/${id}`);
     return res.data.result as ClassRoomDto;
   },
-};
 
+  async createClass(payload: CreateClassRoomRequest): Promise<ClassRoomDto> {
+    const res = await api.post("/classes", payload);
+    return res.data.result as ClassRoomDto;
+  },
+
+  async updateClass(
+    classId: string,
+    payload: UpdateClassRoomRequest,
+  ): Promise<ClassRoomDto> {
+    const res = await api.put(`/classes/${classId}`, payload);
+    return res.data.result as ClassRoomDto;
+  },
+
+  async deleteClass(classId: string): Promise<string> {
+    const res = await api.delete(`/classes/${classId}`);
+    return res.data.result as string;
+  },
+};

@@ -5,7 +5,7 @@
       <option value="$PROJECT_DIR$/backend/.env" />
     </option>
     <option name="MAIN_CLASS_NAME" value="org.rent.room.be.BeApplication" />
-    <module name="BE" />
+    <module name="Elingo_Edu_System" />
     <option name="PROGRAM_PARAMETERS" value="$MAVEN_REPOSITORY$" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
     <extension name="net.ashald.envfile">

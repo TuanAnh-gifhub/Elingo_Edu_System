@@ -31,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -203,9 +205,19 @@ public class AssignmentServiceImpl implements AssignmentService {
                         if (question.getOptions() == null || question.getOptions().size() < 2) {
                             throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
                         }
-                        if (question.getCorrectOptionIndex() == null
-                                || question.getCorrectOptionIndex() < 0
-                                || question.getCorrectOptionIndex() >= question.getOptions().size()) {
+
+                        if (question.getOptions().stream().anyMatch(option -> option == null || option.trim().isEmpty())) {
+                            throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
+                        }
+
+                        List<Integer> correctIndexes = resolveCorrectOptionIndexes(question);
+                        if (correctIndexes.isEmpty()) {
+                            throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
+                        }
+
+                        boolean hasOutOfRangeIndex = correctIndexes.stream()
+                                .anyMatch(index -> index < 0 || index >= question.getOptions().size());
+                        if (hasOutOfRangeIndex) {
                             throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
                         }
                     }
@@ -213,13 +225,18 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     private AssignmentQuestion mapQuestionRequest(Assignment assignment, AssignmentQuestionRequest item) {
+        List<Integer> correctIndexes = item.getQuestionType() == AssignmentQuestionType.MULTIPLE_CHOICE
+                ? resolveCorrectOptionIndexes(item)
+                : List.of();
+
         return AssignmentQuestion.builder()
                 .assignment(assignment)
                 .questionOrder(item.getQuestionOrder())
                 .questionType(item.getQuestionType())
                 .questionContent(item.getQuestionContent())
                 .options(item.getOptions())
-                .correctOptionIndex(item.getCorrectOptionIndex())
+                .correctOptionIndex(correctIndexes.isEmpty() ? null : correctIndexes.get(0))
+                .correctOptionIndexes(correctIndexes.isEmpty() ? null : correctIndexes)
                 .sampleAnswer(item.getSampleAnswer())
                 .maxScore(item.getMaxScore())
                 .build();
@@ -235,11 +252,45 @@ public class AssignmentServiceImpl implements AssignmentService {
                 ? List.of()
                 : assignment.getQuestions().stream()
                 .sorted(Comparator.comparing(AssignmentQuestion::getQuestionOrder))
-                .map(assignmentMapper::toQuestionResponse)
+                .map(question -> {
+                    AssignmentQuestionResponse questionResponse = assignmentMapper.toQuestionResponse(question);
+                    if (questionResponse.getCorrectOptionIndexes() == null || questionResponse.getCorrectOptionIndexes().isEmpty()) {
+                        if (question.getCorrectOptionIndexes() != null && !question.getCorrectOptionIndexes().isEmpty()) {
+                            questionResponse.setCorrectOptionIndexes(question.getCorrectOptionIndexes());
+                        } else if (question.getCorrectOptionIndex() != null) {
+                            questionResponse.setCorrectOptionIndexes(List.of(question.getCorrectOptionIndex()));
+                        }
+                    }
+                    return questionResponse;
+                })
                 .toList();
 
         response.setQuestions(questionResponses);
         return response;
+    }
+
+    private List<Integer> resolveCorrectOptionIndexes(AssignmentQuestionRequest question) {
+        List<Integer> indexes = question.getCorrectOptionIndexes();
+
+        if (indexes == null || indexes.isEmpty()) {
+            if (question.getCorrectOptionIndex() == null) {
+                return List.of();
+            }
+            indexes = List.of(question.getCorrectOptionIndex());
+        }
+
+        List<Integer> normalized = indexes.stream()
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        if (normalized.size() != indexes.size()) {
+            throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
+        }
+
+        LinkedHashSet<Integer> uniqueOrdered = new LinkedHashSet<>(normalized);
+        List<Integer> result = new ArrayList<>(uniqueOrdered);
+        Collections.sort(result);
+        return result;
     }
 
     private Integer resolveMaxAttempts(Integer maxAttempts) {

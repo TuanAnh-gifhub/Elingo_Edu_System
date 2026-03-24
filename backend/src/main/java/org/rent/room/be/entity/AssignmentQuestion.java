@@ -52,6 +52,11 @@ public class AssignmentQuestion extends BaseEntity {
     @Column(name = "correct_option_index")
     Integer correctOptionIndex;
 
+    @ElementCollection
+    @CollectionTable(name = "assignment_question_correct_option_indexes", joinColumns = @JoinColumn(name = "question_id"))
+    @Column(name = "correct_option_index")
+    List<Integer> correctOptionIndexes;
+
     @Column(name = "sample_answer", columnDefinition = "TEXT")
     String sampleAnswer;
 

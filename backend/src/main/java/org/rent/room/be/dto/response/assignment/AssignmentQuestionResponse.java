@@ -22,6 +22,7 @@ public class AssignmentQuestionResponse {
     String questionContent;
     List<String> options;
     Integer correctOptionIndex;
+    List<Integer> correctOptionIndexes;
     String sampleAnswer;
     BigDecimal maxScore;
 }

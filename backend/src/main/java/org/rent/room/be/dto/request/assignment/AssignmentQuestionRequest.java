@@ -31,6 +31,8 @@ public class AssignmentQuestionRequest {
 
     Integer correctOptionIndex;
 
+    List<Integer> correctOptionIndexes;
+
     String sampleAnswer;
 
     @NotNull(message = "QUESTION_MAX_SCORE_REQUIRED")

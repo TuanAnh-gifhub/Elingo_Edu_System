@@ -7,6 +7,7 @@ import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -41,6 +42,11 @@ public class SubmissionAnswer extends BaseEntity {
 
     @Column(name = "selected_option_index")
     Integer selectedOptionIndex;
+
+    @ElementCollection
+    @CollectionTable(name = "submission_answer_selected_option_indexes", joinColumns = @JoinColumn(name = "answer_id"))
+    @Column(name = "selected_option_index")
+    List<Integer> selectedOptionIndexes;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "audio_file_id")

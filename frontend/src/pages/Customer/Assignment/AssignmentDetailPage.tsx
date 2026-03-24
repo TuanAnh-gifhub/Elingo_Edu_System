@@ -16,7 +16,7 @@ const AssignmentDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
-  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, number>>({});
+  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, number[]>>({});
   const [audioAnswers, setAudioAnswers] = useState<
     Record<string, { audioFileId: string; audioUrl: string; transcriptText: string }>
   >({});
@@ -92,7 +92,7 @@ const AssignmentDetailPage = () => {
   const unansweredCount = useMemo(() => {
     return sortedQuestions.filter((question) => {
       if (question.questionType === "MULTIPLE_CHOICE") {
-        return choiceAnswers[question.questionId] === undefined;
+        return (choiceAnswers[question.questionId] || []).length === 0;
       }
 
       if (question.questionType === "AUDIO") {
@@ -167,7 +167,7 @@ const AssignmentDetailPage = () => {
       if (question.questionType === "MULTIPLE_CHOICE") {
         return {
           questionId: question.questionId,
-          selectedOptionIndex: choiceAnswers[question.questionId],
+          selectedOptionIndexes: (choiceAnswers[question.questionId] || []).slice().sort((a, b) => a - b),
         };
       }
 
@@ -291,14 +291,19 @@ const AssignmentDetailPage = () => {
               {(question.options || []).map((option, index) => (
                 <label key={`${question.questionId}-${index}`} className="flex items-center gap-2">
                   <input
-                    type="radio"
-                    name={question.questionId}
-                    checked={choiceAnswers[question.questionId] === index}
-                    onChange={() =>
-                      setChoiceAnswers((prev) => ({
-                        ...prev,
-                        [question.questionId]: index,
-                      }))
+                    type="checkbox"
+                    checked={(choiceAnswers[question.questionId] || []).includes(index)}
+                    onChange={(e) =>
+                      setChoiceAnswers((prev) => {
+                        const current = prev[question.questionId] || [];
+                        const next = e.target.checked
+                          ? Array.from(new Set([...current, index]))
+                          : current.filter((item) => item !== index);
+                        return {
+                          ...prev,
+                          [question.questionId]: next,
+                        };
+                      })
                     }
                   />
                   <span>{option}</span>
@@ -344,7 +349,9 @@ const AssignmentDetailPage = () => {
       <div className="flex justify-end">
         <button
           disabled={submitting || isDeadlinePassed}
-          onClick={handleSubmit}
+          onClick={() => {
+            void handleSubmit();
+          }}
           className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-60"
         >
           {submitting ? "Dang nop..." : "Nop bai"}

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -20,6 +21,8 @@ public class SubmissionAnswerRequest {
     String answerText;
 
     Integer selectedOptionIndex;
+
+    List<Integer> selectedOptionIndexes;
 
     UUID audioFileId;
 }

@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 import org.rent.room.be.constant.AssignmentQuestionType;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -22,6 +23,7 @@ public class SubmissionAnswerResponse {
     String questionContent;
     String answerText;
     Integer selectedOptionIndex;
+    List<Integer> selectedOptionIndexes;
     String audioUrl;
     String transcriptText;
     BigDecimal score;

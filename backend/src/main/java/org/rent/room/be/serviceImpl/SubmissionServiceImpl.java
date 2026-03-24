@@ -37,11 +37,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -285,7 +289,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .submission(submission)
                 .question(question)
                 .answerText(request.getAnswerText())
-                .selectedOptionIndex(request.getSelectedOptionIndex())
+                .selectedOptionIndex(resolveSelectedOptionIndexes(request).stream().findFirst().orElse(null))
+                .selectedOptionIndexes(resolveSelectedOptionIndexes(request))
                 .audioFile(audioFile)
                 .audioUrl(audioFile != null ? audioFile.getAudioUrl() : null)
                 .transcriptText(audioFile != null ? audioFile.getTranscriptText() : null)
@@ -299,7 +304,9 @@ public class SubmissionServiceImpl implements SubmissionService {
         AssignmentQuestion question = answer.getQuestion();
 
         if (question.getQuestionType() == AssignmentQuestionType.MULTIPLE_CHOICE) {
-            if (answer.getSelectedOptionIndex() == null) {
+            List<Integer> selectedIndexes = resolveSelectedOptionIndexes(answer);
+
+            if (selectedIndexes.isEmpty()) {
                 if (allowBlankOnTimeout) {
                     answer.setScore(BigDecimal.ZERO);
                     answer.setAutoGraded(true);
@@ -308,7 +315,23 @@ public class SubmissionServiceImpl implements SubmissionService {
                 throw new AppException(ErrorCode.SUBMISSION_ANSWER_INVALID);
             }
 
-            boolean correct = Objects.equals(question.getCorrectOptionIndex(), answer.getSelectedOptionIndex());
+            int optionsSize = question.getOptions() == null ? 0 : question.getOptions().size();
+            boolean hasOutOfRangeSelection = selectedIndexes.stream()
+                    .anyMatch(index -> index < 0 || index >= optionsSize);
+            if (hasOutOfRangeSelection) {
+                throw new AppException(ErrorCode.SUBMISSION_ANSWER_INVALID);
+            }
+
+            List<Integer> correctIndexes = resolveCorrectOptionIndexes(question);
+            if (correctIndexes.isEmpty()) {
+                throw new AppException(ErrorCode.ASSIGNMENT_QUESTION_INVALID);
+            }
+
+            Set<Integer> selectedSet = new HashSet<>(selectedIndexes);
+            Set<Integer> correctSet = new HashSet<>(correctIndexes);
+
+            boolean correct = selectedSet.equals(correctSet);
+
             answer.setScore(correct ? question.getMaxScore() : BigDecimal.ZERO);
             answer.setAutoGraded(true);
             return;
@@ -334,6 +357,59 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         answer.setAutoGraded(false);
+    }
+
+    private List<Integer> resolveSelectedOptionIndexes(SubmissionAnswerRequest request) {
+        List<Integer> indexes = request.getSelectedOptionIndexes();
+        if (indexes == null || indexes.isEmpty()) {
+            if (request.getSelectedOptionIndex() == null) {
+                return List.of();
+            }
+            indexes = List.of(request.getSelectedOptionIndex());
+        }
+
+        List<Integer> normalized = indexes.stream()
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (normalized.size() != indexes.size()) {
+            throw new AppException(ErrorCode.SUBMISSION_ANSWER_INVALID);
+        }
+
+        LinkedHashSet<Integer> uniqueOrdered = new LinkedHashSet<>(normalized);
+        List<Integer> result = new ArrayList<>(uniqueOrdered);
+        Collections.sort(result);
+        return result;
+    }
+
+    private List<Integer> resolveSelectedOptionIndexes(SubmissionAnswer answer) {
+        List<Integer> indexes = answer.getSelectedOptionIndexes();
+        if (indexes == null || indexes.isEmpty()) {
+            if (answer.getSelectedOptionIndex() == null) {
+                return List.of();
+            }
+            indexes = List.of(answer.getSelectedOptionIndex());
+        }
+
+        LinkedHashSet<Integer> uniqueOrdered = new LinkedHashSet<>(indexes);
+        List<Integer> result = new ArrayList<>(uniqueOrdered);
+        Collections.sort(result);
+        return result;
+    }
+
+    private List<Integer> resolveCorrectOptionIndexes(AssignmentQuestion question) {
+        List<Integer> indexes = question.getCorrectOptionIndexes();
+        if (indexes == null || indexes.isEmpty()) {
+            if (question.getCorrectOptionIndex() == null) {
+                return List.of();
+            }
+            indexes = List.of(question.getCorrectOptionIndex());
+        }
+
+        LinkedHashSet<Integer> uniqueOrdered = new LinkedHashSet<>(indexes);
+        List<Integer> result = new ArrayList<>(uniqueOrdered);
+        Collections.sort(result);
+        return result;
     }
 
     private SubmissionResponse toResponse(Submission submission) {

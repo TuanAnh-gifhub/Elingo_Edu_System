@@ -35,6 +35,21 @@ const SubmissionDetailPage = () => {
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!submission) return <div className="p-6">Khong tim thay bai nop</div>;
 
+  const formatSelectedOptions = (indexes?: number[], fallback?: number) => {
+    const resolved = indexes && indexes.length > 0
+      ? indexes
+      : fallback !== undefined
+        ? [fallback]
+        : [];
+
+    if (resolved.length === 0) return null;
+    return resolved
+      .slice()
+      .sort((a, b) => a - b)
+      .map((item) => item + 1)
+      .join(", ");
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">Ket qua bai nop</h1>
@@ -53,8 +68,8 @@ const SubmissionDetailPage = () => {
           <div key={answer.answerId} className="border rounded p-4 bg-white shadow-sm">
             <div className="font-semibold">Cau {answer.questionOrder}: {answer.questionContent}</div>
             {answer.answerText && <div className="mt-2">Tra loi: {answer.answerText}</div>}
-            {answer.selectedOptionIndex !== undefined && (
-              <div className="mt-2">Lua chon: {answer.selectedOptionIndex + 1}</div>
+            {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex) && (
+              <div className="mt-2">Lua chon: {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex)}</div>
             )}
             {answer.audioUrl && (
               <div className="mt-2 space-y-2">

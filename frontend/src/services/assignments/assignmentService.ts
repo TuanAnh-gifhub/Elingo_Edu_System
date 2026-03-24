@@ -24,6 +24,7 @@ export interface AssignmentQuestion {
   questionContent: string;
   options?: string[];
   correctOptionIndex?: number;
+  correctOptionIndexes?: number[];
   sampleAnswer?: string;
   maxScore: number;
 }
@@ -49,6 +50,7 @@ export interface SubmissionAnswerPayload {
   questionId: string;
   answerText?: string;
   selectedOptionIndex?: number;
+  selectedOptionIndexes?: number[];
   audioFileId?: string;
 }
 
@@ -68,6 +70,7 @@ export interface SubmissionAnswer {
   questionContent: string;
   answerText?: string;
   selectedOptionIndex?: number;
+  selectedOptionIndexes?: number[];
   audioUrl?: string;
   transcriptText?: string;
   score?: number;
@@ -98,6 +101,7 @@ export interface CreateAssignmentQuestionPayload {
   questionContent: string;
   options?: string[];
   correctOptionIndex?: number;
+  correctOptionIndexes?: number[];
   sampleAnswer?: string;
   maxScore: number;
 }
@@ -117,6 +121,7 @@ export interface UpdateAssignmentPayload {
   title: string;
   description?: string;
   deadline?: string;
+  clearDeadline?: boolean;
   accessPassword?: string;
   maxAttempts?: number;
   timeLimitMinutes?: number;

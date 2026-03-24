@@ -95,6 +95,21 @@ const TeacherSubmissionPage = () => {
 
   if (!assignmentId) return <div className="p-6">Thieu assignmentId</div>;
 
+  const formatSelectedOptions = (indexes?: number[], fallback?: number) => {
+    const resolved = indexes && indexes.length > 0
+      ? indexes
+      : fallback !== undefined
+        ? [fallback]
+        : [];
+
+    if (resolved.length === 0) return null;
+    return resolved
+      .slice()
+      .sort((a, b) => a - b)
+      .map((item) => item + 1)
+      .join(", ");
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="border rounded p-4 bg-white shadow-sm space-y-2">
@@ -132,8 +147,8 @@ const TeacherSubmissionPage = () => {
                   Cau {answer.questionOrder}: {answer.questionContent}
                 </div>
                 {answer.answerText && <div>Tra loi: {answer.answerText}</div>}
-                {answer.selectedOptionIndex !== undefined && (
-                  <div>Lua chon: {answer.selectedOptionIndex + 1}</div>
+                {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex) && (
+                  <div>Lua chon: {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex)}</div>
                 )}
                 {answer.audioUrl && (
                   <div className="space-y-2">

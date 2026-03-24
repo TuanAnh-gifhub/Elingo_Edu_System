@@ -16,6 +16,9 @@ export default defineConfig({
       },
     },
   ],
+  define: {
+    global: 'window',
+  },
   resolve: {
     alias: {},
   },
@@ -23,6 +26,6 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   optimizeDeps: {
-    include: ['antd', '@ant-design/icons'],
+    include: ['antd', '@ant-design/icons', 'sockjs-client', 'stompjs'],
   },
 })

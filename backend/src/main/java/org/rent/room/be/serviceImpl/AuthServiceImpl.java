@@ -71,7 +71,8 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            Role renterRole = roleRepository.findByRoleName("RENTER")
+            Role renterRole = roleRepository.findByRoleName("STUDENT")
+                    .or(() -> roleRepository.findByRoleName("STEACHER"))
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
             user = User.builder()

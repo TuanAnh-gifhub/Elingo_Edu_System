@@ -20,7 +20,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIDefinition(
         tags = {
                 @Tag(name = "1. Authentication", description = "API quản lý xác thực"),
-                @Tag(name = "2. User", description = "API quản lý người dùng")
+                @Tag(name = "2. User", description = "API quản lý người dùng"),
+                @Tag(name = "3. ClassRoom", description = "API quản lý lớp học"),
+                @Tag(name = "4. Course", description = "API quản lý khoá học"),
+                @Tag(name = "5. Post", description = "API quản lý bài đăng"),
+                @Tag(name = "6. Wallet", description = "API quản lý ví"),
+                @Tag(name = "7. Payment", description = "API quản lý thanh toán"),
+                @Tag(name = "8. Chat", description = "API quản lý chat"),
         }
 )
 

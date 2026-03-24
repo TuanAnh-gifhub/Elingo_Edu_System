@@ -17,7 +17,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import authService, {
   type ApiResponse as AuthApiResponse,
   type LoginResponse,
-  type LoginGoogleResponse,
   type CreateUsersRequest,
 } from "../../../services/auth/authService";
 import {
@@ -294,7 +293,7 @@ const LoginPage = ({ isOpen, onClose }: LoginPageProps) => {
       setIsLoading(true);
       setErrorMessage("");
       try {
-        const res: AuthApiResponse<LoginGoogleResponse> =
+        const res: AuthApiResponse<LoginResponse> =
           await authService.loginGoogle(codeResponse.code);
         if (res && res.code === 200) {
           const meResponse = await authService.getCurrentUser();
@@ -348,7 +347,7 @@ const LoginPage = ({ isOpen, onClose }: LoginPageProps) => {
             <div className="absolute inset-0 bg-black/40" />
 
             <div className={`absolute bottom-4 text-white hidden md:block ${isRegisterMode ? "right-4 text-right" : "left-4 text-left"}`}>
-              <div className="text-lg font-semibold">EduRoom</div>
+              <div className="text-lg font-semibold">Elingo</div>
               <div className="text-sm text-white/90">
                 Tìm phòng nhanh, quản lý dễ dàng.
               </div>

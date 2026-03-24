@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 // Đảm bảo đường dẫn import đúng với project của bạn
 import { userService, type UserResponse } from "../services/usersService";
+import websocketService from "../services/chats/websocketService";
 
 interface AuthContextType {
   user: UserResponse | null;
@@ -24,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) {
       setUser(null);
       setIsLoading(false);
+      websocketService.disconnect();
       return;
     }
 
@@ -34,6 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (actualData?.result) {
         setUser(actualData.result);
+
+        const wsUrl =
+          import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
+        if (!websocketService.isConnected()) {
+          websocketService.connect(wsUrl, token);
+        }
       }
     } catch (error) {
       console.error("Fetch user thất bại, chờ interceptor refresh token...");
@@ -51,12 +59,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = (userData: UserResponse) => {
     setUser(userData);
     setIsLoading(false);
+
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      const wsUrl = import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
+      if (!websocketService.isConnected()) {
+        websocketService.connect(wsUrl, token);
+      }
+    }
   };
 
   const logout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setUser(null);
+    websocketService.disconnect();
   };
 
   return (

@@ -61,6 +61,8 @@ public enum ErrorCode {
     QUESTION_OPTION_NOT_FOUND(6201, "Question option not found", HttpStatus.NOT_FOUND),
 
 
+    //Wallet
+    WALLET_NOT_FOUND(6001,"Người dùng chưa tạo ví cá nhân", HttpStatus.NOT_FOUND),
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung

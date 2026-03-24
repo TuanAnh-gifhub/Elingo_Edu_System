@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  FaPaperPlane, 
-  FaSmile, 
-  FaImage, 
-  FaMicrophone, 
-  FaStop
+import {
+  FaPaperPlane,
+  FaSmile,
+  FaImage,
 } from "react-icons/fa";
 import EmojiPicker from "./EmojiPicker";
 import FilePreview from "./FilePreview";
@@ -17,7 +15,7 @@ interface FileItem {
 interface MessageInputProps {
   newMessage: string;
   setNewMessage: (message: string | ((prev: string) => string)) => void;
-  onSendMessage: () => void;
+  handleSendMessage: () => void;
   selectedFiles: FileItem[];
   setSelectedFiles: React.Dispatch<React.SetStateAction<FileItem[]>>;
   imagePreview: string | null;
@@ -31,40 +29,35 @@ interface MessageInputProps {
   isDarkMode?: boolean;
 }
 
-// Quick reply templates
 const quickReplies = [
-  "Giá bao nhiêu?",
-  "Xe còn không?",
-  "Địa chỉ ở đâu?",
-  "Có fix giá không?",
+  "Phòng còn trống không ạ?",
+  "Địa chỉ cụ thể ở đâu ạ?",
+  "Giá thuê theo giờ bao nhiêu?",
+  "Có máy chiếu/wifi không ạ?",
   "Cảm ơn"
 ];
 
-const MessageInput = ({ 
-  newMessage, 
-  setNewMessage, 
-  onSendMessage, 
-  selectedFiles, 
-  // setSelectedFiles, 
-  imagePreview, 
-  // setImagePreview,
-  isRecording,
-  onVoiceRecord,
+const MessageInput = ({
+  newMessage,
+  setNewMessage,
+  handleSendMessage,
+  selectedFiles,
+  imagePreview,
   onFileSelect,
   onRemoveFile,
   onRemoveImagePreview,
   onClearAllFiles,
-  isDarkMode = false
+  isDarkMode = false,
 }: MessageInputProps) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
-  
+
   // Inject compact scrollbar for quick replies
   useEffect(() => {
-    const id = 'quick-replies-scroll-style';
+    const id = "quick-replies-scroll-style";
     if (!document.getElementById(id)) {
-      const style = document.createElement('style');
+      const style = document.createElement("style");
       style.id = id;
       style.innerHTML = `
         .quick-replies{ scrollbar-width: thin; }
@@ -81,9 +74,12 @@ const MessageInput = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onSendMessage();
+      // Chỉ gửi khi có nội dung hoặc có file được chọn
+      if (newMessage.trim() || selectedFiles.length > 0) {
+        handleSendMessage();
+      }
     }
   };
 
@@ -93,9 +89,11 @@ const MessageInput = ({
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} px-4 py-3 flex-shrink-0`}>
+    <div
+      className={`${isDarkMode ? "bg-gray-800" : "bg-white"} px-4 py-3 flex-shrink-0`}
+    >
       {/* File Preview */}
-      <FilePreview 
+      <FilePreview
         imagePreview={imagePreview}
         selectedFiles={selectedFiles}
         onRemoveImagePreview={onRemoveImagePreview}
@@ -110,7 +108,9 @@ const MessageInput = ({
             key={index}
             onClick={() => handleQuickReply(reply)}
             className={`flex-shrink-0 px-3 py-2 text-sm rounded-full transition-colors ${
-              isDarkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              isDarkMode
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {reply}
@@ -122,22 +122,22 @@ const MessageInput = ({
       <div className="flex items-center gap-3">
         {/* Emoji Picker */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className={`p-2 transition-colors ${isDarkMode ? 'text-gray-300 hover:text-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2 transition-colors ${isDarkMode ? "text-gray-300 hover:text-gray-100" : "text-gray-500 hover:text-gray-700"}`}
           >
             <FaSmile className="w-4 h-4" />
           </button>
-          
+
           {showEmojiPicker && (
-            <EmojiPicker 
+            <EmojiPicker
               ref={emojiPickerRef}
               onEmojiSelect={handleEmojiSelect}
               onClose={() => setShowEmojiPicker(false)}
             />
           )}
         </div>
-        
+
         <div className="flex-1 relative">
           <input
             type="text"
@@ -146,33 +146,22 @@ const MessageInput = ({
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             className={`w-full px-4 py-3 rounded-full focus:ring-2 focus:ring-[#4da6ff] outline-none transition-colors ${
-              isDarkMode 
-                ? 'bg-gray-700 text-white placeholder-gray-400 border border-gray-600 hover:border-[#4da6ff] focus:border-[#4da6ff]' 
-                : 'bg-white text-gray-900 placeholder-gray-500 border border-gray-300 hover:border-[#4da6ff] focus:border-[#4da6ff]'
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400 border border-gray-600 hover:border-[#4da6ff] focus:border-[#4da6ff]"
+                : "bg-white text-gray-900 placeholder-gray-500 border border-gray-300 hover:border-[#4da6ff] focus:border-[#4da6ff]"
             }`}
           />
         </div>
 
         <button
-          onClick={onVoiceRecord}
-          className={`p-2 transition-colors ${
-            isRecording 
-              ? 'text-red-500' 
-              : (isDarkMode ? 'text-gray-300 hover:text-gray-100' : 'text-gray-500 hover:text-gray-700')
-          }`}
-        >
-          {isRecording ? <FaStop className="w-4 h-4" /> : <FaMicrophone className="w-4 h-4" />}
-        </button>
-
-        <button 
           onClick={() => fileInputRef.current?.click()}
-          className={`p-2 transition-colors ${isDarkMode ? 'text-gray-300 hover:text-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`p-2 transition-colors ${isDarkMode ? "text-gray-300 hover:text-gray-100" : "text-gray-500 hover:text-gray-700"}`}
         >
           <FaImage className="w-4 h-4" />
         </button>
 
         <button
-          onClick={onSendMessage}
+          onClick={handleSendMessage}
           className="p-2 bg-[#4da6ff] hover:bg-[#4da6ff]/90 text-white rounded-full transition-colors"
         >
           <FaPaperPlane className="w-4 h-4" />

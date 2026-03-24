@@ -18,6 +18,11 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public Map uploadImage(MultipartFile file) throws IOException {
+        return uploadMedia(file);
+    }
+
+    @Override
+    public Map uploadMedia(MultipartFile file) throws IOException {
         Map params = ObjectUtils.asMap(
                 "resource_type", "auto"
         );

@@ -1,4 +1,6 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
 import RootLayout from "../layouts/RootLayout";
 import LandingPage from "../pages/Customer/LandingPage/LandingPage";
 import ChatBoxHome from "../pages/Customer/ChatBox/ChatBoxHome";
@@ -22,6 +24,55 @@ import UserManagement from "../pages/Admin/UserManagement";
 import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
 import ClassListPage from "../pages/Customer/ClassRoom/ClassListPage";
 import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
+import AssignmentListPage from "../pages/Customer/Assignment/AssignmentListPage";
+import AssignmentDetailPage from "../pages/Customer/Assignment/AssignmentDetailPage";
+import SubmissionDetailPage from "../pages/Customer/Assignment/SubmissionDetailPage";
+import TeacherAssignmentPage from "../pages/Customer/Assignment/TeacherAssignmentPage";
+import TeacherSubmissionPage from "../pages/Customer/Assignment/TeacherSubmissionPage";
+
+const RequireAuth = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+const RequireRole = ({
+  children,
+  allowRoles,
+}: {
+  children: ReactNode;
+  allowRoles: string[];
+}) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user || !allowRoles.includes(user.role)) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
 
 export const router = createBrowserRouter([
   {
@@ -128,6 +179,51 @@ export const router = createBrowserRouter([
         path: "classes/:classId",
         element: <ClassDetailPage />,
         handle: { breadcrumb: "Chi tiết lớp học" },
+      },
+      {
+        path: "assignments",
+        element: (
+          <RequireAuth>
+            <AssignmentListPage />
+          </RequireAuth>
+        ),
+        handle: { breadcrumb: "Bài tập" },
+      },
+      {
+        path: "assignments/:assignmentId",
+        element: (
+          <RequireRole allowRoles={["STUDENT"]}>
+            <AssignmentDetailPage />
+          </RequireRole>
+        ),
+        handle: { breadcrumb: "Làm bài tập" },
+      },
+      {
+        path: "submissions/:submissionId",
+        element: (
+          <RequireAuth>
+            <SubmissionDetailPage />
+          </RequireAuth>
+        ),
+        handle: { breadcrumb: "Kết quả bài nộp" },
+      },
+      {
+        path: "teacher/assignments",
+        element: (
+          <RequireRole allowRoles={["TEACHER"]}>
+            <TeacherAssignmentPage />
+          </RequireRole>
+        ),
+        handle: { breadcrumb: "Quản lý bài tập" },
+      },
+      {
+        path: "teacher/assignments/:assignmentId/submissions",
+        element: (
+          <RequireRole allowRoles={["TEACHER"]}>
+            <TeacherSubmissionPage />
+          </RequireRole>
+        ),
+        handle: { breadcrumb: "Chấm bài" },
       },
     ],
   },

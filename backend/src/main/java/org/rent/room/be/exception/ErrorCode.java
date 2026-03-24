@@ -32,6 +32,31 @@ public enum ErrorCode {
     FILE_NOT_FOUND(4003,"File not found in course", HttpStatus.NOT_FOUND),
     FILE_DOWNLOAD_ERROR(4004,"Error downloading file", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    //Assignment
+    ASSIGNMENT_NOT_FOUND(7001, "Assignment not found", HttpStatus.NOT_FOUND),
+    ASSIGNMENT_FORBIDDEN(7002, "You do not have permission for this assignment", HttpStatus.FORBIDDEN),
+    ASSIGNMENT_QUESTION_INVALID(7003, "Assignment question is invalid", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_QUESTION_NOT_FOUND(7004, "Assignment question not found", HttpStatus.NOT_FOUND),
+    ASSIGNMENT_NOT_ACTIVE(7005, "Assignment is not active", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_DEADLINE_EXCEEDED(7006, "Assignment deadline has passed", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_PASSWORD_INVALID(7007, "Assignment password is invalid", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_TIME_LIMIT_INVALID(7008, "Assignment time limit is invalid", HttpStatus.BAD_REQUEST),
+
+    //Submission
+    SUBMISSION_NOT_FOUND(7101, "Submission not found", HttpStatus.NOT_FOUND),
+    SUBMISSION_ALREADY_EXISTS(7102, "Submission already exists", HttpStatus.BAD_REQUEST),
+    SUBMISSION_FORBIDDEN(7103, "You do not have permission for this submission", HttpStatus.FORBIDDEN),
+    SUBMISSION_ANSWERS_INCOMPLETE(7104, "Submission answers are incomplete", HttpStatus.BAD_REQUEST),
+    SUBMISSION_ANSWER_INVALID(7105, "Submission answer is invalid", HttpStatus.BAD_REQUEST),
+    SUBMISSION_ANSWER_NOT_FOUND(7106, "Submission answer not found", HttpStatus.NOT_FOUND),
+    SUBMISSION_GRADE_INVALID(7107, "Submission grade is invalid", HttpStatus.BAD_REQUEST),
+    SUBMISSION_ATTEMPT_LIMIT_EXCEEDED(7108, "Submission attempt limit exceeded", HttpStatus.BAD_REQUEST),
+    SUBMISSION_ATTEMPT_STARTED_AT_REQUIRED(7109, "Submission attempt start time is required", HttpStatus.BAD_REQUEST),
+    SUBMISSION_TIME_LIMIT_EXCEEDED(7110, "Submission time limit exceeded", HttpStatus.BAD_REQUEST),
+
+    //Audio
+    AUDIO_FILE_NOT_FOUND(7201, "Audio file not found", HttpStatus.NOT_FOUND),
+
     //Post
     POST_NOT_FOUND(5001,"Post not found", HttpStatus.NOT_FOUND),
 

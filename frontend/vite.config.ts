@@ -9,9 +9,9 @@ export default defineConfig({
       name: 'exclude-node-modules-css',
       enforce: 'pre',
       transform(_code, id) {
-        // Bỏ qua các file CSS từ node_modules khỏi PostCSS processing
+
         if (id.includes('node_modules') && id.endsWith('.css')) {
-          return null
+          return null;
         }
       },
     },

@@ -8,5 +8,7 @@ import java.util.Map;
 public interface UploadService {
 
     Map uploadImage(MultipartFile file) throws IOException;
+
+    Map uploadMedia(MultipartFile file) throws IOException;
 }
 

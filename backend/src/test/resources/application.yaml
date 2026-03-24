@@ -1,0 +1,45 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.mongodb.autoconfigure.MongoAutoConfiguration
+      - org.springframework.boot.mongodb.autoconfigure.MongoDataAutoConfiguration
+      - org.springframework.boot.mongodb.autoconfigure.MongoRepositoriesAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+  flyway:
+    enabled: false
+
+  mail:
+    host: localhost
+    port: 2525
+    username: test
+    password: test
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/test
+
+jwt:
+  secret-key: YXQtYmFzZTY0LXNpbXBsZS1zZWNyZXQtdGVzdC1rZXktMzJi
+  access-expiration: 900000
+  refresh-expiration: 604800000
+
+payos:
+  client-id: test
+  api-key: test
+  checksum-key: test
+
+token_reset_password_expire_seconds: 900
+
+
+
+

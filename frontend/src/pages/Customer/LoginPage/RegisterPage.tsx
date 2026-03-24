@@ -112,7 +112,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
         phone: formValues.phone ?? "",
         gender: formValues.gender,
         dateOfBirth: formValues.dateOfBirth,
-        roleName: "RENTER",
+        roleName: "STUDENT",
       };
 
       const response = await authService.registerRequest(payload);
@@ -212,7 +212,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 
             {/* Thông tin thương hiệu trên video */}
             <div className="absolute bottom-4 right-4 text-white hidden md:block text-right">
-              <div className="text-lg font-semibold">EduRoom</div>
+              <div className="text-lg font-semibold">Elingo</div>
               <div className="text-sm text-white/90">
                 Đăng ký ngay để bắt đầu.
               </div>

@@ -33,7 +33,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -79,3 +79,11 @@ token_reset_password_expire_seconds: 900
 
 file:
   upload-dir: ./uploads
+
+payos:
+  client-id: ${PAYOS_CLIENT_ID:}
+  api-key: ${PAYOS_API_KEY:}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:}
+  base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/deposit-result}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/deposit-result}

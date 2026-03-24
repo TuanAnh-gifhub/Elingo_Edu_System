@@ -25,16 +25,18 @@ public class AuthGoogleServiceImpl implements AuthGoogleService {
     @Override
     public LoginGoogleResponse authenticate(String code) {
 
+        String redirectUri = "postmessage";
+
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("code", code);
         formData.add("client_id", clientProperties.getId());
         formData.add("client_secret", clientProperties.getSecret());
-        formData.add("redirect_uri", "postmessage");
+        formData.add("redirect_uri", redirectUri);
         formData.add("grant_type", "authorization_code");
 
         // Log xem mình gửi cái gì lên Google
         log.info("Sending params to Google: client_id={}, redirect_uri={}",
-                clientProperties.getId(), clientProperties.getUri());
+                clientProperties.getId(), redirectUri);
 
         try {
             // BƯỚC 1: Lấy Access Token

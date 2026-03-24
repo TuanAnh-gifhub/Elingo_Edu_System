@@ -5,10 +5,17 @@ import ChatBoxHome from "../pages/Customer/ChatBox/ChatBoxHome";
 import WalletPage from "../pages/Customer/WalletPage/WalletPage";
 import WalletHistoryPage from "../pages/Customer/WalletPage/WalletHistoryPage";
 import WalletPromotion from "../pages/Customer/WalletPage/WalletPromotion";
+import WalletDepositResultPage from "../pages/Customer/WalletPage/WalletDepositResultPage";
+import DepositResultPage from "../pages/Customer/Payment/DepositResultPage";
+import BookingPaymentResultPage from "../pages/Customer/Payment/BookingPaymentResultPage";
 import NotFound from "../components/Error/NotFound";
 import AdminPage from "../pages/Admin/AdminPage";
 import LoginAdmin from "../pages/Admin/LoginAdmin";
 import { ProtectedAdminRoute } from "./ProtectedAdminRouter";
+import AdminWalletOverviewPage from "../pages/Admin/WalletManagement/AdminWalletOverviewPage";
+import CommissionConfigManagementPage from "../pages/Admin/WalletManagement/CommissionConfigManagementPage";
+import WalletFreezeManagementPage from "../pages/Admin/WalletManagement/WalletFreezeManagementPage";
+import WalletWithdrawManagementPage from "../pages/Admin/WalletManagement/WalletWithdrawManagementPage";
 import AboutUs from "../pages/Customer/AboutUs/AboutUs";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
@@ -49,6 +56,21 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Ví cá nhân" },
       },
       {
+        path: "wallet/recharge",
+        element: <WalletPage />,
+        handle: { breadcrumb: "Nạp tiền" },
+      },
+      {
+        path: "wallet/withdraw",
+        element: <WalletPage />,
+        handle: { breadcrumb: "Rút tiền" },
+      },
+      {
+        path: "wallet/revenue",
+        element: <WalletPage />,
+        handle: { breadcrumb: "Doanh thu" },
+      },
+      {
         path: "wallet/history",
         element: <WalletHistoryPage />,
         handle: { breadcrumb: "Lịch sử giao dịch" },
@@ -57,6 +79,21 @@ export const router = createBrowserRouter([
         path: "wallet/promotion",
         element: <WalletPromotion />,
         handle: { breadcrumb: "Khuyến mãi" },
+      },
+      {
+        path: "payment/deposit-result",
+        element: <DepositResultPage />,
+        handle: { breadcrumb: "Kết quả nạp tiền" },
+      },
+      {
+        path: "wallet/deposit/result",
+        element: <WalletDepositResultPage />,
+        handle: { breadcrumb: "Kết quả nạp tiền" },
+      },
+      {
+        path: "payment/booking-result",
+        element: <BookingPaymentResultPage />,
+        handle: { breadcrumb: "Kết quả thanh toán" },
       },
       {
         path: "reset-password",
@@ -132,6 +169,22 @@ export const router = createBrowserRouter([
       {
         path: "customers",
         element: <UserManagement />,
+      },
+      {
+        path: "transactions",
+        element: <WalletWithdrawManagementPage />,
+      },
+      {
+        path: "wallet-overview",
+        element: <AdminWalletOverviewPage />,
+      },
+      {
+        path: "commission-config",
+        element: <CommissionConfigManagementPage />,
+      },
+      {
+        path: "wallet-freeze",
+        element: <WalletFreezeManagementPage />,
       },
     ],
   },

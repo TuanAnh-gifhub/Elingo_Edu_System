@@ -41,6 +41,8 @@ public class SecurityConfig {
             "/posts/**",
             "/courses",
             "/courses/**",
+            "/wallet/deposit/webhook",
+            "/payments/payos/webhook",
             "/api/v1/files/**"
     };
 

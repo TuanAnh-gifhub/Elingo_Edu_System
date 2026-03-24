@@ -102,30 +102,39 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Link to="/admin/transactions">Lịch sử giao dịch</Link>,
         "/admin/transactions",
       ),
-    ]),
-
-    // 6. Đánh giá & Phản hồi
-    getItem(
-      <Link to="/admin/reviews">Đánh giá từ khách</Link>,
-      "/admin/reviews",
-      <StarOutlined />,
-    ),
-
-    // 7. Cài đặt hệ thống -> THÊM CHILD
-    getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
       getItem(
-        <Link to="/admin/room-types">Loại phòng</Link>,
-        "/admin/room-types",
+        <Link to="/admin/wallet-overview">Tổng quan ví hệ thống</Link>,
+        "/admin/wallet-overview",
       ),
       getItem(
-        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
-        "/admin/amenities",
+        <Link to="/admin/commission-config">Cấu hình Commission</Link>,
+        "/admin/commission-config",
       ),
       getItem(
-        <Link to="/admin/settings">Cài đặt chung</Link>,
-        "/admin/settings",
+        <Link to="/admin/wallet-freeze">Khóa/Mở khóa ví</Link>,
+        "/admin/wallet-freeze",
       ),
     ]),
+
+      getItem(
+          <Link to="/admin/reviews">Đánh giá từ khách</Link>,
+          "/admin/reviews",
+          <StarOutlined />,
+      ),
+      getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
+          getItem(
+              <Link to="/admin/room-types">Loại phòng</Link>,
+              "/admin/room-types",
+          ),
+          getItem(
+              <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
+              "/admin/amenities",
+          ),
+          getItem(
+              <Link to="/admin/settings">Cài đặt chung</Link>,
+              "/admin/settings",
+          ),
+      ]),
 
     // Logout
     getItem("Đăng xuất", "logout", <LogoutOutlined />),

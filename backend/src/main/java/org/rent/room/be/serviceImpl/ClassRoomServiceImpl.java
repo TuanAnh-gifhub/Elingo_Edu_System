@@ -49,6 +49,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                 .currentStudents(0)
                 .active(true)
                 .schedule(request.getSchedule())
+                .poster(request.getPoster())
                 .build();
 
         return classRoomMapper.toResponse(classRoomRepository.save(classRoom));
@@ -111,6 +112,9 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         }
         if (request.getSchedule() != null) {
             classRoom.setSchedule(request.getSchedule());
+        }
+        if (request.getPoster() != null) {
+            classRoom.setPoster(request.getPoster());
         }
         if (request.getActive() != null) {
             classRoom.setActive(request.getActive());

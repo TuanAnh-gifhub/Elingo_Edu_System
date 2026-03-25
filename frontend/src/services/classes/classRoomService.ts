@@ -28,6 +28,7 @@ export interface CreateClassRoomRequest {
   endDate: string;
   maxStudents: number;
   schedule: string;
+  poster?: string;
 }
 
 export interface UpdateClassRoomRequest {
@@ -39,6 +40,7 @@ export interface UpdateClassRoomRequest {
   endDate: string;
   maxStudents: number;
   schedule: string;
+  poster?: string;
 }
 
 export interface ClassRoomPageResponse {

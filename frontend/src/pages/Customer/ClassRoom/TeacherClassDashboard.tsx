@@ -10,6 +10,7 @@ import type {
   CreateCourseRequest,
   UpdateCourseRequest,
 } from "../../../services/courses/courseService";
+import { uploadToCloudinary } from "../../../services/upload/uploadService";
 
 interface CourseItem {
   courseId: string;
@@ -26,11 +27,16 @@ interface NewClassForm {
   className: string;
   description: string;
   schedule: string;
+  poster: string;
   maxStudents: number;
   price: number;
   startDate: string;
   endDate: string;
 }
+
+const MAX_POSTER_LENGTH = 1000;
+const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
 
 interface NewCourseForm {
   title: string;
@@ -43,6 +49,7 @@ const INITIAL_CLASS_FORM: NewClassForm = {
   className: "",
   description: "",
   schedule: "",
+  poster: "",
   maxStudents: 25,
   price: 0,
   startDate: "",
@@ -94,11 +101,29 @@ const mapClassToForm = (classItem: ClassRoomDto): NewClassForm => ({
   className: classItem.className || "",
   description: classItem.description || "",
   schedule: classItem.schedule || "",
+  poster: classItem.poster || "",
   maxStudents: classItem.maxStudents ?? 25,
   price: Number(classItem.price || 0),
   startDate: formatIsoToDatetimeLocal(classItem.startDate),
   endDate: formatIsoToDatetimeLocal(classItem.endDate),
 });
+
+const normalizePoster = (poster: string): string | undefined => {
+  const trimmedPoster = poster.trim();
+  return trimmedPoster ? trimmedPoster : undefined;
+};
+
+const validatePosterFile = (file: File): string | null => {
+  if (!file.type.startsWith("image/")) {
+    return "Vui lòng chọn file ảnh hợp lệ (jpg, png, webp...).";
+  }
+
+  if (file.size > MAX_POSTER_FILE_SIZE_BYTES) {
+    return "Ảnh poster không được vượt quá 5MB.";
+  }
+
+  return null;
+};
 
 const mapCourseToForm = (courseItem: CourseItem): NewCourseForm => ({
   title: courseItem.title || "",
@@ -140,6 +165,8 @@ const TeacherClassDashboard = ({
   const [isCreatingClass, setIsCreatingClass] = useState(false);
   const [isUpdatingClass, setIsUpdatingClass] = useState(false);
   const [isDeletingClass, setIsDeletingClass] = useState(false);
+  const [isUploadingCreatePoster, setIsUploadingCreatePoster] = useState(false);
+  const [isUploadingEditPoster, setIsUploadingEditPoster] = useState(false);
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [isUpdatingCourse, setIsUpdatingCourse] = useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
@@ -262,6 +289,16 @@ const TeacherClassDashboard = ({
       return;
     }
 
+    if (isUploadingCreatePoster) {
+      toast.error("Ảnh poster đang được upload. Vui lòng đợi hoàn tất.");
+      return;
+    }
+
+    if (classForm.poster.trim().length > MAX_POSTER_LENGTH) {
+      toast.error(`Poster không được vượt quá ${MAX_POSTER_LENGTH} ký tự.`);
+      return;
+    }
+
     const payload: CreateClassRoomRequest = {
       className: classForm.className.trim(),
       description: classForm.description.trim() || "Lớp mới tạo",
@@ -271,6 +308,7 @@ const TeacherClassDashboard = ({
       endDate: endDate.toISOString(),
       maxStudents: Number(classForm.maxStudents || 1),
       schedule: classForm.schedule.trim() || "Chưa lên lịch",
+      poster: normalizePoster(classForm.poster),
     };
 
     try {
@@ -459,6 +497,62 @@ const TeacherClassDashboard = ({
     setShowEditClassForm(true);
   };
 
+  const handleUploadPoster = async (file: File, isEditForm: boolean) => {
+    const validationError = validatePosterFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    if (isEditForm) {
+      setIsUploadingEditPoster(true);
+    } else {
+      setIsUploadingCreatePoster(true);
+    }
+
+    try {
+      const uploaded = await uploadToCloudinary(file, {
+        folder: CLASS_POSTER_UPLOAD_FOLDER,
+      });
+
+      if (!uploaded.success || !uploaded.data.url) {
+        toast.error(uploaded.error || "Upload poster thất bại.");
+        return;
+      }
+
+      if (uploaded.data.url.length > MAX_POSTER_LENGTH) {
+        toast.error(`URL poster vượt quá ${MAX_POSTER_LENGTH} ký tự.`);
+        return;
+      }
+
+      if (isEditForm) {
+        setEditClassForm((prev) => ({
+          ...prev,
+          poster: uploaded.data.url,
+        }));
+      } else {
+        setClassForm((prev) => ({
+          ...prev,
+          poster: uploaded.data.url,
+        }));
+      }
+
+      toast.success("Upload poster thành công.");
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Upload poster thất bại. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      if (isEditForm) {
+        setIsUploadingEditPoster(false);
+      } else {
+        setIsUploadingCreatePoster(false);
+      }
+    }
+  };
+
   const handleUpdateClass = async () => {
     if (!selectedClass) {
       toast.error("Không tìm thấy lớp để cập nhật.");
@@ -493,6 +587,16 @@ const TeacherClassDashboard = ({
       return;
     }
 
+    if (isUploadingEditPoster) {
+      toast.error("Ảnh poster đang được upload. Vui lòng đợi hoàn tất.");
+      return;
+    }
+
+    if (editClassForm.poster.trim().length > MAX_POSTER_LENGTH) {
+      toast.error(`Poster không được vượt quá ${MAX_POSTER_LENGTH} ký tự.`);
+      return;
+    }
+
     const payload: UpdateClassRoomRequest = {
       className: editClassForm.className.trim(),
       description: editClassForm.description.trim() || "Lớp học đã cập nhật",
@@ -502,6 +606,7 @@ const TeacherClassDashboard = ({
       endDate: endDate.toISOString(),
       maxStudents: Number(editClassForm.maxStudents || 1),
       schedule: editClassForm.schedule.trim() || "Chưa lên lịch",
+      poster: normalizePoster(editClassForm.poster),
     };
 
     try {
@@ -731,6 +836,51 @@ const TeacherClassDashboard = ({
 
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-xs font-semibold text-slate-600">
+                  Poster lớp học
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    void (async () => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (!file) {
+                        return;
+                      }
+                      await handleUploadPoster(file, false);
+                    })()
+                  }
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                />
+                <span className="text-[11px] text-slate-500">
+                  Chọn ảnh từ máy tính, hệ thống sẽ upload lên Cloudinary.
+                </span>
+                {isUploadingCreatePoster && (
+                  <span className="text-xs text-sky-600">Đang upload poster...</span>
+                )}
+                {classForm.poster && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <img
+                      src={classForm.poster}
+                      alt="Poster preview"
+                      className="h-20 w-32 rounded-md border border-slate-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setClassForm((prev) => ({ ...prev, poster: "" }))
+                      }
+                      className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Xóa poster
+                    </button>
+                  </div>
+                )}
+              </label>
+
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-xs font-semibold text-slate-600">
                   Mô tả lớp học
                 </span>
                 <textarea
@@ -752,7 +902,7 @@ const TeacherClassDashboard = ({
               <button
                 type="button"
                 onClick={handleCreateClass}
-                disabled={isCreatingClass}
+                  disabled={isCreatingClass || isUploadingCreatePoster}
                 className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
               >
                 {isCreatingClass ? "Đang tạo..." : "Lưu lớp học"}
@@ -914,6 +1064,51 @@ const TeacherClassDashboard = ({
 
                 <label className="flex flex-col gap-1 md:col-span-2">
                   <span className="text-xs font-semibold text-slate-600">
+                    Poster lớp học
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      void (async () => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (!file) {
+                          return;
+                        }
+                        await handleUploadPoster(file, true);
+                      })()
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
+                  />
+                  <span className="text-[11px] text-slate-500">
+                    Chọn ảnh từ máy tính để cập nhật poster.
+                  </span>
+                  {isUploadingEditPoster && (
+                    <span className="text-xs text-amber-600">Đang upload poster...</span>
+                  )}
+                  {editClassForm.poster && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <img
+                        src={editClassForm.poster}
+                        alt="Poster preview"
+                        className="h-20 w-32 rounded-md border border-slate-200 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditClassForm((prev) => ({ ...prev, poster: "" }))
+                        }
+                        className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Xóa poster
+                      </button>
+                    </div>
+                  )}
+                </label>
+
+                <label className="flex flex-col gap-1 md:col-span-2">
+                  <span className="text-xs font-semibold text-slate-600">
                     Mô tả lớp học
                   </span>
                   <textarea
@@ -934,7 +1129,7 @@ const TeacherClassDashboard = ({
                 <button
                   type="button"
                   onClick={handleUpdateClass}
-                  disabled={isUpdatingClass}
+                  disabled={isUpdatingClass || isUploadingEditPoster}
                   className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isUpdatingClass ? "Đang lưu..." : "Lưu chỉnh sửa"}

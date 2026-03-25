@@ -1,6 +1,7 @@
 package org.rent.room.be.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -28,7 +29,7 @@ public class ClassRoomController {
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping
     public ResponseEntity<ApiResponse<ClassRoomResponse>> createClass(
-            @RequestBody CreateClassRoomRequest request
+            @Valid @RequestBody CreateClassRoomRequest request
     ) {
         ClassRoomResponse response = classRoomService.createClass(request);
         return ResponseEntity.ok(
@@ -76,7 +77,7 @@ public class ClassRoomController {
     @PutMapping("/{classId}")
     public ResponseEntity<ApiResponse<ClassRoomResponse>> updateClass(
             @PathVariable UUID classId,
-            @RequestBody UpdateClassRoomRequest request
+            @Valid @RequestBody UpdateClassRoomRequest request
     ) {
         ClassRoomResponse response = classRoomService.updateClass(classId, request);
         return ResponseEntity.ok(

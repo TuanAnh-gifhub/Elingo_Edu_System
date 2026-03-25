@@ -5,6 +5,7 @@ import org.rent.room.be.base.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -68,6 +69,19 @@ public class GlobalExceptionHandler {
                         .message("Malformed JSON request")
                         .build()
         );
+    }
+
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<ApiResponse<?>> handleSchemaOutdated(InvalidDataAccessResourceUsageException e) {
+        log.error("Database schema mismatch: ", e);
+
+        ErrorCode errorCode = ErrorCode.DATABASE_SCHEMA_OUTDATED;
+        return ResponseEntity
+                .status(errorCode.getHttpStatusCode())
+                .body(ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build());
     }
 
     // 6. CATCH-ALL: Bắt tất cả các lỗi còn lại (RuntimeException, NullPointer, DB Error...)

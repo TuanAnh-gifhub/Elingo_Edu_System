@@ -17,6 +17,7 @@ import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.AssignmentMapper;
 import org.rent.room.be.repository.AssignmentRepository;
 import org.rent.room.be.repository.ClassRoomRepository;
+import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.service.AssignmentService;
 import org.rent.room.be.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,6 +44,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final UserService userService;
     private final AssignmentMapper assignmentMapper;
     private final PasswordEncoder passwordEncoder;
@@ -154,6 +156,18 @@ public class AssignmentServiceImpl implements AssignmentService {
     public AssignmentResponse getAssignmentById(UUID assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        User currentUser = userService.getCurrentUserEntity();
+        if ("STUDENT".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+            boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
+                    currentUser.getUserId(),
+                    assignment.getClassRoom().getClassId()
+            );
+            if (!enrolled) {
+                throw new AppException(ErrorCode.CLASS_JOIN_REQUIRED);
+            }
+        }
+
         return toResponse(assignment);
     }
 
@@ -173,6 +187,23 @@ public class AssignmentServiceImpl implements AssignmentService {
                 classId, teacherId, keyword, deadlineFrom, deadlineTo, active
         );
 
+        User currentUser = userService.getCurrentUserEntity();
+        if ("STUDENT".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+            List<UUID> joinedClassIds = enrollmentRepository.findJoinedClassIdsByStudentId(currentUser.getUserId());
+
+            if (classId != null && !joinedClassIds.contains(classId)) {
+                return PageResponse.<AssignmentResponse>builder()
+                        .currentPage(page + 1)
+                        .totalPages(1)
+                        .pageSize(size)
+                        .totalElements(0)
+                        .data(List.of())
+                        .build();
+            }
+
+            spec = spec.and(AssignmentSpecification.classIdIn(joinedClassIds));
+        }
+
         Page<Assignment> assignmentPage = assignmentRepository.findAll(spec, pageable);
         Page<AssignmentResponse> mapped = assignmentPage.map(this::toResponse);
 
@@ -183,6 +214,37 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .totalElements(assignmentPage.getTotalElements())
                 .data(mapped.getContent())
                 .build();
+    }
+
+    @Override
+    public void validateAssignmentStart(UUID assignmentId, String accessPassword) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        if (!assignment.isActive()) {
+            throw new AppException(ErrorCode.ASSIGNMENT_NOT_ACTIVE);
+        }
+
+        if (assignment.getDeadline() != null && LocalDateTime.now().isAfter(assignment.getDeadline())) {
+            throw new AppException(ErrorCode.ASSIGNMENT_DEADLINE_EXCEEDED);
+        }
+
+        User currentUser = userService.getCurrentUserEntity();
+        if ("STUDENT".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+            boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
+                    currentUser.getUserId(),
+                    assignment.getClassRoom().getClassId()
+            );
+            if (!enrolled) {
+                throw new AppException(ErrorCode.CLASS_JOIN_REQUIRED);
+            }
+        }
+
+        if (assignment.getAccessPasswordHash() != null && !assignment.getAccessPasswordHash().isBlank()) {
+            if (accessPassword == null || !passwordEncoder.matches(accessPassword, assignment.getAccessPasswordHash())) {
+                throw new AppException(ErrorCode.ASSIGNMENT_PASSWORD_INVALID);
+            }
+        }
     }
 
     private void validateTeacher(User teacher) {

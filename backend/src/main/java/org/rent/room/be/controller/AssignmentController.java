@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.assignment.CreateAssignmentRequest;
+import org.rent.room.be.dto.request.assignment.StartAssignmentRequest;
 import org.rent.room.be.dto.request.assignment.UpdateAssignmentRequest;
 import org.rent.room.be.dto.response.assignment.AssignmentResponse;
 import org.rent.room.be.dto.response.audio.AssignmentAudioResponse;
@@ -125,6 +126,22 @@ public class AssignmentController {
                 .code(200)
                 .message("Get submissions successfully")
                 .result(result)
+                .build());
+    }
+
+    @PostMapping("/{assignmentId}/start")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> startAssignment(
+            @PathVariable UUID assignmentId,
+            @RequestBody(required = false) StartAssignmentRequest request
+    ) {
+        assignmentService.validateAssignmentStart(
+                assignmentId,
+                request != null ? request.getAccessPassword() : null
+        );
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(200)
+                .message("Assignment start validated")
                 .build());
     }
 

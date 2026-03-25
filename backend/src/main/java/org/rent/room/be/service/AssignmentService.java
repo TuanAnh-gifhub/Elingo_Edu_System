@@ -28,5 +28,7 @@ public interface AssignmentService {
             LocalDateTime deadlineTo,
             Boolean active
     );
+
+    void validateAssignmentStart(UUID assignmentId, String accessPassword);
 }
 

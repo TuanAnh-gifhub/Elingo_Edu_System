@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,7 +110,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 assignment.getClassRoom().getClassId()
         );
         if (!enrolled) {
-            throw new AppException(ErrorCode.SUBMISSION_FORBIDDEN);
+            throw new AppException(ErrorCode.CLASS_JOIN_REQUIRED);
         }
 
         long usedAttempts = submissionRepository.countByAssignment_AssignmentIdAndStudent_UserId(
@@ -176,12 +177,12 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         submission.setStatus(hasManualQuestion ? SubmissionStatus.IN_REVIEW : SubmissionStatus.GRADED);
         submission.setTotalScore(autoScore);
-        submission.setAnswers(answers);
 
-        return toResponse(submissionRepository.save(submission));
+        return toResponse(submission, true);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public SubmissionResponse getSubmissionById(UUID submissionId) {
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
@@ -194,7 +195,49 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new AppException(ErrorCode.SUBMISSION_FORBIDDEN);
         }
 
-        return toResponse(submission);
+        return toResponse(submission, true);
+    }
+
+    @Override
+    public SubmissionResponse getLatestMySubmissionByAssignment(UUID assignmentId) {
+        User student = userService.getCurrentUserEntity();
+        if (!"STUDENT".equalsIgnoreCase(student.getRole().getRoleName())) {
+            throw new AppException(ErrorCode.SUBMISSION_FORBIDDEN);
+        }
+
+        return submissionRepository
+                .findFirstByAssignment_AssignmentIdAndStudent_UserIdOrderByAttemptNumberDesc(
+                        assignmentId,
+                        student.getUserId()
+                )
+                .map(item -> toResponse(item, false))
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, SubmissionResponse> getLatestMySubmissionsByAssignmentIds(List<UUID> assignmentIds) {
+        User student = userService.getCurrentUserEntity();
+        if (!"STUDENT".equalsIgnoreCase(student.getRole().getRoleName())) {
+            throw new AppException(ErrorCode.SUBMISSION_FORBIDDEN);
+        }
+
+        if (assignmentIds == null || assignmentIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<UUID> distinctIds = assignmentIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (distinctIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return submissionRepository.findLatestByStudentAndAssignmentIds(student.getUserId(), distinctIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        item -> item.getAssignment().getAssignmentId(),
+                        item -> toResponse(item, false),
+                        (left, right) -> left
+                ));
     }
 
     @Override
@@ -209,7 +252,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("submittedAt").descending());
         Page<Submission> submissionPage = submissionRepository.findByAssignment_AssignmentId(assignmentId, pageable);
-        Page<SubmissionResponse> mapped = submissionPage.map(this::toResponse);
+        Page<SubmissionResponse> mapped = submissionPage.map(item -> toResponse(item, false));
 
         return PageResponse.<SubmissionResponse>builder()
                 .currentPage(page + 1)
@@ -263,9 +306,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         submission.setTeacherFeedback(request.getTeacherFeedback());
         submission.setTotalScore(total);
         submission.setStatus(SubmissionStatus.GRADED);
-        submission.setAnswers(answers);
 
-        return toResponse(submissionRepository.save(submission));
+        return toResponse(submission, true);
     }
 
     private SubmissionAnswer buildSubmissionAnswer(
@@ -412,12 +454,16 @@ public class SubmissionServiceImpl implements SubmissionService {
         return result;
     }
 
-    private SubmissionResponse toResponse(Submission submission) {
+    private SubmissionResponse toResponse(Submission submission, boolean includeAnswers) {
         SubmissionResponse response = submissionMapper.toResponse(submission);
 
-        List<SubmissionAnswer> answers = submission.getAnswers() != null
-                ? submission.getAnswers()
-                : submissionAnswerRepository.findBySubmission_SubmissionIdOrderByQuestion_QuestionOrderAsc(submission.getSubmissionId());
+        if (!includeAnswers) {
+            response.setAnswers(List.of());
+            return response;
+        }
+
+        List<SubmissionAnswer> answers = submissionAnswerRepository
+                .findBySubmission_SubmissionIdOrderByQuestion_QuestionOrderAsc(submission.getSubmissionId());
 
         List<SubmissionAnswerResponse> answerResponses = answers.stream()
                 .sorted(Comparator.comparing(item -> item.getQuestion().getQuestionOrder()))

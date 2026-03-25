@@ -1,4 +1,5 @@
 import api from "../../config/axios";
+import type { AxiosError } from "axios";
 
 export interface ApiResponse<T> {
   code: number;
@@ -150,6 +151,39 @@ export interface AssignmentAudioResponse {
   fileSizeBytes?: number;
 }
 
+const ASSIGNMENT_ERROR_MAP: Array<{ match: string; message: string }> = [
+  { match: "Ma tham gia nhom khong dung", message: "Ma nhom khong dung. Vui long thu lai." },
+  { match: "Class join code is invalid", message: "Ma nhom khong dung. Vui long thu lai." },
+  { match: "Nhom bai tap da du hoc vien", message: "Nhom bai tap da du hoc vien." },
+  { match: "Class is full", message: "Nhom bai tap da du hoc vien." },
+  { match: "Mat khau bai tap khong dung", message: "Mat khau bai tap khong dung." },
+  { match: "Assignment password is invalid", message: "Mat khau bai tap khong dung." },
+  { match: "Ban chua tham gia nhom bai tap cua lop nay", message: "Ban chua tham gia nhom bai tap cua lop nay." },
+  { match: "must join this class", message: "Ban chua tham gia nhom bai tap cua lop nay." },
+  { match: "Bai tap da het han nop", message: "Bai tap da het han." },
+  { match: "Submission attempt limit exceeded", message: "Ban da het so lan lam bai cho bai tap nay." },
+  { match: "You do not have permission for this submission", message: "Ban khong co quyen thao tac bai nop nay." },
+  { match: "You do not have permission for this assignment", message: "Ban khong co quyen thao tac bai tap nay." },
+  { match: "Cau truc CSDL chua cap nhat", message: "He thong dang cap nhat du lieu. Vui long thu lai sau it phut." },
+  { match: "Uncategorized error", message: "He thong dang ban. Vui long thu lai sau." },
+];
+
+export const resolveAssignmentErrorMessage = (
+  error: unknown,
+  fallback: string,
+): string => {
+  const apiError = error as AxiosError<{ message?: string }>;
+  const serverMessage = apiError.response?.data?.message || "";
+
+  for (const item of ASSIGNMENT_ERROR_MAP) {
+    if (serverMessage.includes(item.match)) {
+      return item.message;
+    }
+  }
+
+  return serverMessage || fallback;
+};
+
 const assignmentService = {
   async getAssignments(params?: {
     page?: number;
@@ -198,6 +232,13 @@ const assignmentService = {
     await api.delete(`/assignments/${assignmentId}`);
   },
 
+  async startAssignment(
+    assignmentId: string,
+    accessPassword?: string,
+  ): Promise<void> {
+    await api.post(`/assignments/${assignmentId}/start`, { accessPassword });
+  },
+
   async createSubmission(payload: CreateSubmissionPayload): Promise<Submission> {
     const response = await api.post<ApiResponse<Submission>>(
       "/submissions",
@@ -211,6 +252,31 @@ const assignmentService = {
       `/submissions/${submissionId}`,
     );
     return response.data.result;
+  },
+
+  async getLatestMySubmissionByAssignment(
+    assignmentId: string,
+  ): Promise<Submission | null> {
+    const response = await api.get<ApiResponse<Submission | null>>(
+      `/submissions/latest/by-assignment/${assignmentId}`,
+    );
+    return response.data.result || null;
+  },
+
+  async getLatestMySubmissionsByAssignments(
+    assignmentIds: string[],
+  ): Promise<Record<string, Submission>> {
+    if (!assignmentIds.length) {
+      return {};
+    }
+
+    const response = await api.get<ApiResponse<Record<string, Submission>>>(
+      "/submissions/latest/by-assignments",
+      {
+        params: { assignmentIds },
+      },
+    );
+    return response.data.result || {};
   },
 
   async getSubmissionsByAssignment(

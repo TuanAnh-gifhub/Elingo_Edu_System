@@ -2,13 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { AxiosError } from "axios";
 import { useAuth } from "../../../context/AuthContext";
-import { classRoomService, type ClassRoomDto } from "../../../services/classes/classRoomService";
+import {
+  classRoomService,
+  type ClassRoomDto,
+} from "../../../services/classes/classRoomService";
 import assignmentService, {
   type Assignment,
   type AssignmentQuestionType,
   type CreateAssignmentPayload,
   type UpdateAssignmentPayload,
+  resolveAssignmentErrorMessage,
 } from "../../../services/assignments/assignmentService";
+import { StatusBadge } from "../../../components/Assignment/StatusBadge";
 
 type QuestionDraft = {
   questionOrder: number;
@@ -18,6 +23,8 @@ type QuestionDraft = {
   correctOptionIndexes: number[];
   maxScore: number;
 };
+
+type TeacherTab = "ASSIGNMENT" | "GROUP";
 
 const toLocalDateTime = (value?: string) => {
   if (!value) return undefined;
@@ -42,14 +49,20 @@ const TeacherAssignmentPage = () => {
   const [classId, setClassId] = useState("");
   const [deadline, setDeadline] = useState("");
   const [noDeadline, setNoDeadline] = useState(true);
+  const [groupCodeRequired, setGroupCodeRequired] = useState(false);
+  const [groupJoinCode, setGroupJoinCode] = useState("");
   const [passwordEnabled, setPasswordEnabled] = useState(false);
   const [accessPassword, setAccessPassword] = useState("");
   const [maxAttempts, setMaxAttempts] = useState<number>(1);
   const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(30);
   const [active, setActive] = useState(true);
+  const [teacherTab, setTeacherTab] = useState<TeacherTab>("ASSIGNMENT");
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [classOptions, setClassOptions] = useState<ClassRoomDto[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([
     {
       questionOrder: 1,
@@ -87,22 +100,26 @@ const TeacherAssignmentPage = () => {
     }
   }, [user?.userId]);
 
-  const loadClasses = async () => {
+  const loadClasses = useCallback(async () => {
+    if (!user?.userId) return;
     try {
-      const data = await classRoomService.getClasses(1, 100);
+      const data = await classRoomService.getClasses(1, 200, {
+        teacherId: user.userId,
+        active: true,
+      });
       setClassOptions(data.data || []);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [user?.userId]);
 
   useEffect(() => {
     loadAssignments();
   }, [loadAssignments]);
 
   useEffect(() => {
-    loadClasses();
-  }, []);
+    void loadClasses();
+  }, [loadClasses]);
 
   const totalScore = useMemo(
     () => questions.reduce((sum, item) => sum + Number(item.maxScore || 0), 0),
@@ -215,6 +232,10 @@ const TeacherAssignmentPage = () => {
         maxScore: 10,
       },
     ]);
+  };
+
+  const handleSelectClass = (nextClassId: string) => {
+    setClassId(nextClassId);
   };
 
   const handleSave = async () => {
@@ -335,7 +356,7 @@ const TeacherAssignmentPage = () => {
       if (message.includes("Malformed JSON request")) {
         setError("Du lieu gui len khong dung dinh dang (kiem tra classId/deadline).");
       } else {
-        setError(message || "Luu bai tap that bai");
+        setError(resolveAssignmentErrorMessage(e, "Luu bai tap that bai"));
       }
     } finally {
       setSaving(false);
@@ -392,9 +413,72 @@ const TeacherAssignmentPage = () => {
     }
   };
 
+  const resetGroupForm = () => {
+    setEditingGroupId(null);
+    setGroupName("");
+    setGroupDescription("");
+    setGroupCodeRequired(false);
+    setGroupJoinCode("");
+  };
+
+  const startEditGroup = (group: ClassRoomDto) => {
+    setTeacherTab("GROUP");
+    setEditingGroupId(group.classId);
+    setGroupName(group.className || "");
+    setGroupDescription(group.description || "");
+    setGroupCodeRequired(Boolean(group.joinCodeRequired));
+    setGroupJoinCode("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSaveGroup = async () => {
+    if (!canManage || !user?.userId) return;
+    if (!groupName.trim()) {
+      setError("Vui long nhap ten group bai tap.");
+      return;
+    }
+    if (groupCodeRequired && !groupJoinCode.trim() && !editingGroupId) {
+      setError("Vui long nhap ma group khi group can ma.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      if (editingGroupId) {
+        await classRoomService.updateClass(editingGroupId, {
+          className: groupName.trim(),
+          description: groupDescription.trim() || undefined,
+          joinCodeRequired: groupCodeRequired,
+          joinCode: groupCodeRequired ? (groupJoinCode.trim() || undefined) : "",
+        });
+      } else {
+        await classRoomService.createClass({
+          className: groupName.trim(),
+          description: groupDescription.trim() || undefined,
+          teacherId: user.userId,
+          price: 0,
+          maxStudents: 9999,
+          schedule: "Assignment Group",
+          joinCodeRequired: groupCodeRequired,
+          joinCode: groupCodeRequired ? groupJoinCode.trim() : undefined,
+        });
+      }
+
+      resetGroupForm();
+      await loadClasses();
+    } catch (e) {
+      console.error(e);
+      setError(resolveAssignmentErrorMessage(e, "Luu group bai tap that bai"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const totalAssignments = items.length;
   const totalQuestions = questions.length;
   const activeAssignments = items.filter((item) => item.active).length;
+  const closedAssignments = items.filter((item) => !item.active).length;
 
   const formatDeadline = (value?: string) => {
     if (!value) return "Khong co han nop";
@@ -422,7 +506,7 @@ const TeacherAssignmentPage = () => {
                 Tao, cap nhat va theo doi assignment cho hoc vien theo phong cach trinh bay ro rang, hien dai.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3 rounded-xl bg-white/15 p-3 text-sm backdrop-blur">
+            <div className="grid grid-cols-3 gap-3 rounded-xl bg-white/15 p-3 text-sm backdrop-blur">
               <div className="rounded-lg bg-white/10 px-3 py-2">
                 <div className="text-blue-100">Tong bai tap</div>
                 <div className="text-lg font-semibold">{totalAssignments}</div>
@@ -431,11 +515,41 @@ const TeacherAssignmentPage = () => {
                 <div className="text-blue-100">Dang mo</div>
                 <div className="text-lg font-semibold">{activeAssignments}</div>
               </div>
+              <div className="rounded-lg bg-white/10 px-3 py-2">
+                <div className="text-blue-100">Da dong</div>
+                <div className="text-lg font-semibold">{closedAssignments}</div>
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTeacherTab("ASSIGNMENT")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                teacherTab === "ASSIGNMENT"
+                  ? "bg-blue-600 text-white"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Quan ly Assignment
+            </button>
+            <button
+              onClick={() => setTeacherTab("GROUP")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                teacherTab === "GROUP"
+                  ? "bg-indigo-600 text-white"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Quan ly Group
+            </button>
+          </div>
+        </section>
+
+        {teacherTab === "ASSIGNMENT" && (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
           <section className="xl:col-span-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -451,13 +565,13 @@ const TeacherAssignmentPage = () => {
                 <select
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
+                  onChange={(e) => handleSelectClass(e.target.value)}
                   disabled={!!editingAssignmentId}
                 >
                   <option value="">Chon lop hoc</option>
                   {classOptions.map((item) => (
                     <option key={item.classId} value={item.classId}>
-                      {item.className} ({item.classId})
+                      {item.className} ({item.joinCodeRequired ? "Can ma group" : "Public"})
                     </option>
                   ))}
                 </select>
@@ -467,7 +581,7 @@ const TeacherAssignmentPage = () => {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     placeholder="Hoac nhap classId"
                     value={classId}
-                    onChange={(e) => setClassId(e.target.value)}
+                    onChange={(e) => handleSelectClass(e.target.value)}
                   />
                 )}
 
@@ -517,6 +631,9 @@ const TeacherAssignmentPage = () => {
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                   <h3 className="font-semibold text-slate-900">Cau hinh truy cap bai tap</h3>
+                  <p className="text-xs text-slate-500">
+                    Luu y: day la mat khau lam bai tap, khac voi ma tham gia nhom/lop.
+                  </p>
 
                   <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                     <input
@@ -755,13 +872,7 @@ const TeacherAssignmentPage = () => {
                         <div className="font-semibold text-slate-900">{item.title}</div>
                         <div className="mt-1 text-xs text-slate-500">Class: {item.classId}</div>
                       </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                          item.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
-                        {item.active ? "Dang mo" : "Da khoa"}
-                      </span>
+                        <StatusBadge label={item.active ? "Dang mo" : "Da khoa"} tone={item.active ? "emerald" : "slate"} />
                     </div>
 
                     <div className="mt-3 space-y-1 text-xs text-slate-600">
@@ -796,6 +907,130 @@ const TeacherAssignmentPage = () => {
             </div>
           </section>
         </div>
+        )}
+
+        {teacherTab === "GROUP" && (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+            <section className="xl:col-span-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {editingGroupId ? "Cap nhat Group" : "Tao Group bai tap"}
+                  </h2>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    {editingGroupId ? "Editing" : "New group"}
+                  </span>
+                </div>
+
+                <input
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  placeholder="Ten group bai tap"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+
+                <textarea
+                  className="min-h-[90px] w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  placeholder="Mo ta group"
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                />
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                  <h3 className="font-semibold text-slate-900">Bao mat tham gia group</h3>
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={groupCodeRequired}
+                      onChange={(e) => setGroupCodeRequired(e.target.checked)}
+                    />
+                    <span>Yeu cau ma tham gia group</span>
+                  </label>
+
+                  {groupCodeRequired ? (
+                    <input
+                      type="password"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      placeholder={editingGroupId ? "Nhap ma moi (de trong de giu ma cu)" : "Nhap ma group"}
+                      value={groupJoinCode}
+                      onChange={(e) => setGroupJoinCode(e.target.value)}
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-600">Group public, hoc vien tham gia khong can ma.</p>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSaveGroup}
+                    disabled={saving}
+                    className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                  >
+                    {saving ? "Dang luu..." : editingGroupId ? "Cap nhat Group" : "Tao Group"}
+                  </button>
+                  {editingGroupId && (
+                    <button
+                      onClick={resetGroupForm}
+                      className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Huy chinh sua
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="xl:col-span-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">Danh sach Group</h2>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    {classOptions.length} group
+                  </span>
+                </div>
+
+                {classOptions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                    Chua co group nao.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {classOptions.map((group) => (
+                      <article
+                        key={group.classId}
+                        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold text-slate-900">{group.className}</div>
+                            {group.description && (
+                              <div className="mt-1 text-xs text-slate-500">{group.description}</div>
+                            )}
+                          </div>
+                          <StatusBadge label={group.joinCodeRequired ? "Can ma" : "Public"} tone={group.joinCodeRequired ? "amber" : "emerald"} />
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={() => startEditGroup(group)}
+                            className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-600"
+                          >
+                            Sua Group
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );

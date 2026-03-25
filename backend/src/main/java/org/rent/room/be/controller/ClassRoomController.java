@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
+import org.rent.room.be.dto.request.classroom.JoinClassRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
 import org.rent.room.be.service.ClassRoomService;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -99,6 +101,33 @@ public class ClassRoomController {
                     .code(200)
                     .message("Delete class successfully (soft delete)")
                     .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/{classId}/join")
+    public ResponseEntity<ApiResponse<Void>> joinClass(
+            @PathVariable UUID classId,
+            @RequestBody(required = false) JoinClassRequest request
+    ) {
+        classRoomService.joinClass(classId, request != null ? request.getJoinCode() : null);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(200)
+                        .message("Join class successfully")
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/joined-ids")
+    public ResponseEntity<ApiResponse<List<UUID>>> getJoinedClassIds() {
+        return ResponseEntity.ok(
+                ApiResponse.<List<UUID>>builder()
+                        .code(200)
+                        .message("Get joined classes successfully")
+                        .result(classRoomService.getJoinedClassIds())
+                        .build()
         );
     }
 }

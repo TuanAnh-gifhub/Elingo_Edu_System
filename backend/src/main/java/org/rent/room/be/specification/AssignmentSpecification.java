@@ -12,6 +12,15 @@ import java.util.UUID;
 
 public class AssignmentSpecification {
 
+    public static Specification<Assignment> classIdIn(List<UUID> classIds) {
+        return (root, query, criteriaBuilder) -> {
+            if (classIds == null || classIds.isEmpty()) {
+                return criteriaBuilder.disjunction();
+            }
+            return root.get("classRoom").get("classId").in(classIds);
+        };
+    }
+
     public static Specification<Assignment> filterAssignments(
             UUID classId,
             UUID teacherId,

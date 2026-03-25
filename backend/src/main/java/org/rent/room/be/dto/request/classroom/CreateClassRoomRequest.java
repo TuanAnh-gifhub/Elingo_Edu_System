@@ -23,5 +23,7 @@ public class CreateClassRoomRequest {
     LocalDateTime endDate;
     Integer maxStudents;
     String schedule;
+    String joinCode;
+    Boolean joinCodeRequired;
 }
 

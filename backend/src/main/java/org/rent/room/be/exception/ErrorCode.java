@@ -26,6 +26,9 @@ public enum ErrorCode {
 
     //ClassRoom
     CLASS_NOT_FOUND(4001,"Class not found", HttpStatus.NOT_FOUND),
+    CLASS_JOIN_CODE_INVALID(4005, "Ma tham gia nhom khong dung", HttpStatus.BAD_REQUEST),
+    CLASS_JOIN_REQUIRED(4006, "Ban chua tham gia nhom bai tap cua lop nay", HttpStatus.FORBIDDEN),
+    CLASS_FULL(4007, "Nhom bai tap da du hoc vien", HttpStatus.BAD_REQUEST),
 
     //Course
     COURSE_NOT_FOUND(4002,"Course not found", HttpStatus.NOT_FOUND),
@@ -38,8 +41,8 @@ public enum ErrorCode {
     ASSIGNMENT_QUESTION_INVALID(7003, "Assignment question is invalid", HttpStatus.BAD_REQUEST),
     ASSIGNMENT_QUESTION_NOT_FOUND(7004, "Assignment question not found", HttpStatus.NOT_FOUND),
     ASSIGNMENT_NOT_ACTIVE(7005, "Assignment is not active", HttpStatus.BAD_REQUEST),
-    ASSIGNMENT_DEADLINE_EXCEEDED(7006, "Assignment deadline has passed", HttpStatus.BAD_REQUEST),
-    ASSIGNMENT_PASSWORD_INVALID(7007, "Assignment password is invalid", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_DEADLINE_EXCEEDED(7006, "Bai tap da het han nop", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_PASSWORD_INVALID(7007, "Mat khau bai tap khong dung", HttpStatus.BAD_REQUEST),
     ASSIGNMENT_TIME_LIMIT_INVALID(7008, "Assignment time limit is invalid", HttpStatus.BAD_REQUEST),
 
     //Submission
@@ -56,6 +59,8 @@ public enum ErrorCode {
 
     //Audio
     AUDIO_FILE_NOT_FOUND(7201, "Audio file not found", HttpStatus.NOT_FOUND),
+    AUDIO_UPLOAD_FAILED(7202, "Audio upload failed", HttpStatus.BAD_GATEWAY),
+    CLOUDINARY_CONFIG_INVALID(7203, "Cloudinary configuration is invalid", HttpStatus.INTERNAL_SERVER_ERROR),
 
     //Post
     POST_NOT_FOUND(5001,"Post not found", HttpStatus.NOT_FOUND),
@@ -65,6 +70,8 @@ public enum ErrorCode {
 
     //Wallet
     WALLET_NOT_FOUND(6001,"Người dùng chưa tạo ví cá nhân", HttpStatus.NOT_FOUND),
+
+    DATABASE_SCHEMA_OUTDATED(9001, "Cau truc CSDL chua cap nhat. Vui long chay migration moi nhat", HttpStatus.INTERNAL_SERVER_ERROR),
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung

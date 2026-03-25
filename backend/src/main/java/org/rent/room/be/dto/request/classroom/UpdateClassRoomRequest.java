@@ -23,6 +23,8 @@ public class UpdateClassRoomRequest {
     LocalDateTime endDate;
     Integer maxStudents;
     String schedule;
+    String joinCode;
+    Boolean joinCodeRequired;
     Boolean active;
 }
 

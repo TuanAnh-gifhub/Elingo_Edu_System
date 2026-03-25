@@ -32,6 +32,7 @@ public class ClassRoomResponse {
     Integer currentStudents;
     boolean active;
     String schedule;
+    boolean joinCodeRequired;
     String poster;
 
     LocalDateTime createdAt;

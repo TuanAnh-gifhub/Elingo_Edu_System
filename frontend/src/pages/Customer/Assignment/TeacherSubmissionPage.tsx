@@ -4,6 +4,8 @@ import assignmentService, {
   type GradeSubmissionPayload,
   type Submission,
 } from "../../../services/assignments/assignmentService";
+import SubmissionPanel from "../../../components/Assignment/SubmissionPanel";
+import { SubmissionStatusBadge } from "../../../components/Assignment/StatusBadge";
 
 const TeacherSubmissionPage = () => {
   const { assignmentId } = useParams<{ assignmentId: string }>();
@@ -95,121 +97,102 @@ const TeacherSubmissionPage = () => {
 
   if (!assignmentId) return <div className="p-6">Thieu assignmentId</div>;
 
-  const formatSelectedOptions = (indexes?: number[], fallback?: number) => {
-    const resolved = indexes && indexes.length > 0
-      ? indexes
-      : fallback !== undefined
-        ? [fallback]
-        : [];
+   return (
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-6 text-white shadow-lg">
+          <h1 className="text-2xl font-bold md:text-3xl">Cham bai tap</h1>
+          <p className="mt-1 text-sm text-blue-100">Theo doi bai nop, cham diem va gui nhan xet cho hoc vien.</p>
+        </section>
 
-    if (resolved.length === 0) return null;
-    return resolved
-      .slice()
-      .sort((a, b) => a - b)
-      .map((item) => item + 1)
-      .join(", ");
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="border rounded p-4 bg-white shadow-sm space-y-2">
-        <h1 className="text-xl font-bold">Danh sach bai nop</h1>
-        {loading && <div>Dang tai...</div>}
-        {error && <div className="text-red-500">{error}</div>}
-        {!loading && items.length === 0 && <div>Chua co bai nop.</div>}
-
-        {items.map((item) => (
-          <button
-            key={item.submissionId}
-            onClick={() => selectSubmission(item)}
-            className={`w-full text-left border rounded p-3 ${
-              selected?.submissionId === item.submissionId ? "border-blue-600" : ""
-            }`}
-          >
-            <div className="font-semibold">{item.studentName}</div>
-            <div className="text-sm">Lan nop: {item.attemptNumber}</div>
-            <div className="text-sm">{item.status}</div>
-            <div className="text-sm">{new Date(item.submittedAt).toLocaleString("vi-VN")}</div>
-          </button>
-        ))}
-      </div>
-
-      <div className="lg:col-span-2 border rounded p-4 bg-white shadow-sm space-y-3">
-        {!selected && <div>Chon bai nop de cham diem.</div>}
-
-        {selected && (
-          <>
-            <h2 className="text-lg font-bold">Cham bai: {selected.studentName}</h2>
-
-            {selected.answers.map((answer) => (
-              <div key={answer.answerId} className="border rounded p-3 space-y-2">
-                <div className="font-semibold">
-                  Cau {answer.questionOrder}: {answer.questionContent}
-                </div>
-                {answer.answerText && <div>Tra loi: {answer.answerText}</div>}
-                {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex) && (
-                  <div>Lua chon: {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex)}</div>
-                )}
-                {answer.audioUrl && (
-                  <div className="space-y-2">
-                    <audio controls src={answer.audioUrl} />
-                    <div className="text-sm">Transcript: {answer.transcriptText || "(none)"}</div>
-                  </div>
-                )}
-
-                <input
-                  type="number"
-                  className="border rounded px-3 py-2"
-                  value={scores[answer.answerId] ?? 0}
-                  disabled={answer.autoGraded}
-                  onChange={(e) =>
-                    setScores((prev) => ({
-                      ...prev,
-                      [answer.answerId]: Number(e.target.value),
-                    }))
-                  }
-                />
-                {answer.autoGraded && (
-                  <div className="text-xs text-blue-600">
-                    Cau nay da duoc cham tu dong (trac nghiem).
-                  </div>
-                )}
-
-                <textarea
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="Feedback tung cau"
-                  value={feedbacks[answer.answerId] || ""}
-                  onChange={(e) =>
-                    setFeedbacks((prev) => ({
-                      ...prev,
-                      [answer.answerId]: e.target.value,
-                    }))
-                  }
-                />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Danh sach bai nop</h2>
+            {loading && <div className="mt-3 text-sm text-slate-600">Dang tai...</div>}
+            {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+            {!loading && items.length === 0 && (
+              <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-600">
+                Chua co bai nop.
               </div>
-            ))}
+            )}
 
-            <textarea
-              className="w-full border rounded px-3 py-2"
-              placeholder="Nhan xet tong ket"
-              value={teacherFeedback}
-              onChange={(e) => setTeacherFeedback(e.target.value)}
-            />
-
-            <div className="flex items-center justify-between">
-              <div>Tong diem tam tinh: {totalScore}</div>
-              <button
-                disabled={saving}
-                onClick={handleGrade}
-                className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-60"
-              >
-                {saving ? "Dang luu..." : "Luu diem"}
-              </button>
+            <div className="mt-3 space-y-2" aria-label="Danh sach hoc vien nop bai">
+              {items.map((item) => (
+                <button
+                  key={item.submissionId}
+                  onClick={() => selectSubmission(item)}
+                  className={`w-full rounded-xl border p-3 text-left transition ${
+                    selected?.submissionId === item.submissionId
+                      ? "border-blue-300 bg-blue-50"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium text-slate-900">{item.studentName}</div>
+                    <SubmissionStatusBadge status={item.status} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Lan nop: {item.attemptNumber}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {new Date(item.submittedAt).toLocaleString("vi-VN")}
+                  </p>
+                </button>
+              ))}
             </div>
-          </>
-        )}
+          </aside>
+
+          <section className="space-y-4 lg:col-span-2">
+            {!selected && (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600 shadow-sm">
+                Chon bai nop de cham diem.
+              </div>
+            )}
+
+            {selected && (
+              <>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h2 className="text-lg font-semibold text-slate-900">Cham bai: {selected.studentName}</h2>
+                  <p className="mt-1 text-sm text-slate-600">Tong diem tam tinh: {totalScore}</p>
+                </div>
+
+                <SubmissionPanel
+                  submission={selected}
+                  editable
+                  scores={scores}
+                  feedbacks={feedbacks}
+                  onScoreChange={(answerId, score) => {
+                    setScores((prev) => ({ ...prev, [answerId]: score }));
+                  }}
+                  onFeedbackChange={(answerId, feedback) => {
+                    setFeedbacks((prev) => ({ ...prev, [answerId]: feedback }));
+                  }}
+                />
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Nhan xet tong ket</label>
+                  <textarea
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="Nhan xet tong ket"
+                    value={teacherFeedback}
+                    onChange={(e) => setTeacherFeedback(e.target.value)}
+                    rows={3}
+                  />
+
+                  <div className="mt-3 flex items-center justify-end">
+                    <button
+                      disabled={saving}
+                      onClick={handleGrade}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      {saving ? "Dang luu..." : "Luu diem"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

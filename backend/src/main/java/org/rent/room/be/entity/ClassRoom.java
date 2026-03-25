@@ -58,6 +58,12 @@ public class ClassRoom extends BaseEntity {
     @Column(name = "schedule", length = 500)
     String schedule;
 
+    @Column(name = "join_code_hash", length = 255)
+    String joinCodeHash;
+
+    @Column(name = "join_code_required", nullable = false)
+    boolean joinCodeRequired;
+
     // Thêm trường poster dạng URL ảnh cho lớp học
     @Column(name = "poster", length = 1000)
     String poster;

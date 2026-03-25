@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import type { AxiosError } from "axios";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import assignmentService, {
   type Assignment,
   type SubmissionAnswerPayload,
+  resolveAssignmentErrorMessage,
 } from "../../../services/assignments/assignmentService";
+import { DeadlineBadge, StatusBadge } from "../../../components/Assignment/StatusBadge";
 
 const AssignmentDetailPage = () => {
   const { assignmentId } = useParams<{ assignmentId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const startState = location.state as { accessPassword?: string; className?: string } | null;
 
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +26,7 @@ const AssignmentDetailPage = () => {
 
   const [recordingQuestionId, setRecordingQuestionId] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState<string | null>(null);
-  const [accessPassword, setAccessPassword] = useState("");
+  const [accessPassword, setAccessPassword] = useState(startState?.accessPassword || "");
   const [attemptStartedAt, setAttemptStartedAt] = useState<string | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
@@ -41,7 +44,7 @@ const AssignmentDetailPage = () => {
         setAssignment(data);
       } catch (e) {
         console.error(e);
-        setError("Khong the tai chi tiet bai tap");
+        setError(resolveAssignmentErrorMessage(e, "Khong the tai chi tiet bai tap"));
       } finally {
         setLoading(false);
       }
@@ -201,19 +204,7 @@ const AssignmentDetailPage = () => {
       navigate(`/submissions/${submission.submissionId}`);
     } catch (e) {
       console.error(e);
-      const apiError = e as AxiosError<{ message?: string }>;
-      const serverMessage = apiError.response?.data?.message || "";
-      if (serverMessage.includes("Submission already exists")) {
-        setError("Ban da nop bai nay truoc do.");
-      } else if (serverMessage.includes("Assignment password is invalid")) {
-        setError("Mat khau bai tap khong dung.");
-      } else if (serverMessage.includes("Submission attempt limit exceeded")) {
-        setError("Ban da het so lan lam bai cho bai tap nay.");
-      } else if (serverMessage.includes("Forbidden")) {
-        setError("Ban khong co quyen nop bai tap nay.");
-      } else {
-        setError(serverMessage || "Nop bai that bai.");
-      }
+      setError(resolveAssignmentErrorMessage(e, "Nop bai that bai."));
     } finally {
       setSubmitting(false);
     }
@@ -227,137 +218,161 @@ const AssignmentDetailPage = () => {
   }, [remainingSeconds, submitting]);
 
   if (loading) return <div className="p-6">Dang tai...</div>;
-  if (error) return <div className="p-6 text-red-600">{error}</div>;
   if (!assignment) return <div className="p-6">Khong tim thay bai tap</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-5">
-      <div className="border rounded p-4 bg-white shadow-sm">
-        <h1 className="text-2xl font-bold">{assignment.title}</h1>
-        {assignment.description && <p className="mt-2 text-gray-700">{assignment.description}</p>}
-        {assignment.deadline && (
-          <p className="mt-2 text-sm text-orange-600">
-            Deadline: {new Date(assignment.deadline).toLocaleString("vi-VN")}
-          </p>
-        )}
-        <p className="mt-2 text-sm text-gray-700">So lan lam toi da: {assignment.maxAttempts || 1}</p>
-        {assignment.timeLimitMinutes && (
-          <p className="mt-2 text-sm text-blue-700">
-            Thoi gian lam bai: {assignment.timeLimitMinutes} phut
-            {remainingSeconds !== null && (
-              <> - Con lai: {Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, "0")}</>
-            )}
-          </p>
-        )}
-        {assignment.passwordRequired && (
-          <div className="mt-3">
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              placeholder="Nhap mat khau bai tap"
-              value={accessPassword}
-              onChange={(e) => setAccessPassword(e.target.value)}
-            />
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-6 text-white shadow-lg">
+          <h1 className="text-2xl font-bold md:text-3xl">Lam bai: {assignment.title}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <DeadlineBadge deadline={assignment.deadline} />
+            {assignment.passwordRequired && <StatusBadge label="Can mat khau" tone="violet" />}
+            <StatusBadge label={`So lan toi da: ${assignment.maxAttempts || 1}`} tone="blue" />
           </div>
-        )}
-        {isDeadlinePassed && (
-          <p className="mt-2 text-sm text-red-600">Bai tap da qua han nop.</p>
-        )}
-      </div>
-
-      {sortedQuestions.map((question) => (
-        <div key={question.questionId} className="border rounded p-4 bg-white shadow-sm space-y-3">
-          <div className="font-medium">
-            Cau {question.questionOrder}: {question.questionContent}
-          </div>
-
-          {question.questionType === "TEXT" && (
-            <textarea
-              className="w-full border rounded px-3 py-2"
-              rows={4}
-              value={textAnswers[question.questionId] || ""}
-              onChange={(e) =>
-                setTextAnswers((prev) => ({
-                  ...prev,
-                  [question.questionId]: e.target.value,
-                }))
-              }
-              placeholder="Nhap cau tra loi"
-            />
+          <p className="mt-3 text-sm text-blue-100">Giao vien: {assignment.teacherName}</p>
+          <p className="text-sm text-blue-100">Nhom: {startState?.className || assignment.classId}</p>
+          {assignment.deadline && (
+            <p className="mt-2 text-sm text-blue-100">
+              Deadline: {new Date(assignment.deadline).toLocaleString("vi-VN")}
+            </p>
           )}
+          {assignment.timeLimitMinutes && (
+            <p className="mt-1 text-sm text-blue-100">
+              Thoi gian lam bai: {assignment.timeLimitMinutes} phut
+              {remainingSeconds !== null && (
+                <> - Con lai: {Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, "0")}</>
+              )}
+            </p>
+          )}
+        </section>
 
-          {question.questionType === "MULTIPLE_CHOICE" && (
-            <div className="space-y-2">
-              {(question.options || []).map((option, index) => (
-                <label key={`${question.questionId}-${index}`} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={(choiceAnswers[question.questionId] || []).includes(index)}
-                    onChange={(e) =>
-                      setChoiceAnswers((prev) => {
-                        const current = prev[question.questionId] || [];
-                        const next = e.target.checked
-                          ? Array.from(new Set([...current, index]))
-                          : current.filter((item) => item !== index);
-                        return {
-                          ...prev,
-                          [question.questionId]: next,
-                        };
-                      })
-                    }
-                  />
-                  <span>{option}</span>
+        {(assignment.description || assignment.passwordRequired) && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {assignment.description && <p className="text-sm leading-6 text-slate-700">{assignment.description}</p>}
+            {assignment.passwordRequired && (
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="assignment-access-password">
+                  Mat khau bai tap (khac voi ma tham gia nhom)
                 </label>
-              ))}
-            </div>
-          )}
-
-          {question.questionType === "AUDIO" && (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startRecording(question.questionId)}
-                  disabled={recordingQuestionId !== null && recordingQuestionId !== question.questionId}
-                  className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-                >
-                  Start Recording
-                </button>
-                <button
-                  onClick={stopRecording}
-                  disabled={recordingQuestionId !== question.questionId}
-                  className="px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-50"
-                >
-                  Stop Recording
-                </button>
+                <input
+                  id="assignment-access-password"
+                  type="password"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Nhap mat khau bai tap"
+                  value={accessPassword}
+                  onChange={(e) => setAccessPassword(e.target.value)}
+                />
               </div>
+            )}
+            {isDeadlinePassed && (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Bai tap da qua han nop.
+              </p>
+            )}
+          </section>
+        )}
 
-              {audioAnswers[question.questionId]?.audioUrl && (
-                <div className="space-y-2">
-                  <audio controls src={audioAnswers[question.questionId].audioUrl} />
-                  <div className="text-sm text-gray-700">
-                    Transcript: {audioAnswers[question.questionId].transcriptText || "(none)"}
-                  </div>
+        <section className="space-y-4" aria-label="Danh sach cau hoi bai tap">
+          {sortedQuestions.map((question) => (
+            <article key={question.questionId} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900">
+                Cau {question.questionOrder}: {question.questionContent}
+              </h2>
+
+              {question.questionType === "TEXT" && (
+                <textarea
+                  className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  rows={4}
+                  value={textAnswers[question.questionId] || ""}
+                  onChange={(e) =>
+                    setTextAnswers((prev) => ({
+                      ...prev,
+                      [question.questionId]: e.target.value,
+                    }))
+                  }
+                  placeholder="Nhap cau tra loi"
+                />
+              )}
+
+              {question.questionType === "MULTIPLE_CHOICE" && (
+                <div className="mt-3 space-y-2">
+                  {(question.options || []).map((option, index) => (
+                    <label
+                      key={`${question.questionId}-${index}`}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:border-blue-200"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(choiceAnswers[question.questionId] || []).includes(index)}
+                        onChange={(e) =>
+                          setChoiceAnswers((prev) => {
+                            const current = prev[question.questionId] || [];
+                            const next = e.target.checked
+                              ? Array.from(new Set([...current, index]))
+                              : current.filter((item) => item !== index);
+                            return {
+                              ...prev,
+                              [question.questionId]: next,
+                            };
+                          })
+                        }
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
                 </div>
               )}
-            </div>
-          )}
+
+              {question.questionType === "AUDIO" && (
+                <div className="mt-3 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => startRecording(question.questionId)}
+                      disabled={recordingQuestionId !== null && recordingQuestionId !== question.questionId}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Start Recording
+                    </button>
+                    <button
+                      onClick={stopRecording}
+                      disabled={recordingQuestionId !== question.questionId}
+                      className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Stop Recording
+                    </button>
+                  </div>
+
+                  {audioAnswers[question.questionId]?.audioUrl && (
+                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <audio controls src={audioAnswers[question.questionId].audioUrl} className="w-full" />
+                      <p className="text-sm text-slate-700">
+                        Transcript: {audioAnswers[question.questionId].transcriptText || "(none)"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </article>
+          ))}
+        </section>
+
+        {recordingError && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{recordingError}</div>}
+        {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+        <div className="flex justify-end">
+          <button
+            disabled={submitting || isDeadlinePassed}
+            onClick={() => {
+              void handleSubmit();
+            }}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {submitting ? "Dang nop..." : "Nop bai"}
+          </button>
         </div>
-      ))}
-
-      {recordingError && <div className="text-red-500">{recordingError}</div>}
-
-      <div className="flex justify-end">
-        <button
-          disabled={submitting || isDeadlinePassed}
-          onClick={() => {
-            void handleSubmit();
-          }}
-          className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-60"
-        >
-          {submitting ? "Dang nop..." : "Nop bai"}
-        </button>
       </div>
-    </div>
+    </main>
   );
 };
 

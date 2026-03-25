@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -45,6 +47,32 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.<SubmissionResponse>builder()
                 .code(200)
                 .message("Get submission successfully")
+                .result(response)
+                .build());
+    }
+
+    @GetMapping("/latest/by-assignment/{assignmentId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<SubmissionResponse>> getLatestMySubmissionByAssignment(
+            @PathVariable UUID assignmentId
+    ) {
+        SubmissionResponse response = submissionService.getLatestMySubmissionByAssignment(assignmentId);
+        return ResponseEntity.ok(ApiResponse.<SubmissionResponse>builder()
+                .code(200)
+                .message("Get latest submission successfully")
+                .result(response)
+                .build());
+    }
+
+    @GetMapping("/latest/by-assignments")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Map<UUID, SubmissionResponse>>> getLatestMySubmissionsByAssignments(
+            @RequestParam List<UUID> assignmentIds
+    ) {
+        Map<UUID, SubmissionResponse> response = submissionService.getLatestMySubmissionsByAssignmentIds(assignmentIds);
+        return ResponseEntity.ok(ApiResponse.<Map<UUID, SubmissionResponse>>builder()
+                .code(200)
+                .message("Get latest submissions successfully")
                 .result(response)
                 .build());
     }

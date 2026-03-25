@@ -87,3 +87,9 @@ payos:
   base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/deposit-result}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/deposit-result}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+  folder: ${CLOUDINARY_FOLDER:elingo}

@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import assignmentService, {
   type Submission,
 } from "../../../services/assignments/assignmentService";
+import SubmissionPanel from "../../../components/Assignment/SubmissionPanel";
+import { SubmissionStatusBadge } from "../../../components/Assignment/StatusBadge";
 
 const SubmissionDetailPage = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
@@ -35,54 +37,30 @@ const SubmissionDetailPage = () => {
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!submission) return <div className="p-6">Khong tim thay bai nop</div>;
 
-  const formatSelectedOptions = (indexes?: number[], fallback?: number) => {
-    const resolved = indexes && indexes.length > 0
-      ? indexes
-      : fallback !== undefined
-        ? [fallback]
-        : [];
-
-    if (resolved.length === 0) return null;
-    return resolved
-      .slice()
-      .sort((a, b) => a - b)
-      .map((item) => item + 1)
-      .join(", ");
-  };
-
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Ket qua bai nop</h1>
-      <div className="border rounded p-4 bg-white shadow-sm space-y-2">
-        <div>Lan nop: <b>{submission.attemptNumber}</b></div>
-        <div>Trang thai: <b>{submission.status}</b></div>
-        <div>Tong diem: <b>{submission.totalScore ?? "Dang cham"}</b></div>
-        <div>Nop luc: {new Date(submission.submittedAt).toLocaleString("vi-VN")}</div>
-        {submission.teacherFeedback && (
-          <div className="text-gray-700">Nhan xet GV: {submission.teacherFeedback}</div>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        {submission.answers.map((answer) => (
-          <div key={answer.answerId} className="border rounded p-4 bg-white shadow-sm">
-            <div className="font-semibold">Cau {answer.questionOrder}: {answer.questionContent}</div>
-            {answer.answerText && <div className="mt-2">Tra loi: {answer.answerText}</div>}
-            {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex) && (
-              <div className="mt-2">Lua chon: {formatSelectedOptions(answer.selectedOptionIndexes, answer.selectedOptionIndex)}</div>
-            )}
-            {answer.audioUrl && (
-              <div className="mt-2 space-y-2">
-                <audio controls src={answer.audioUrl} />
-                <div className="text-sm">Transcript: {answer.transcriptText || "(none)"}</div>
-              </div>
-            )}
-            <div className="mt-2">Diem: {answer.score ?? "Dang cham"}</div>
-            {answer.feedback && <div className="text-sm text-gray-700">Feedback: {answer.feedback}</div>}
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-6 text-white shadow-lg">
+          <h1 className="text-2xl font-bold md:text-3xl">Ket qua bai nop</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <SubmissionStatusBadge status={submission.status} />
+            <span className="text-sm text-blue-100">Lan nop: {submission.attemptNumber}</span>
+            <span className="text-sm text-blue-100">Tong diem: {submission.totalScore ?? "Dang cham"}</span>
           </div>
-        ))}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-sm text-slate-600">Nop luc: {new Date(submission.submittedAt).toLocaleString("vi-VN")}</div>
+          {submission.teacherFeedback && (
+            <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+              Nhan xet GV: {submission.teacherFeedback}
+            </div>
+          )}
+        </section>
+
+        <SubmissionPanel submission={submission} editable={false} />
       </div>
-    </div>
+    </main>
   );
 };
 

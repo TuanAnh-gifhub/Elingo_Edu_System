@@ -137,6 +137,15 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick, isHeaderTrans
               Quản lý cá nhân
             </Link>
 
+            <Link
+              to="/packages"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
+            >
+              <FiCreditCard className="w-4 h-4" />
+              Gói cước học tập
+            </Link>
+
             <div className="h-px bg-gray-100 my-1 mx-4" />
 
             <button

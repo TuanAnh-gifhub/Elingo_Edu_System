@@ -15,5 +15,6 @@ public interface WalletService {
     WalletInfoResponse getMyWalletInfo();
 
     BigDecimal getCurrentBalance();
-}
 
+    void debit(Wallet wallet, BigDecimal amount);
+}

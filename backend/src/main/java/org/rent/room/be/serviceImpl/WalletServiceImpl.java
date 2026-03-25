@@ -59,5 +59,14 @@ public class WalletServiceImpl implements WalletService {
     public BigDecimal getCurrentBalance() {
         return getOrCreateCurrentUserWallet().getBalance();
     }
-}
 
+    @Override
+    @Transactional
+    public void debit(Wallet wallet, BigDecimal amount) {
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient funds");
+        }
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+    }
+}

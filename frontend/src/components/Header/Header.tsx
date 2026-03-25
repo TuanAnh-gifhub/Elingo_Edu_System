@@ -284,6 +284,17 @@ const Header = () => {
                       )}
                     </button>
 
+                    {/* Gói cước */}
+                    <button
+                      onClick={() => navigate("/packages")}
+                      className={`${PRIMARY_BUTTON_CLASS} inline-flex items-center justify-center h-10 md:h-11 px-3 md:px-5 py-2 md:py-2.5 bg-amber-500 hover:bg-amber-600 text-white border-amber-500 hover:border-amber-600 transition-all shadow-amber-100 hover:shadow-amber-200`}
+                      title="Gói cước học tập"
+                    >
+                      <span className={`${BUTTON_TEXT_HOVER_CLASS} leading-none`}>
+                        Gói cước
+                      </span>
+                    </button>
+
                     {/* Đăng phòng */}
                     <button
                       onClick={() => requireAuth(() => navigate("/post-item"))}

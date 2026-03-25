@@ -29,6 +29,8 @@ import AssignmentDetailPage from "../pages/Customer/Assignment/AssignmentDetailP
 import SubmissionDetailPage from "../pages/Customer/Assignment/SubmissionDetailPage";
 import TeacherAssignmentPage from "../pages/Customer/Assignment/TeacherAssignmentPage";
 import TeacherSubmissionPage from "../pages/Customer/Assignment/TeacherSubmissionPage";
+import PackageManagementPage from "../pages/Admin/Package/PackageManagementPage";
+import SubscriptionPage from "../pages/Customer/Package/SubscriptionPage";
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -171,6 +173,11 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Về chúng tôi" },
       },
       {
+        path: "packages",
+        element: <SubscriptionPage />,
+        handle: { breadcrumb: "Gói cước" },
+      },
+      {
         path: "classes",
         element: <ClassListPage />,
         handle: { breadcrumb: "Danh sách lớp học" },
@@ -275,6 +282,10 @@ export const router = createBrowserRouter([
       {
         path: "wallet-freeze",
         element: <WalletFreezeManagementPage />,
+      },
+      {
+        path: "packages",
+        element: <PackageManagementPage />,
       },
     ],
   },

@@ -85,7 +85,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       ),
     ]),
 
-    // 4. Đăng xuất
+    // 4. Quản lý gói cước
+    getItem(
+      <Link to="/admin/packages">Quản lý gói cước</Link>,
+      "/admin/packages",
+      <AppstoreOutlined />,
+    ),
+
+    // 5. Đăng xuất
     getItem("Đăng xuất", "logout", <LogoutOutlined />),
   ];
 

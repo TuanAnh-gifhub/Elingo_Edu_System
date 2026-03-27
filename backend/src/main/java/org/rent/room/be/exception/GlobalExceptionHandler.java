@@ -3,6 +3,7 @@ package org.rent.room.be.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.rent.room.be.base.ApiResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +71,17 @@ public class GlobalExceptionHandler {
                         .build()
         );
     }
+
+        @ExceptionHandler(MaxUploadSizeExceededException.class)
+        public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+                int payloadTooLarge = 413;
+                return ResponseEntity.status(HttpStatusCode.valueOf(payloadTooLarge)).body(
+                                ApiResponse.builder()
+                                .code(payloadTooLarge)
+                                                .message("File qua lon. Vui long upload tep nho hon 50MB.")
+                                                .build()
+                );
+        }
 
     // 6. CATCH-ALL: Bắt tất cả các lỗi còn lại (RuntimeException, NullPointer, DB Error...)
     // Đây là chốt chặn cuối cùng để API không bao giờ chết hoặc trả về stacktrace xấu xí

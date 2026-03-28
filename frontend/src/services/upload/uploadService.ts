@@ -135,7 +135,6 @@ const extractMediaMetadata = async (file: File): Promise<MediaMetadata> => {
   return { format, size: file.size };
 };
 
-
 const uploadToBackendApi = async (
   file: File,
   options: UploadOptions,

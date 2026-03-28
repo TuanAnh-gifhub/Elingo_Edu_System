@@ -1,5 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import type { IconType } from "react-icons";
+import {
+  FiChevronDown,
+  FiChevronUp,
+  FiFile,
+  FiFileText,
+  FiImage,
+  FiMusic,
+  FiVideo,
+} from "react-icons/fi";
+import { FaFilePowerpoint } from "react-icons/fa";
 import type {
   ClassRoomDto,
   CreateClassRoomRequest,
@@ -10,7 +21,10 @@ import type {
   CreateCourseRequest,
   UpdateCourseRequest,
 } from "../../../services/courses/courseService";
-import { uploadToCloudinary } from "../../../services/upload/uploadService";
+import {
+  uploadMultipleFiles,
+  uploadToCloudinary,
+} from "../../../services/upload/uploadService";
 
 interface CourseItem {
   courseId: string;
@@ -37,6 +51,7 @@ interface NewClassForm {
 const MAX_POSTER_LENGTH = 1000;
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
+const CLASS_COURSE_FILE_UPLOAD_FOLDER = "class-course-files";
 
 interface NewCourseForm {
   title: string;
@@ -132,6 +147,110 @@ const mapCourseToForm = (courseItem: CourseItem): NewCourseForm => ({
   fileUrlsText: courseItem.fileUrls.join("\n"),
 });
 
+const getFileNameFromUrl = (fileUrl: string, index: number) => {
+  try {
+    const url = new URL(fileUrl);
+    const rawName = decodeURIComponent(
+      url.pathname.split("/").pop() || "",
+    ).trim();
+    return rawName || `tep-dinh-kem-${index + 1}`;
+  } catch {
+    const fallback = decodeURIComponent(fileUrl.split("/").pop() || "").trim();
+    return fallback || `tep-dinh-kem-${index + 1}`;
+  }
+};
+
+const getFileExtension = (fileName: string): string => {
+  const dotIndex = fileName.lastIndexOf(".");
+  if (dotIndex === -1 || dotIndex === fileName.length - 1) {
+    return "";
+  }
+
+  return fileName.slice(dotIndex + 1).toLowerCase();
+};
+
+const getFileTypeBadge = (extension: string) => {
+  switch (extension) {
+    case "pdf":
+      return { label: "PDF", className: "bg-rose-100 text-rose-700" };
+    case "doc":
+    case "docx":
+      return { label: "WORD", className: "bg-blue-100 text-blue-700" };
+    case "xls":
+    case "xlsx":
+      return { label: "EXCEL", className: "bg-emerald-100 text-emerald-700" };
+    case "ppt":
+    case "pptx":
+      return { label: "PPT", className: "bg-amber-100 text-amber-700" };
+    case "mp3":
+    case "wav":
+    case "ogg":
+    case "m4a":
+    case "aac":
+    case "flac":
+      return { label: "AUDIO", className: "bg-violet-100 text-violet-700" };
+    case "zip":
+    case "rar":
+      return { label: "ARCHIVE", className: "bg-violet-100 text-violet-700" };
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "webp":
+    case "gif":
+      return { label: "IMAGE", className: "bg-cyan-100 text-cyan-700" };
+    case "mp4":
+    case "mov":
+    case "avi":
+    case "mkv":
+      return { label: "VIDEO", className: "bg-fuchsia-100 text-fuchsia-700" };
+    default:
+      return {
+        label: extension ? extension.toUpperCase() : "FILE",
+        className: "bg-slate-100 text-slate-700",
+      };
+  }
+};
+
+const getFileIcon = (
+  extension: string,
+): { icon: IconType; className: string } => {
+  switch (extension) {
+    case "ppt":
+    case "pptx":
+      return { icon: FaFilePowerpoint, className: "text-amber-600" };
+    case "mp4":
+    case "mov":
+    case "avi":
+    case "mkv":
+    case "webm":
+      return { icon: FiVideo, className: "text-fuchsia-600" };
+    case "mp3":
+    case "wav":
+    case "ogg":
+    case "m4a":
+    case "aac":
+    case "flac":
+      return { icon: FiMusic, className: "text-violet-600" };
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "webp":
+    case "gif":
+    case "bmp":
+    case "svg":
+      return { icon: FiImage, className: "text-cyan-600" };
+    case "pdf":
+    case "doc":
+    case "docx":
+    case "txt":
+    case "xls":
+    case "xlsx":
+      return { icon: FiFileText, className: "text-slate-600" };
+    default:
+      return { icon: FiFile, className: "text-slate-500" };
+  }
+};
+
 const TeacherClassDashboard = ({
   classes,
   loading,
@@ -167,10 +286,22 @@ const TeacherClassDashboard = ({
   const [isDeletingClass, setIsDeletingClass] = useState(false);
   const [isUploadingCreatePoster, setIsUploadingCreatePoster] = useState(false);
   const [isUploadingEditPoster, setIsUploadingEditPoster] = useState(false);
+  const [createPosterFileName, setCreatePosterFileName] = useState("");
+  const [editPosterFileName, setEditPosterFileName] = useState("");
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [isUpdatingCourse, setIsUpdatingCourse] = useState(false);
+  const [isUploadingCourseFiles, setIsUploadingCourseFiles] = useState(false);
+  const [isUploadingEditCourseFiles, setIsUploadingEditCourseFiles] =
+    useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [expandedCourseIds, setExpandedCourseIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const createPosterInputRef = useRef<HTMLInputElement>(null);
+  const editPosterInputRef = useRef<HTMLInputElement>(null);
+  const courseFileInputRef = useRef<HTMLInputElement>(null);
+  const editCourseFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (classes.length === 0) {
@@ -210,6 +341,10 @@ const TeacherClassDashboard = ({
       setEditCourseForm(INITIAL_COURSE_FORM);
     }
   }, [editingCourseId, selectedClassCourses]);
+
+  useEffect(() => {
+    setExpandedCourseIds(new Set());
+  }, [selectedClassId]);
 
   useEffect(() => {
     if (!selectedClassId) {
@@ -316,6 +451,7 @@ const TeacherClassDashboard = ({
       const createdClass = await onCreateClass(payload);
       setSelectedClassId(createdClass.classId);
       setClassForm(INITIAL_CLASS_FORM);
+      setCreatePosterFileName("");
       setShowClassForm(false);
       toast.success("Tạo lớp học thành công.");
     } catch (createError) {
@@ -337,6 +473,11 @@ const TeacherClassDashboard = ({
 
     if (!courseForm.title.trim()) {
       toast.error("Vui lòng nhập tên khóa học.");
+      return;
+    }
+
+    if (isUploadingCourseFiles) {
+      toast.error("Tài liệu đang được upload. Vui lòng đợi hoàn tất.");
       return;
     }
 
@@ -391,6 +532,11 @@ const TeacherClassDashboard = ({
   const handleUpdateCourse = async () => {
     if (!editingCourseId || !selectedClassId) {
       toast.error("Không tìm thấy khóa học cần cập nhật.");
+      return;
+    }
+
+    if (isUploadingEditCourseFiles) {
+      toast.error("Tài liệu đang được upload. Vui lòng đợi hoàn tất.");
       return;
     }
 
@@ -475,6 +621,12 @@ const TeacherClassDashboard = ({
         setEditCourseForm(INITIAL_COURSE_FORM);
       }
 
+      setExpandedCourseIds((prev) => {
+        const next = new Set(prev);
+        next.delete(course.courseId);
+        return next;
+      });
+
       toast.success(deleteMessage || "Xóa khóa học thành công.");
     } catch (deleteCourseError) {
       const message =
@@ -487,6 +639,18 @@ const TeacherClassDashboard = ({
     }
   };
 
+  const toggleCourseExpand = (courseId: string) => {
+    setExpandedCourseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) {
+        next.delete(courseId);
+      } else {
+        next.add(courseId);
+      }
+      return next;
+    });
+  };
+
   const openEditClassForm = () => {
     if (!selectedClass) {
       toast.error("Hãy chọn lớp cần chỉnh sửa.");
@@ -494,6 +658,7 @@ const TeacherClassDashboard = ({
     }
 
     setEditClassForm(mapClassToForm(selectedClass));
+    setEditPosterFileName("");
     setShowEditClassForm(true);
   };
 
@@ -551,6 +716,142 @@ const TeacherClassDashboard = ({
         setIsUploadingCreatePoster(false);
       }
     }
+  };
+
+  const handleUploadCourseFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const fileList = Array.from(files);
+    setIsUploadingCourseFiles(true);
+
+    try {
+      const results = await uploadMultipleFiles(fileList, {
+        folder: CLASS_COURSE_FILE_UPLOAD_FOLDER,
+      });
+
+      const successUrls = results
+        .filter((item) => item.success && Boolean(item.data.url))
+        .map((item) => item.data.url);
+
+      if (successUrls.length === 0) {
+        const firstError = results.find((item) => !item.success)?.error;
+        toast.error(firstError || "Upload tài liệu thất bại.");
+        return;
+      }
+
+      setCourseForm((prev) => {
+        const existingUrls = prev.fileUrlsText
+          .split(/\r?\n|,/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        const mergedUrls = Array.from(
+          new Set([...existingUrls, ...successUrls]),
+        );
+
+        return {
+          ...prev,
+          fileUrlsText: mergedUrls.join("\n"),
+        };
+      });
+
+      const failedCount = results.length - successUrls.length;
+      if (failedCount > 0) {
+        toast.warn(
+          `Đã upload ${successUrls.length} tệp, ${failedCount} tệp thất bại.`,
+        );
+      } else {
+        toast.success(`Đã upload ${successUrls.length} tệp tài liệu.`);
+      }
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Upload tài liệu thất bại. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setIsUploadingCourseFiles(false);
+    }
+  };
+
+  const handleUploadEditCourseFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const fileList = Array.from(files);
+    setIsUploadingEditCourseFiles(true);
+
+    try {
+      const results = await uploadMultipleFiles(fileList, {
+        folder: CLASS_COURSE_FILE_UPLOAD_FOLDER,
+      });
+
+      const successUrls = results
+        .filter((item) => item.success && Boolean(item.data.url))
+        .map((item) => item.data.url);
+
+      if (successUrls.length === 0) {
+        const firstError = results.find((item) => !item.success)?.error;
+        toast.error(firstError || "Upload tài liệu thất bại.");
+        return;
+      }
+
+      setEditCourseForm((prev) => {
+        const existingUrls = prev.fileUrlsText
+          .split(/\r?\n|,/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        const mergedUrls = Array.from(
+          new Set([...existingUrls, ...successUrls]),
+        );
+
+        return {
+          ...prev,
+          fileUrlsText: mergedUrls.join("\n"),
+        };
+      });
+
+      const failedCount = results.length - successUrls.length;
+      if (failedCount > 0) {
+        toast.warn(
+          `Đã upload ${successUrls.length} tệp, ${failedCount} tệp thất bại.`,
+        );
+      } else {
+        toast.success(`Đã upload ${successUrls.length} tệp tài liệu.`);
+      }
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Upload tài liệu thất bại. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setIsUploadingEditCourseFiles(false);
+    }
+  };
+
+  const handlePosterFileSelection = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    isEditForm: boolean,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (isEditForm) {
+      setEditPosterFileName(file.name);
+    } else {
+      setCreatePosterFileName(file.name);
+    }
+
+    await handleUploadPoster(file, isEditForm);
   };
 
   const handleUpdateClass = async () => {
@@ -839,25 +1140,41 @@ const TeacherClassDashboard = ({
                   Poster lớp học
                 </span>
                 <input
+                  ref={createPosterInputRef}
                   type="file"
                   accept="image/*"
                   onChange={(event) =>
-                    void (async () => {
-                      const file = event.target.files?.[0];
-                      event.target.value = "";
-                      if (!file) {
-                        return;
-                      }
-                      await handleUploadPoster(file, false);
-                    })()
+                    void handlePosterFileSelection(event, false)
                   }
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                  className="hidden"
                 />
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => createPosterInputRef.current?.click()}
+                      disabled={isUploadingCreatePoster}
+                      className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isUploadingCreatePoster
+                        ? "Đang upload poster..."
+                        : "Tải poster từ máy"}
+                    </button>
+                    <span className="text-xs text-slate-500">
+                      {createPosterFileName ||
+                        (classForm.poster
+                          ? "Đã có poster. Bạn có thể chọn ảnh mới để thay thế."
+                          : "Chưa chọn ảnh nào")}
+                    </span>
+                  </div>
+                </div>
                 <span className="text-[11px] text-slate-500">
                   Chọn ảnh từ máy tính, hệ thống sẽ upload lên Cloudinary.
                 </span>
                 {isUploadingCreatePoster && (
-                  <span className="text-xs text-sky-600">Đang upload poster...</span>
+                  <span className="text-xs text-sky-600">
+                    Đang upload poster...
+                  </span>
                 )}
                 {classForm.poster && (
                   <div className="mt-2 flex items-center gap-3">
@@ -868,9 +1185,10 @@ const TeacherClassDashboard = ({
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        setClassForm((prev) => ({ ...prev, poster: "" }))
-                      }
+                      onClick={() => {
+                        setClassForm((prev) => ({ ...prev, poster: "" }));
+                        setCreatePosterFileName("");
+                      }}
                       className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                     >
                       Xóa poster
@@ -902,7 +1220,7 @@ const TeacherClassDashboard = ({
               <button
                 type="button"
                 onClick={handleCreateClass}
-                  disabled={isCreatingClass || isUploadingCreatePoster}
+                disabled={isCreatingClass || isUploadingCreatePoster}
                 className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
               >
                 {isCreatingClass ? "Đang tạo..." : "Lưu lớp học"}
@@ -1067,25 +1385,41 @@ const TeacherClassDashboard = ({
                     Poster lớp học
                   </span>
                   <input
+                    ref={editPosterInputRef}
                     type="file"
                     accept="image/*"
                     onChange={(event) =>
-                      void (async () => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        if (!file) {
-                          return;
-                        }
-                        await handleUploadPoster(file, true);
-                      })()
+                      void handlePosterFileSelection(event, true)
                     }
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
+                    className="hidden"
                   />
+                  <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/70 p-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => editPosterInputRef.current?.click()}
+                        disabled={isUploadingEditPoster}
+                        className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isUploadingEditPoster
+                          ? "Đang upload poster..."
+                          : "Chọn poster mới"}
+                      </button>
+                      <span className="text-xs text-slate-500">
+                        {editPosterFileName ||
+                          (editClassForm.poster
+                            ? "Đang dùng poster hiện tại."
+                            : "Chưa có poster")}
+                      </span>
+                    </div>
+                  </div>
                   <span className="text-[11px] text-slate-500">
                     Chọn ảnh từ máy tính để cập nhật poster.
                   </span>
                   {isUploadingEditPoster && (
-                    <span className="text-xs text-amber-600">Đang upload poster...</span>
+                    <span className="text-xs text-amber-600">
+                      Đang upload poster...
+                    </span>
                   )}
                   {editClassForm.poster && (
                     <div className="mt-2 flex items-center gap-3">
@@ -1096,9 +1430,10 @@ const TeacherClassDashboard = ({
                       />
                       <button
                         type="button"
-                        onClick={() =>
-                          setEditClassForm((prev) => ({ ...prev, poster: "" }))
-                        }
+                        onClick={() => {
+                          setEditClassForm((prev) => ({ ...prev, poster: "" }));
+                          setEditPosterFileName("");
+                        }}
                         className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
                         Xóa poster
@@ -1139,6 +1474,7 @@ const TeacherClassDashboard = ({
                   onClick={() => {
                     setShowEditClassForm(false);
                     setEditClassForm(INITIAL_CLASS_FORM);
+                    setEditPosterFileName("");
                   }}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
                 >
@@ -1160,42 +1496,57 @@ const TeacherClassDashboard = ({
                   key={item.classId}
                   type="button"
                   onClick={() => setSelectedClassId(item.classId)}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${
+                  className={`w-full rounded-2xl border p-3 text-left transition ${
                     isSelected
                       ? "border-sky-300 bg-sky-50 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">
-                        {item.className}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {item.description || "Chưa có mô tả"}
-                      </p>
+                  <div className="flex items-start gap-3">
+                    <div className="h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                      {item.poster ? (
+                        <img
+                          src={item.poster}
+                          alt={`Poster ${item.className}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-400">
+                          Chưa có poster
+                        </div>
+                      )}
                     </div>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        item.active
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {item.active ? "Đang hoạt động" : "Tạm dừng"}
-                    </span>
-                  </div>
 
-                  <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-3">
-                    <p>Lịch học: {item.schedule || "Chưa cập nhật"}</p>
-                    <p>
-                      Sĩ số: {item.currentStudents ?? 0}/
-                      {item.maxStudents ?? "-"}
-                    </p>
-                    <p>
-                      Học phí: {Number(item.price || 0).toLocaleString("vi-VN")}{" "}
-                      VNĐ
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="line-clamp-1 text-base font-semibold text-slate-900">
+                          {item.className}
+                        </h3>
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            item.active
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {item.active ? "Đang hoạt động" : "Tạm dừng"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 grid gap-1 text-xs text-slate-600 md:grid-cols-2">
+                        <p className="line-clamp-1">
+                          Lịch: {item.schedule || "Chưa cập nhật"}
+                        </p>
+                        <p>
+                          Sĩ số: {item.currentStudents ?? 0}/
+                          {item.maxStudents ?? "-"}
+                        </p>
+                        <p>
+                          Học phí:{" "}
+                          {Number(item.price || 0).toLocaleString("vi-VN")} VNĐ
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </button>
               );
@@ -1204,6 +1555,63 @@ const TeacherClassDashboard = ({
         </div>
 
         <aside className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          {selectedClass ? (
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start gap-3">
+                <div className="h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                  {selectedClass.poster ? (
+                    <img
+                      src={selectedClass.poster}
+                      alt={`Poster ${selectedClass.className}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-400">
+                      Chưa có poster
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                    {selectedClass.className}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-600">
+                    {selectedClass.description || "Chưa có mô tả"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-2 text-xs text-slate-600 md:grid-cols-2">
+                <p>Lịch học: {selectedClass.schedule || "Chưa cập nhật"}</p>
+                <p>
+                  Học phí:{" "}
+                  {Number(selectedClass.price || 0).toLocaleString("vi-VN")} VNĐ
+                </p>
+                <p>
+                  Sĩ số: {selectedClass.currentStudents ?? 0}/
+                  {selectedClass.maxStudents ?? "-"}
+                </p>
+                <p>
+                  Trạng thái:{" "}
+                  {selectedClass.active ? "Đang hoạt động" : "Tạm dừng"}
+                </p>
+                <p>
+                  Bắt đầu:{" "}
+                  {selectedClass.startDate
+                    ? new Date(selectedClass.startDate).toLocaleString("vi-VN")
+                    : "Chưa cập nhật"}
+                </p>
+                <p>
+                  Kết thúc:{" "}
+                  {selectedClass.endDate
+                    ? new Date(selectedClass.endDate).toLocaleString("vi-VN")
+                    : "Chưa cập nhật"}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
@@ -1285,6 +1693,33 @@ const TeacherClassDashboard = ({
                 <span className="text-xs font-semibold text-slate-600">
                   File URLs (mỗi dòng 1 link)
                 </span>
+                <input
+                  ref={courseFileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt,image/*,video/*,audio/*"
+                  onChange={(event) => {
+                    void handleUploadCourseFiles(event.target.files);
+                    event.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                <div className="rounded-lg border border-dashed border-sky-200 bg-sky-50/70 p-2">
+                  <button
+                    type="button"
+                    onClick={() => courseFileInputRef.current?.click()}
+                    disabled={isUploadingCourseFiles}
+                    className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isUploadingCourseFiles
+                      ? "Đang upload tài liệu..."
+                      : "Upload tài liệu từ máy"}
+                  </button>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Hệ thống sẽ upload file và tự điền URL vào danh sách bên
+                    dưới.
+                  </p>
+                </div>
                 <textarea
                   placeholder="https://.../slide-1.pdf\nhttps://.../worksheet.docx"
                   rows={3}
@@ -1303,7 +1738,7 @@ const TeacherClassDashboard = ({
                 <button
                   type="button"
                   onClick={handleCreateCourse}
-                  disabled={isCreatingCourse}
+                  disabled={isCreatingCourse || isUploadingCourseFiles}
                   className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
                 >
                   {isCreatingCourse ? "Đang tạo..." : "Lưu khóa học"}
@@ -1384,6 +1819,33 @@ const TeacherClassDashboard = ({
                 <span className="text-xs font-semibold text-slate-600">
                   File URLs (mỗi dòng 1 link)
                 </span>
+                <input
+                  ref={editCourseFileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt,image/*,video/*,audio/*"
+                  onChange={(event) => {
+                    void handleUploadEditCourseFiles(event.target.files);
+                    event.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                <div className="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/70 p-2">
+                  <button
+                    type="button"
+                    onClick={() => editCourseFileInputRef.current?.click()}
+                    disabled={isUploadingEditCourseFiles}
+                    className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isUploadingEditCourseFiles
+                      ? "Đang upload tài liệu..."
+                      : "Upload tài liệu từ máy"}
+                  </button>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Hệ thống sẽ upload file và tự điền URL vào danh sách bên
+                    dưới.
+                  </p>
+                </div>
                 <textarea
                   rows={3}
                   value={editCourseForm.fileUrlsText}
@@ -1401,7 +1863,7 @@ const TeacherClassDashboard = ({
                 <button
                   type="button"
                   onClick={handleUpdateCourse}
-                  disabled={isUpdatingCourse}
+                  disabled={isUpdatingCourse || isUploadingEditCourseFiles}
                   className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
                 >
                   {isUpdatingCourse ? "Đang lưu..." : "Lưu khóa học"}
@@ -1431,46 +1893,152 @@ const TeacherClassDashboard = ({
                   key={course.courseId}
                   className="rounded-xl border border-slate-200 p-3"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-slate-900">
-                      {course.title}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                        Thứ tự: {course.orderIndex}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => openEditCourseForm(course)}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCourse(course)}
-                        disabled={deletingCourseId === course.courseId}
-                        className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {deletingCourseId === course.courseId
-                          ? "Đang xóa..."
-                          : "Xóa"}
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {course.description || "Chưa có mô tả"}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span className="rounded-md bg-slate-100 px-2 py-1">
-                      {course.fileUrls.length} tệp đính kèm
-                    </span>
-                    <span className="rounded-md bg-slate-100 px-2 py-1">
-                      {course.createdAt
-                        ? new Date(course.createdAt).toLocaleDateString("vi-VN")
-                        : "Mới tạo"}
-                    </span>
-                  </div>
+                  {(() => {
+                    const isExpanded = expandedCourseIds.has(course.courseId);
+                    return (
+                      <>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-slate-900">
+                            {course.title}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                              Thứ tự: {course.orderIndex}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openEditCourseForm(course)}
+                              className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCourse(course)}
+                              disabled={deletingCourseId === course.courseId}
+                              className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {deletingCourseId === course.courseId
+                                ? "Đang xóa..."
+                                : "Xóa"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleCourseExpand(course.courseId)
+                              }
+                              className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  Thu gọn <FiChevronUp />
+                                </>
+                              ) : (
+                                <>
+                                  Xem tài liệu <FiChevronDown />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {course.description || "Chưa có mô tả"}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                          <span className="rounded-md bg-slate-100 px-2 py-1">
+                            {course.fileUrls.length} tệp đính kèm
+                          </span>
+                          <span className="rounded-md bg-slate-100 px-2 py-1">
+                            {course.createdAt
+                              ? new Date(course.createdAt).toLocaleDateString(
+                                  "vi-VN",
+                                )
+                              : "Mới tạo"}
+                          </span>
+                        </div>
+
+                        {isExpanded && course.fileUrls.length > 0 ? (
+                          <div className="mt-3 space-y-2">
+                            {course.fileUrls.map((fileUrl, index) => {
+                              const trimmedUrl = fileUrl.trim();
+                              if (!trimmedUrl) {
+                                return null;
+                              }
+
+                              const fileName = getFileNameFromUrl(
+                                trimmedUrl,
+                                index,
+                              );
+                              const extension = getFileExtension(fileName);
+                              const typeBadge = getFileTypeBadge(extension);
+                              const fileIcon = getFileIcon(extension);
+                              const FileIcon = fileIcon.icon;
+                              const hasExtension = /\.[a-zA-Z0-9]{2,8}$/.test(
+                                fileName,
+                              );
+                              const downloadName = hasExtension
+                                ? fileName
+                                : `${fileName}.bin`;
+
+                              return (
+                                <div
+                                  key={`${course.courseId}-file-${index}`}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                                >
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <FileIcon
+                                      className={`shrink-0 ${fileIcon.className}`}
+                                    />
+                                    <span
+                                      className="max-w-55 truncate text-xs font-medium text-slate-700"
+                                      title={trimmedUrl}
+                                    >
+                                      {fileName}
+                                    </span>
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${typeBadge.className}`}
+                                    >
+                                      {typeBadge.label}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <a
+                                      href={trimmedUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-white"
+                                      onClick={(event) =>
+                                        event.stopPropagation()
+                                      }
+                                    >
+                                      Mở
+                                    </a>
+                                    <a
+                                      href={trimmedUrl}
+                                      download={downloadName}
+                                      className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700 transition hover:bg-sky-100"
+                                      onClick={(event) =>
+                                        event.stopPropagation()
+                                      }
+                                    >
+                                      Tải xuống
+                                    </a>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+
+                        {isExpanded && course.fileUrls.length === 0 ? (
+                          <div className="mt-3 rounded-lg border border-dashed border-slate-300 p-3 text-xs text-slate-500">
+                            Khóa học này chưa có tài liệu.
+                          </div>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </article>
               ))
             ) : (

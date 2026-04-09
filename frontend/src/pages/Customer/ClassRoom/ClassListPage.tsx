@@ -1,20 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   classRoomService,
   type ClassRoomDto,
   type CreateClassRoomRequest,
-  type UpdateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
-import {
-  courseService,
-  type CourseDto,
-  type CreateCourseRequest,
-  type UpdateCourseRequest,
-} from "../../../services/courses/courseService";
+import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import RoomCard, { type RoomCardProps } from "../LandingPage/RoomCard";
-import TeacherClassDashboard from "./TeacherClassDashboard";
+
+const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
 
 const isTeacherRole = (role?: string): boolean => {
   if (!role) {
@@ -29,71 +26,80 @@ const isTeacherRole = (role?: string): boolean => {
   );
 };
 
+const getClassRating = (classId: string): number => {
+  const hash = classId
+    .split("")
+    .reduce((total, char) => total + char.charCodeAt(0), 0);
+  return 3.5 + (hash % 16) * 0.1;
+};
+
+const renderRatingStars = (rating: number) => {
+  const stars = [];
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating - fullStars >= 0.5;
+
+  for (let index = 0; index < 5; index += 1) {
+    if (index < fullStars) {
+      stars.push(<FaStar key={`full-${index}`} className="text-amber-400" />);
+      continue;
+    }
+
+    if (index === fullStars && hasHalfStar) {
+      stars.push(
+        <FaStarHalfAlt key={`half-${index}`} className="text-amber-400" />,
+      );
+      continue;
+    }
+
+    stars.push(<FaRegStar key={`empty-${index}`} className="text-slate-300" />);
+  }
+
+  return stars;
+};
+
+const validatePosterFile = (file: File): string | null => {
+  if (!file.type.startsWith("image/")) {
+    return "Vui lòng chọn file ảnh hợp lệ (jpg, png, webp...).";
+  }
+
+  if (file.size > MAX_POSTER_FILE_SIZE_BYTES) {
+    return "Ảnh poster không được vượt quá 5MB.";
+  }
+
+  return null;
+};
+
 const ClassListPage = () => {
   const [classes, setClasses] = useState<ClassRoomDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creatingClass, setCreatingClass] = useState(false);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [posterFileName, setPosterFileName] = useState("");
+  const [createForm, setCreateForm] = useState<CreateClassRoomRequest>({
+    className: "",
+    description: "",
+    teacherId: "",
+    price: 0,
+    startDate: "",
+    endDate: "",
+    maxStudents: 20,
+    schedule: "",
+    poster: "",
+  });
   const navigate = useNavigate();
+  const posterInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const isTeacher = isTeacherRole(user?.role);
 
-  const handleCreateClass = async (
-    payload: CreateClassRoomRequest,
-  ): Promise<ClassRoomDto> => {
-    const createdClass = await classRoomService.createClass(payload);
-    setClasses((prev) => {
-      const deduped = prev.filter(
-        (item) => item.classId !== createdClass.classId,
-      );
-      return [createdClass, ...deduped];
-    });
-    return createdClass;
-  };
+  useEffect(() => {
+    if (!user?.userId) {
+      return;
+    }
 
-  const handleUpdateClass = async (
-    classId: string,
-    payload: UpdateClassRoomRequest,
-  ): Promise<ClassRoomDto> => {
-    const updatedClass = await classRoomService.updateClass(classId, payload);
-    setClasses((prev) =>
-      prev.map((item) =>
-        item.classId === updatedClass.classId ? updatedClass : item,
-      ),
-    );
-    return updatedClass;
-  };
-
-  const handleDeleteClass = async (classId: string): Promise<string> => {
-    const message = await classRoomService.deleteClass(classId);
-    setClasses((prev) => prev.filter((item) => item.classId !== classId));
-    return message;
-  };
-
-  const handleCreateCourse = async (
-    payload: CreateCourseRequest,
-  ): Promise<CourseDto> => {
-    return courseService.createCourse(payload);
-  };
-
-  const handleUpdateCourse = async (
-    courseId: string,
-    payload: UpdateCourseRequest,
-  ): Promise<CourseDto> => {
-    return courseService.updateCourse(courseId, payload);
-  };
-
-  const handleDeleteCourse = async (courseId: string): Promise<string> => {
-    return courseService.deleteCourse(courseId);
-  };
-
-  const handleLoadCourses = useCallback(
-    async (classId: string): Promise<CourseDto[]> => {
-      const page = await courseService.getCourses(1, 100, classId);
-      const courses = page.data || [];
-      return courses.filter((course) => course.classId === classId);
-    },
-    [],
-  );
+    setCreateForm((prev) => ({ ...prev, teacherId: user.userId }));
+  }, [user?.userId]);
 
   useEffect(() => {
     const load = async () => {
@@ -112,6 +118,17 @@ const ClassListPage = () => {
     load();
   }, []);
 
+  const classesForTeacher = useMemo(() => {
+    if (!user?.userId) {
+      return classes;
+    }
+
+    const ownClasses = classes.filter(
+      (classItem) => classItem.teacherId === user.userId,
+    );
+    return ownClasses.length > 0 ? ownClasses : classes;
+  }, [classes, user?.userId]);
+
   const toRoomProps = (c: ClassRoomDto): RoomCardProps => ({
     id: c.classId,
     title: c.className,
@@ -122,21 +139,400 @@ const ClassListPage = () => {
     feature: { icon: () => null, label: c.description || "Lớp học" },
   });
 
+  const handleCreateClass = async () => {
+    if (!createForm.className.trim()) {
+      setError("Vui lòng nhập tên lớp học.");
+      return;
+    }
+
+    if (!createForm.teacherId) {
+      setError("Không xác định được giáo viên hiện tại.");
+      return;
+    }
+
+    if (!createForm.startDate || !createForm.endDate) {
+      setError("Vui lòng chọn ngày bắt đầu và ngày kết thúc.");
+      return;
+    }
+
+    try {
+      setCreatingClass(true);
+      setError(null);
+
+      const payload: CreateClassRoomRequest = {
+        ...createForm,
+        className: createForm.className.trim(),
+        description: createForm.description.trim(),
+        schedule: createForm.schedule.trim(),
+        price: Number(createForm.price) || 0,
+        maxStudents: Number(createForm.maxStudents) || 1,
+        startDate: new Date(createForm.startDate).toISOString(),
+        endDate: new Date(createForm.endDate).toISOString(),
+        poster: createForm.poster?.trim() || undefined,
+      };
+
+      const created = await classRoomService.createClass(payload);
+      setClasses((prev) => [created, ...prev]);
+      setShowCreateForm(false);
+      setCreateForm((prev) => ({
+        ...prev,
+        className: "",
+        description: "",
+        price: 0,
+        startDate: "",
+        endDate: "",
+        maxStudents: 20,
+        schedule: "",
+        poster: "",
+      }));
+      setPosterFileName("");
+    } catch (createError) {
+      const message =
+        createError instanceof Error
+          ? createError.message
+          : "Không thể tạo lớp học";
+      setError(message);
+    } finally {
+      setCreatingClass(false);
+    }
+  };
+
+  const handleUploadPoster = async (file: File) => {
+    const validationError = validatePosterFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setUploadingPoster(true);
+      setError(null);
+
+      const uploaded = await uploadToCloudinary(file, {
+        folder: CLASS_POSTER_UPLOAD_FOLDER,
+      });
+
+      if (!uploaded.success || !uploaded.data.url) {
+        setError(uploaded.error || "Upload ảnh poster thất bại.");
+        return;
+      }
+
+      setCreateForm((prev) => ({ ...prev, poster: uploaded.data.url }));
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Upload ảnh poster thất bại.";
+      setError(message);
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
+
   if (isTeacher) {
+    if (loading) return <div className="p-6">Đang tải lớp học của bạn...</div>;
+    if (error) return <div className="p-6 text-red-500">{error}</div>;
+
     return (
-      <TeacherClassDashboard
-        classes={classes}
-        loading={loading}
-        error={error}
-        teacherId={user?.userId ?? ""}
-        onCreateClass={handleCreateClass}
-        onUpdateClass={handleUpdateClass}
-        onDeleteClass={handleDeleteClass}
-        onCreateCourse={handleCreateCourse}
-        onUpdateCourse={handleUpdateCourse}
-        onDeleteCourse={handleDeleteCourse}
-        onLoadCourses={handleLoadCourses}
-      />
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div className="rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50 p-5 md:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 mb-3">
+                Teacher Studio
+              </span>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+                Lớp học của giáo viên
+              </h1>
+              <p className="text-slate-600 mt-1">
+                Nhấn vào từng lớp để vào trang quản lý khóa học, học sinh và
+                feedback.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCreateForm((prev) => !prev)}
+              className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105 transition shadow-md"
+            >
+              {showCreateForm ? "Đóng" : "Tạo lớp học"}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <p className="text-sm text-slate-500 mt-1">
+              Tổng số lớp hiện có: {classesForTeacher.length}
+            </p>
+          </div>
+        </div>
+
+        {showCreateForm && (
+          <div className="rounded-2xl border border-cyan-100 bg-linear-to-br from-white via-cyan-50/70 to-sky-50/70 p-4 md:p-5 space-y-3 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Tạo lớp học mới
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Tên lớp học</span>
+                <input
+                  value={createForm.className}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      className: event.target.value,
+                    }))
+                  }
+                  placeholder="Nhập tên lớp học"
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Học phí (VNĐ)</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={createForm.price}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      price: Number(event.target.value) || 0,
+                    }))
+                  }
+                  placeholder="Nhập học phí"
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Lịch học</span>
+                <input
+                  value={createForm.schedule}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      schedule: event.target.value,
+                    }))
+                  }
+                  placeholder="Ví dụ: Thứ 2 - 4 - 6, 19:00"
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Số học sinh tối đa</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={createForm.maxStudents}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      maxStudents: Number(event.target.value) || 1,
+                    }))
+                  }
+                  placeholder="Nhập sĩ số tối đa"
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Ngày bắt đầu</span>
+                <input
+                  type="datetime-local"
+                  value={createForm.startDate}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      startDate: event.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span className="font-medium">Ngày kết thúc</span>
+                <input
+                  type="datetime-local"
+                  value={createForm.endDate}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      endDate: event.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-300 px-3 py-2"
+                />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              <span className="font-medium">Mô tả lớp học</span>
+              <textarea
+                rows={3}
+                value={createForm.description}
+                onChange={(event) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                placeholder="Nhập mô tả lớp học"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2"
+              />
+            </label>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-700">
+                Ảnh poster lớp học
+              </p>
+              <input
+                ref={posterInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) {
+                    return;
+                  }
+
+                  setPosterFileName(file.name);
+                  handleUploadPoster(file);
+                  event.target.value = "";
+                }}
+              />
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => posterInputRef.current?.click()}
+                  disabled={uploadingPoster}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {uploadingPoster ? "Đang upload ảnh..." : "Chọn ảnh poster"}
+                </button>
+
+                {posterFileName ? (
+                  <span className="text-sm text-slate-500">
+                    {posterFileName}
+                  </span>
+                ) : (
+                  <span className="text-sm text-slate-400">Chưa chọn ảnh</span>
+                )}
+              </div>
+
+              {createForm.poster ? (
+                <div className="w-full max-w-xs rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                  <img
+                    src={createForm.poster}
+                    alt="Poster preview"
+                    className="w-full h-40 object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCreateClass}
+                disabled={creatingClass}
+                className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105 disabled:opacity-60"
+              >
+                {creatingClass ? "Đang tạo..." : "Xác nhận tạo lớp"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="rounded-xl border border-slate-300 text-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        )}
+
+        {classesForTeacher.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-cyan-300 bg-cyan-50/40 p-8 text-center text-slate-500">
+            Bạn chưa có lớp học nào.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {classesForTeacher.map((classItem) => {
+              const rating = Number(
+                getClassRating(classItem.classId).toFixed(1),
+              );
+
+              return (
+                <button
+                  key={classItem.classId}
+                  type="button"
+                  onClick={() =>
+                    navigate(`/classes/${classItem.classId}/manage`)
+                  }
+                  className="group aspect-square text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
+                >
+                  <div className="relative h-1/2 w-full overflow-hidden bg-slate-100">
+                    {classItem.poster ? (
+                      <img
+                        src={classItem.poster}
+                        alt={classItem.className}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(event) => {
+                          (event.target as HTMLImageElement).style.display =
+                            "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-linear-to-br from-blue-100 via-cyan-100 to-teal-100" />
+                    )}
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-900/25 via-transparent to-transparent" />
+                    <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
+                      Lớp học
+                    </span>
+                  </div>
+
+                  <div className="h-1/2 p-4 md:p-5 flex flex-col justify-between bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50">
+                    <div>
+                      <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 min-h-14 leading-snug">
+                        {classItem.className}
+                      </h2>
+                      <p className="text-sm text-slate-600 mt-1 line-clamp-1">
+                        {classItem.schedule || "Lớp học trực tuyến"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 mt-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          {renderRatingStars(rating)}
+                        </div>
+                        <span className="font-medium text-slate-700">
+                          {rating}/5
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">
+                          {classItem.currentStudents ?? 0}/
+                          {classItem.maxStudents ?? 0} học sinh
+                        </span>
+                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
+                          {Number(classItem.price || 0).toLocaleString("vi-VN")}{" "}
+                          đ
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
   }
 

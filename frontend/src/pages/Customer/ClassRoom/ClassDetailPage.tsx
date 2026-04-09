@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { classRoomService, type ClassRoomDto } from "../../../services/classes/classRoomService";
+import {
+  classRoomService,
+  type ClassRoomDto,
+} from "../../../services/classes/classRoomService";
+import RichTextContent from "../../../components/common/RichTextContent";
 
 const JAAS_SCRIPT_SRC =
   "https://8x8.vc/vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/external_api.js";
@@ -9,7 +13,7 @@ declare global {
   interface Window {
     JitsiMeetExternalAPI?: new (
       domain: string,
-      options: { roomName: string; parentNode: HTMLElement }
+      options: { roomName: string; parentNode: HTMLElement },
     ) => unknown;
   }
 }
@@ -84,7 +88,11 @@ const ClassDetailPage = () => {
       )}
       <div>
         <h1 className="text-2xl font-bold mb-2">{clazz.className}</h1>
-        {clazz.description && <p className="text-gray-700 mb-2">{clazz.description}</p>}
+        <RichTextContent
+          content={clazz.description}
+          emptyFallback=""
+          className="text-gray-700 mb-2 wrap-break-word [&_a]:text-blue-600 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-200 [&_blockquote]:pl-3"
+        />
         <p className="text-sm text-gray-600">
           Lịch học: {clazz.schedule || "Chưa cập nhật"} | Sĩ số:{" "}
           {clazz.currentStudents ?? 0}/{clazz.maxStudents ?? "-"}
@@ -101,10 +109,9 @@ const ClassDetailPage = () => {
         Vào lớp học trực tuyến
       </button>
 
-      <div id="jaas-container" className="w-full h-[600px] border rounded mt-4" />
+      <div id="jaas-container" className="w-full h-150 border rounded mt-4" />
     </div>
   );
 };
 
 export default ClassDetailPage;
-

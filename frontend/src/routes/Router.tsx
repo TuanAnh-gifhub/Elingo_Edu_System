@@ -22,6 +22,7 @@ import UserManagement from "../pages/Admin/UserManagement";
 import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
 import ClassListPage from "../pages/Customer/ClassRoom/ClassListPage";
 import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
+import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassManagePage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 
 export const router = createBrowserRouter([
@@ -129,6 +130,11 @@ export const router = createBrowserRouter([
         path: "classes/:classId",
         element: <ClassDetailPage />,
         handle: { breadcrumb: "Chi tiết lớp học" },
+      },
+      {
+        path: "classes/:classId/manage",
+        element: <TeacherClassManagePage />,
+        handle: { breadcrumb: "Quản lý lớp học" },
       },
       {
         path: "community",

@@ -31,8 +31,13 @@ import {
 } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import RichTextContent from "../../../components/common/RichTextContent";
+import {
+  quizService,
+  type QuizDto,
+  type QuizImportResult,
+} from "../../../services/quizzes/quizService";
 
-type TeacherTab = "overview" | "courses" | "students" | "feedback";
+type TeacherTab = "overview" | "courses" | "quizzes" | "students" | "feedback";
 
 interface NewCourseForm {
   title: string;
@@ -314,8 +319,10 @@ const TeacherClassManagePage = () => {
   const [loadingClass, setLoadingClass] = useState(true);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(true);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
   const [courses, setCourses] = useState<CourseDto[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [students, setStudents] = useState<UserResponse[]>([]);
   const [showEditClassForm, setShowEditClassForm] = useState(false);
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
@@ -344,6 +351,16 @@ const TeacherClassManagePage = () => {
   const [expandedCourseIds, setExpandedCourseIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [expandedLessonQuizCourseIds, setExpandedLessonQuizCourseIds] =
+    useState<Set<string>>(() => new Set());
+  const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
+  const [importingQuizId, setImportingQuizId] = useState<string | null>(null);
+  const [quizImportResultByQuizId, setQuizImportResultByQuizId] = useState<
+    Record<string, QuizImportResult>
+  >({});
+  const quizExcelInputRefs = useRef<Record<string, HTMLInputElement | null>>(
+    {},
+  );
 
   useEffect(() => {
     if (!classId) {
@@ -367,6 +384,39 @@ const TeacherClassManagePage = () => {
     };
 
     loadClass();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadQuizzes = async () => {
+      try {
+        setLoadingQuizzes(true);
+        const firstPage = await quizService.getQuizzes(1, 100);
+        let allQuizzes = firstPage.data || [];
+
+        if (firstPage.totalPages > 1) {
+          for (let page = 2; page <= firstPage.totalPages; page += 1) {
+            const nextPage = await quizService.getQuizzes(page, 100);
+            allQuizzes = [...allQuizzes, ...(nextPage.data || [])];
+          }
+        }
+
+        setQuizzes(allQuizzes);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể tải danh sách quiz.";
+        toast.error(message);
+      } finally {
+        setLoadingQuizzes(false);
+      }
+    };
+
+    loadQuizzes();
   }, [classId]);
 
   useEffect(() => {
@@ -457,6 +507,20 @@ const TeacherClassManagePage = () => {
       };
     });
   }, [classInfo, registeredStudents]);
+
+  const quizzesOfClass = useMemo(() => {
+    const lessonIds = new Set(courses.map((course) => course.courseId));
+    return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
+  }, [courses, quizzes]);
+
+  const getQuizzesByCourseId = (courseId: string) => {
+    return quizzesOfClass.filter((quiz) => quiz.courseId === courseId);
+  };
+
+  const getLessonTitleByCourseId = (courseId: string) => {
+    const lesson = courses.find((course) => course.courseId === courseId);
+    return lesson?.title || "Bài học không xác định";
+  };
 
   const handleCreateCourse = async () => {
     if (!classId) {
@@ -701,6 +765,87 @@ const TeacherClassManagePage = () => {
     });
   };
 
+  const toggleLessonQuizList = (courseId: string) => {
+    setExpandedLessonQuizCourseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) {
+        next.delete(courseId);
+      } else {
+        next.add(courseId);
+      }
+
+      return next;
+    });
+  };
+
+  const handleDeleteQuiz = async (quizId: string) => {
+    const shouldDelete = window.confirm("Bạn có chắc muốn xóa quiz này?");
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setDeletingQuizId(quizId);
+      await quizService.deleteQuiz(quizId);
+
+      setQuizzes((prev) => prev.filter((item) => item.quizId !== quizId));
+
+      toast.success("Xóa quiz thành công.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể xóa quiz.";
+      toast.error(message);
+    } finally {
+      setDeletingQuizId(null);
+    }
+  };
+
+  const handleSelectQuizExcel = (quizId: string) => {
+    quizExcelInputRefs.current[quizId]?.click();
+  };
+
+  const handleImportQuizExcel = async (
+    quiz: QuizDto,
+    fileList: FileList | null,
+  ) => {
+    if (!fileList || fileList.length === 0) {
+      return;
+    }
+
+    const file = fileList[0];
+    const extension = getExtension(file.name);
+    if (extension !== "xlsx" && extension !== "xls") {
+      toast.error("Vui lòng chọn file Excel (.xlsx hoặc .xls).");
+      return;
+    }
+
+    try {
+      setImportingQuizId(quiz.quizId);
+      const result = await quizService.importQuizExcel(quiz.quizId, file);
+
+      setQuizImportResultByQuizId((prev) => ({
+        ...prev,
+        [quiz.quizId]: result,
+      }));
+
+      if (result.errors?.length) {
+        toast.warning(
+          `Import thành công ${result.importedCount}/${result.totalRows} dòng. Có ${result.errors.length} lỗi cần kiểm tra.`,
+        );
+      } else {
+        toast.success(
+          `Import Excel thành công: ${result.importedCount}/${result.totalRows} dòng.`,
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể import file Excel.";
+      toast.error(message);
+    } finally {
+      setImportingQuizId(null);
+    }
+  };
+
   const handleOpenEditClassForm = () => {
     if (!classInfo) {
       toast.error("Không thể lấy thông tin lớp học để chỉnh sửa.");
@@ -866,6 +1011,7 @@ const TeacherClassManagePage = () => {
         {[
           { key: "overview", label: "Tổng quan" },
           { key: "courses", label: "Bài học" },
+          { key: "quizzes", label: "Quiz" },
           { key: "students", label: "Học sinh" },
           { key: "feedback", label: "Feedback" },
         ].map((item) => (
@@ -1309,6 +1455,10 @@ const TeacherClassManagePage = () => {
               <div className="mt-4 space-y-3">
                 {courses.map((course) => {
                   const isExpanded = expandedCourseIds.has(course.courseId);
+                  const lessonQuizzes = getQuizzesByCourseId(course.courseId);
+                  const isQuizListExpanded = expandedLessonQuizCourseIds.has(
+                    course.courseId,
+                  );
 
                   return (
                     <div
@@ -1331,6 +1481,17 @@ const TeacherClassManagePage = () => {
                         </div>
 
                         <div className="shrink-0 flex flex-wrap items-center gap-2 justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(
+                                `/classes/${classId}/lessons/${course.courseId}/quiz`,
+                              )
+                            }
+                            className="inline-flex items-center rounded-lg border border-sky-300 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+                          >
+                            Tạo quiz + câu hỏi
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleStartEditCourse(course)}
@@ -1359,6 +1520,179 @@ const TeacherClassManagePage = () => {
                             </button>
                           ) : null}
                         </div>
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/50 px-3 py-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center rounded-full bg-cyan-100 text-cyan-700 px-2.5 py-1 text-xs font-semibold">
+                            Quiz đã tạo: {lessonQuizzes.length}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleLessonQuizList(course.courseId)
+                            }
+                            className="inline-flex items-center gap-1 rounded-lg border border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
+                          >
+                            {isQuizListExpanded ? "Ẩn quiz" : "Mở quiz"}
+                            {isQuizListExpanded ? (
+                              <FiChevronUp />
+                            ) : (
+                              <FiChevronDown />
+                            )}
+                          </button>
+                        </div>
+
+                        {isQuizListExpanded ? (
+                          loadingQuizzes ? (
+                            <p className="text-xs text-slate-500 mt-2">
+                              Đang tải quiz...
+                            </p>
+                          ) : lessonQuizzes.length === 0 ? (
+                            <p className="text-xs text-slate-500 mt-2">
+                              Bài học này chưa có quiz nào.
+                            </p>
+                          ) : (
+                            <div className="mt-2 space-y-2">
+                              {lessonQuizzes.map((quiz) => (
+                                <div
+                                  key={`${course.courseId}-${quiz.quizId}`}
+                                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2"
+                                >
+                                  <input
+                                    ref={(element) => {
+                                      quizExcelInputRefs.current[quiz.quizId] =
+                                        element;
+                                    }}
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                      handleImportQuizExcel(
+                                        quiz,
+                                        event.target.files,
+                                      );
+                                      event.target.value = "";
+                                    }}
+                                  />
+
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div>
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {quiz.title}
+                                      </p>
+                                      <p className="text-xs text-slate-500 mt-0.5">
+                                        {quiz.description ||
+                                          "Chưa có mô tả quiz."}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          navigate(
+                                            `/classes/${classId}/lessons/${course.courseId}/quiz?quizId=${quiz.quizId}`,
+                                          )
+                                        }
+                                        className="rounded-md border border-amber-300 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50"
+                                      >
+                                        Chỉnh sửa quiz
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleSelectQuizExcel(quiz.quizId)
+                                        }
+                                        disabled={
+                                          importingQuizId === quiz.quizId
+                                        }
+                                        className="rounded-md border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                                      >
+                                        {importingQuizId === quiz.quizId
+                                          ? "Đang import..."
+                                          : "Import Excel"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleDeleteQuiz(quiz.quizId)
+                                        }
+                                        disabled={
+                                          deletingQuizId === quiz.quizId
+                                        }
+                                        className="rounded-md border border-rose-300 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                                      >
+                                        {deletingQuizId === quiz.quizId
+                                          ? "Đang xóa..."
+                                          : "Xóa"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          navigate(
+                                            `/classes/${classId}/lessons/${course.courseId}/quiz?quizId=${quiz.quizId}`,
+                                          )
+                                        }
+                                        className="rounded-md border border-cyan-300 px-2.5 py-1 text-[11px] font-semibold text-cyan-700 hover:bg-cyan-50"
+                                      >
+                                        Mở quiz
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="mt-1 text-[11px] text-slate-400">
+                                    Quiz ID: {quiz.quizId}
+                                  </div>
+
+                                  {quizImportResultByQuizId[quiz.quizId] ? (
+                                    <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50/50 px-2.5 py-2 text-[11px] text-emerald-800">
+                                      <p>
+                                        Import gần nhất:{" "}
+                                        {
+                                          quizImportResultByQuizId[quiz.quizId]
+                                            .importedCount
+                                        }
+                                        /
+                                        {
+                                          quizImportResultByQuizId[quiz.quizId]
+                                            .totalRows
+                                        }{" "}
+                                        dòng.
+                                      </p>
+                                      {quizImportResultByQuizId[quiz.quizId]
+                                        .errors?.length ? (
+                                        <div className="mt-1 text-rose-700">
+                                          <p>
+                                            Lỗi (
+                                            {
+                                              quizImportResultByQuizId[
+                                                quiz.quizId
+                                              ].errors.length
+                                            }
+                                            ):
+                                          </p>
+                                          <ul className="list-disc pl-4">
+                                            {quizImportResultByQuizId[
+                                              quiz.quizId
+                                            ].errors
+                                              .slice(0, 5)
+                                              .map((errorItem, index) => (
+                                                <li
+                                                  key={`${quiz.quizId}-import-error-${index}`}
+                                                >
+                                                  {errorItem}
+                                                </li>
+                                              ))}
+                                          </ul>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        ) : null}
                       </div>
 
                       <p className="text-xs text-slate-500 mt-3">
@@ -1552,6 +1886,168 @@ const TeacherClassManagePage = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "quizzes" && (
+        <section className="space-y-4">
+          <div className="rounded-2xl border border-cyan-100 bg-white p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Quản lí bài quiz
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  Danh sách quiz thuộc các bài học trong lớp này.
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full bg-cyan-100 text-cyan-700 text-sm font-semibold px-3 py-1">
+                Tổng quiz: {quizzesOfClass.length}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            {loadingQuizzes ? (
+              <p className="text-slate-500">Đang tải danh sách quiz...</p>
+            ) : quizzesOfClass.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-cyan-300 bg-cyan-50/40 p-6 text-center">
+                <p className="text-slate-600">
+                  Chưa có quiz nào trong lớp này.
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Hãy vào tab Bài học và bấm nút Tạo quiz để tạo quiz.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {quizzesOfClass.map((quiz) => (
+                  <div
+                    key={quiz.quizId}
+                    className="rounded-xl border border-sky-100 bg-linear-to-br from-white to-cyan-50/50 p-4"
+                  >
+                    <input
+                      ref={(element) => {
+                        quizExcelInputRefs.current[quiz.quizId] = element;
+                      }}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                      onChange={(event) => {
+                        handleImportQuizExcel(quiz, event.target.files);
+                        event.target.value = "";
+                      }}
+                    />
+
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                      <div>
+                        <h4 className="text-lg font-bold text-slate-900">
+                          {quiz.title}
+                        </h4>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {quiz.description || "Chưa có mô tả quiz."}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-3 text-xs">
+                          <span className="inline-flex rounded-full bg-violet-100 text-violet-700 px-2.5 py-1 font-medium">
+                            Bài học: {getLessonTitleByCourseId(quiz.courseId)}
+                          </span>
+                          <span className="inline-flex rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 font-medium">
+                            Số lần làm tối đa: {quiz.maxAttempts}
+                          </span>
+                          <span className="inline-flex rounded-full bg-slate-100 text-slate-700 px-2.5 py-1 font-medium">
+                            Tạo lúc:{" "}
+                            {quiz.createdAt
+                              ? new Date(quiz.createdAt).toLocaleString("vi-VN")
+                              : "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/classes/${classId}/lessons/${quiz.courseId}/quiz?quizId=${quiz.quizId}`,
+                            )
+                          }
+                          className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+                        >
+                          Chỉnh sửa quiz
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectQuizExcel(quiz.quizId)}
+                          disabled={importingQuizId === quiz.quizId}
+                          className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                        >
+                          {importingQuizId === quiz.quizId
+                            ? "Đang import..."
+                            : "Import Excel"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteQuiz(quiz.quizId)}
+                          disabled={deletingQuizId === quiz.quizId}
+                          className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                        >
+                          {deletingQuizId === quiz.quizId
+                            ? "Đang xóa..."
+                            : "Xóa"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/classes/${classId}/lessons/${quiz.courseId}/quiz?quizId=${quiz.quizId}`,
+                            )
+                          }
+                          className="rounded-lg border border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50"
+                        >
+                          Quản lí quiz
+                        </button>
+                      </div>
+                    </div>
+
+                    {quizImportResultByQuizId[quiz.quizId] ? (
+                      <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-xs text-emerald-800">
+                        <p>
+                          Import gần nhất:{" "}
+                          {quizImportResultByQuizId[quiz.quizId].importedCount}/
+                          {quizImportResultByQuizId[quiz.quizId].totalRows}{" "}
+                          dòng.
+                        </p>
+                        {quizImportResultByQuizId[quiz.quizId].errors
+                          ?.length ? (
+                          <div className="mt-1 text-rose-700">
+                            <p>
+                              Lỗi (
+                              {
+                                quizImportResultByQuizId[quiz.quizId].errors
+                                  .length
+                              }
+                              ):
+                            </p>
+                            <ul className="list-disc pl-5">
+                              {quizImportResultByQuizId[quiz.quizId].errors
+                                .slice(0, 5)
+                                .map((errorItem, index) => (
+                                  <li
+                                    key={`${quiz.quizId}-import-error-tab-${index}`}
+                                  >
+                                    {errorItem}
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             )}
           </div>

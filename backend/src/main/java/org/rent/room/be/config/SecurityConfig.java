@@ -44,7 +44,8 @@ public class SecurityConfig {
             "/wallet/deposit/webhook",
             "/payments/payos/webhook",
                 "/files/**",
-            "/api/v1/files/**"
+            "/api/v1/files/**",
+            "/users/teachers/public"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;

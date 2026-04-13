@@ -18,6 +18,7 @@ public interface ReviewService {
 
     ReviewSummaryResponse getSummaryByClass(UUID classId);
 
+
     ReviewResponse updateReview(UUID reviewId, UUID userId, UpdateReviewRequest request);
 
     void deleteReview(UUID reviewId, UUID userId);

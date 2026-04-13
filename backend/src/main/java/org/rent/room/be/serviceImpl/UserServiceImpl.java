@@ -7,6 +7,7 @@ import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.request.user.UpdateUserRequest;
 import org.rent.room.be.dto.response.UserResponse;
+import org.rent.room.be.dto.response.teacher.TeacherProfileResponse;
 import org.rent.room.be.entity.PasswordResetToken;
 import org.rent.room.be.entity.Role;
 import org.rent.room.be.entity.User;
@@ -32,7 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -185,6 +188,50 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
 
         return userMapper.toUserResponse(savedUser);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeacherProfileResponse> getTopTeachers(int limit) {
+        int safeLimit = Math.max(1, limit);
+        return userRepository.findActiveTeachers(Sort.by("createdAt").descending())
+                .stream()
+                .limit(safeLimit)
+                .map(teacher -> TeacherProfileResponse.builder()
+                        .teacherId(teacher.getUserId())
+                        .teacherName(teacher.getUserName())
+                        .avatar(null)
+                        .averageRating(0.0)
+                        .totalReviews(0)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> getTeachers(int page, int size, Boolean active, String keyword) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by("createdAt").descending());
+        String normalizedKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+
+        Page<User> pageData = userRepository.findTeachers(active, normalizedKeyword, pageable);
+        Page<UserResponse> responsePage = pageData.map(userMapper::toUserResponse);
+
+        return PageResponse.<UserResponse>builder()
+                .currentPage(pageData.getNumber() + 1)
+                .totalPages(pageData.getTotalPages())
+                .pageSize(pageData.getSize())
+                .totalElements(pageData.getTotalElements())
+                .data(responsePage.getContent())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateTeacherStatus(UUID teacherId, Boolean active) {
+        User teacher = userRepository.findById(teacherId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        teacher.setActive(Boolean.TRUE.equals(active));
+        userRepository.save(teacher);
     }
 
     @Override

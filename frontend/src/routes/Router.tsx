@@ -25,6 +25,7 @@ import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassManagePage";
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
+import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 
 export const router = createBrowserRouter([
   {
@@ -146,6 +147,11 @@ export const router = createBrowserRouter([
         path: "community",
         element: <CommunityPage />,
         handle: { breadcrumb: "Cộng đồng" },
+      },
+      {
+        path: "profile",
+        element: <ProfilePage />,
+        handle: { breadcrumb: "Thông tin cá nhân" },
       },
     ],
   },

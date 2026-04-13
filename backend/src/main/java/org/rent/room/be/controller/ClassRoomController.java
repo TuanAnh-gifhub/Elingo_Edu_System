@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -61,9 +62,23 @@ public class ClassRoomController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UUID teacherId,
-            @RequestParam(required = false) Boolean active
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String studyDay,
+            @RequestParam(required = false) String studyHour
     ) {
-        PageResponse<ClassRoomResponse> result = classRoomService.getClasses(page - 1, size, keyword, teacherId, active);
+        PageResponse<ClassRoomResponse> result = classRoomService.getClasses(
+                page - 1,
+                size,
+                keyword,
+                teacherId,
+                active,
+                minPrice,
+                maxPrice,
+                studyDay,
+                studyHour
+        );
         return ResponseEntity.ok(
                 ApiResponse.<PageResponse<ClassRoomResponse>>builder()
                         .code(200)

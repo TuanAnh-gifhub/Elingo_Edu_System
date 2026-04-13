@@ -22,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -64,11 +65,29 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     }
 
     @Override
-    public PageResponse<ClassRoomResponse> getClasses(int page, int size, String keyword, UUID teacherId, Boolean active) {
+    public PageResponse<ClassRoomResponse> getClasses(
+            int page,
+            int size,
+            String keyword,
+            UUID teacherId,
+            Boolean active,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String studyDay,
+            String studyHour
+    ) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Specification<ClassRoom> spec = ClassRoomSpecification.filterClasses(keyword, teacherId, active);
+        Specification<ClassRoom> spec = ClassRoomSpecification.filterClasses(
+                keyword,
+                teacherId,
+                active,
+                minPrice,
+                maxPrice,
+                studyDay,
+                studyHour
+        );
 
         Page<ClassRoom> pageData = classRoomRepository.findAll(spec, pageable);
 

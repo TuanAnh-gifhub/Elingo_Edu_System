@@ -30,4 +30,5 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.classRoom IS NULL AND r.active = true")
     Double averageRatingGlobal();
+
 }

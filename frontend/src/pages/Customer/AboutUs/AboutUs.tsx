@@ -14,11 +14,13 @@ import {
   FaEnvelope,
 } from "react-icons/fa";
 import {  message } from "antd";
+import type { TeacherProfileDto } from "../../../services/teachers/teacherService";
 interface AboutUsProps {
   isDarkMode?: boolean;
+  teacherProfiles?: TeacherProfileDto[];
 }
 
-const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
+const AboutUs = ({ isDarkMode = false, teacherProfiles = [] }: AboutUsProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [isVisible, setIsVisible] = useState(true);
   const [email, setEmail] = useState("");
@@ -132,12 +134,99 @@ const AboutUs = ({ isDarkMode = false }: AboutUsProps) => {
     },
   ];
 
+  const sortedTeacherProfiles = [...teacherProfiles].sort((a, b) => {
+    const byAverage = (b.averageRating || 0) - (a.averageRating || 0);
+    if (byAverage !== 0) {
+      return byAverage;
+    }
+    return (b.totalReviews || 0) - (a.totalReviews || 0);
+  });
+
   return (
     <div
       ref={aboutUsRef}
       className="relative z-10 w-full py-16 px-4 sm:px-6 lg:px-8"
     >
       <div className="max-w-7xl mx-auto">
+        {sortedTeacherProfiles.length > 0 && (
+          <motion.div
+            initial={{ opacity: 1, y: 0 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-16"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
+                Giáo Viên Nổi Bật
+              </h2>
+              <p
+                className={`text-sm md:text-base ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Xếp hạng theo đánh giá từ cao xuống thấp
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {sortedTeacherProfiles.map((teacher, index) => {
+                const safeRating = Math.max(0, Math.min(5, Number(teacher.averageRating || 0)));
+                const filledStars = Math.round(safeRating);
+                return (
+                  <motion.div
+                    key={teacher.teacherId}
+                    initial={{ opacity: 1, y: 0 }}
+                    animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.08 }}
+                    className={`rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+                      isDarkMode
+                        ? "bg-gray-800/90 backdrop-blur-sm border border-gray-700"
+                        : "bg-white/95 backdrop-blur-sm border border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <img
+                        src={teacher.avatar}
+                        alt={teacher.teacherName}
+                        className="w-12 h-12 rounded-full object-cover border border-sky-200"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0">
+                        <h3
+                          className={`text-sm font-bold truncate ${
+                            isDarkMode ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          {teacher.teacherName}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {teacher.totalReviews || 0} đánh giá
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 mb-1">
+                      {Array.from({ length: 5 }).map((_, starIndex) => (
+                        <FaStar
+                          key={`${teacher.teacherId}-star-${starIndex}`}
+                          className={
+                            starIndex < filledStars
+                              ? "text-amber-400"
+                              : "text-slate-300"
+                          }
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      {safeRating.toFixed(1)}/5.0
+                    </p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* Section 1: Tại Sao Chọn Chúng Tôi? */}
         <motion.div
           initial={{ opacity: 1, y: 0 }}

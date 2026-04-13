@@ -71,6 +71,147 @@ const INITIAL_CLASS_FORM: NewClassForm = {
   endDate: "",
 };
 
+const WEEKDAY_OPTIONS = [
+  { value: "2", label: "Thứ 2" },
+  { value: "3", label: "Thứ 3" },
+  { value: "4", label: "Thứ 4" },
+  { value: "5", label: "Thứ 5" },
+  { value: "6", label: "Thứ 6" },
+  { value: "7", label: "Thứ 7" },
+  { value: "CN", label: "Chủ nhật" },
+];
+
+const getWeekdayOrder = (day: string) => {
+  if (day.toUpperCase() === "CN") {
+    return 8;
+  }
+  const numericDay = Number(day);
+  if (Number.isNaN(numericDay)) {
+    return 99;
+  }
+  return numericDay;
+};
+
+const sortWeekdays = (days: string[]) =>
+  [...days].sort((left, right) => getWeekdayOrder(left) - getWeekdayOrder(right));
+
+const formatScheduleTime = (time: string): string => {
+  const [hoursPart, minutesPart = "00"] = time.split(":");
+  const hours = Number(hoursPart);
+
+  if (Number.isNaN(hours)) {
+    return time;
+  }
+
+  if (minutesPart === "00") {
+    return `${hours}h`;
+  }
+
+  return `${hours}h${minutesPart}`;
+};
+
+const parseScheduleTime = (value: string): string => {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "");
+  if (!normalized) {
+    return "";
+  }
+
+  const hourMinuteMatch = normalized.match(/^(\d{1,2})h(\d{1,2})$/);
+  if (hourMinuteMatch) {
+    const hours = hourMinuteMatch[1].padStart(2, "0");
+    const minutes = hourMinuteMatch[2].padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  const hourOnlyMatch = normalized.match(/^(\d{1,2})h$/);
+  if (hourOnlyMatch) {
+    return `${hourOnlyMatch[1].padStart(2, "0")}:00`;
+  }
+
+  const timeMatch = normalized.match(/^(\d{1,2}):(\d{1,2})$/);
+  if (timeMatch) {
+    const hours = timeMatch[1].padStart(2, "0");
+    const minutes = timeMatch[2].padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  return "";
+};
+
+const buildScheduleText = (
+  weekdays: string[],
+  startTime: string,
+  endTime: string,
+): string => {
+  if (!weekdays.length || !startTime || !endTime) {
+    return "";
+  }
+
+  const orderedDays = sortWeekdays(
+    Array.from(new Set(weekdays.map((item) => item.toUpperCase()))),
+  );
+
+  const hasSunday = orderedDays.includes("CN");
+  const numericDays = orderedDays.filter((item) => item !== "CN");
+  const dayText = hasSunday
+    ? `${numericDays.join(" - ")}${numericDays.length ? " - " : ""}CN`
+    : numericDays.join(" - ");
+
+  if (!dayText) {
+    return "";
+  }
+
+  return `thứ ${dayText} (${formatScheduleTime(startTime)}-${formatScheduleTime(endTime)})`;
+};
+
+const parseScheduleText = (schedule: string) => {
+  const normalized = schedule.trim();
+  if (!normalized) {
+    return { weekdays: [] as string[], startTime: "", endTime: "" };
+  }
+
+  const outerMatch = normalized.match(/^(.+?)\s*\(([^\)]*)\)$/i);
+  if (!outerMatch) {
+    return { weekdays: [] as string[], startTime: "", endTime: "" };
+  }
+
+  const rawDaysText = outerMatch[1]
+    .replace(/chủ\s*nhật/gi, "CN")
+    .replace(/chu\s*nhat/gi, "CN")
+    .replace(/thứ/gi, "")
+    .trim();
+
+  const weekdays = sortWeekdays(
+    rawDaysText
+      .split("-")
+      .map((item) => item.trim().toUpperCase())
+      .map((item) => (item === "CN" ? "CN" : item.replace(/[^0-9]/g, "")))
+      .filter((item) => /^(?:[2-7]|CN)$/.test(item)),
+  );
+
+  const [rawStart = "", rawEnd = ""] = outerMatch[2].split("-");
+
+  return {
+    weekdays,
+    startTime: parseScheduleTime(rawStart),
+    endTime: parseScheduleTime(rawEnd),
+  };
+};
+
+const isEndTimeAfterStartTime = (startTime: string, endTime: string): boolean => {
+  const toMinutes = (value: string) => {
+    const [hoursText = "0", minutesText = "0"] = value.split(":");
+    const hours = Number(hoursText);
+    const minutes = Number(minutesText);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+      return -1;
+    }
+    return hours * 60 + minutes;
+  };
+
+  return toMinutes(endTime) > toMinutes(startTime);
+};
+
 const INITIAL_COURSE_FORM: NewCourseForm = {
   title: "",
   description: "",
@@ -280,6 +421,14 @@ const TeacherClassDashboard = ({
     useState<NewCourseForm>(INITIAL_COURSE_FORM);
   const [editCourseForm, setEditCourseForm] =
     useState<NewCourseForm>(INITIAL_COURSE_FORM);
+  const [createScheduleWeekdays, setCreateScheduleWeekdays] = useState<string[]>(
+    [],
+  );
+  const [createScheduleStartTime, setCreateScheduleStartTime] = useState("");
+  const [createScheduleEndTime, setCreateScheduleEndTime] = useState("");
+  const [editScheduleWeekdays, setEditScheduleWeekdays] = useState<string[]>([]);
+  const [editScheduleStartTime, setEditScheduleStartTime] = useState("");
+  const [editScheduleEndTime, setEditScheduleEndTime] = useState("");
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [isCreatingClass, setIsCreatingClass] = useState(false);
   const [isUpdatingClass, setIsUpdatingClass] = useState(false);
@@ -395,6 +544,44 @@ const TeacherClassDashboard = ({
     [classes],
   );
 
+  const createSchedulePreview = useMemo(
+    () =>
+      buildScheduleText(
+        createScheduleWeekdays,
+        createScheduleStartTime,
+        createScheduleEndTime,
+      ),
+    [createScheduleWeekdays, createScheduleStartTime, createScheduleEndTime],
+  );
+
+  const editSchedulePreview = useMemo(
+    () =>
+      buildScheduleText(
+        editScheduleWeekdays,
+        editScheduleStartTime,
+        editScheduleEndTime,
+      ),
+    [editScheduleWeekdays, editScheduleStartTime, editScheduleEndTime],
+  );
+
+  const toggleCreateScheduleDay = (day: string) => {
+    setCreateScheduleWeekdays((prev) => {
+      if (prev.includes(day)) {
+        return prev.filter((item) => item !== day);
+      }
+      return sortWeekdays([...prev, day]);
+    });
+  };
+
+  const toggleEditScheduleDay = (day: string) => {
+    setEditScheduleWeekdays((prev) => {
+      if (prev.includes(day)) {
+        return prev.filter((item) => item !== day);
+      }
+      return sortWeekdays([...prev, day]);
+    });
+  };
+
   const handleCreateClass = async () => {
     if (!classForm.className.trim()) {
       toast.error("Vui lòng nhập tên lớp học.");
@@ -429,6 +616,21 @@ const TeacherClassDashboard = ({
       return;
     }
 
+    if (createScheduleWeekdays.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 thứ học.");
+      return;
+    }
+
+    if (!createScheduleStartTime || !createScheduleEndTime) {
+      toast.error("Vui lòng chọn đầy đủ giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+
+    if (!isEndTimeAfterStartTime(createScheduleStartTime, createScheduleEndTime)) {
+      toast.error("Giờ kết thúc phải sau giờ bắt đầu.");
+      return;
+    }
+
     if (classForm.poster.trim().length > MAX_POSTER_LENGTH) {
       toast.error(`Poster không được vượt quá ${MAX_POSTER_LENGTH} ký tự.`);
       return;
@@ -442,7 +644,7 @@ const TeacherClassDashboard = ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       maxStudents: Number(classForm.maxStudents || 1),
-      schedule: classForm.schedule.trim() || "Chưa lên lịch",
+      schedule: createSchedulePreview || "Chưa lên lịch",
       poster: normalizePoster(classForm.poster),
     };
 
@@ -451,6 +653,9 @@ const TeacherClassDashboard = ({
       const createdClass = await onCreateClass(payload);
       setSelectedClassId(createdClass.classId);
       setClassForm(INITIAL_CLASS_FORM);
+      setCreateScheduleWeekdays([]);
+      setCreateScheduleStartTime("");
+      setCreateScheduleEndTime("");
       setCreatePosterFileName("");
       setShowClassForm(false);
       toast.success("Tạo lớp học thành công.");
@@ -658,6 +863,10 @@ const TeacherClassDashboard = ({
     }
 
     setEditClassForm(mapClassToForm(selectedClass));
+    const parsedSchedule = parseScheduleText(selectedClass.schedule || "");
+    setEditScheduleWeekdays(parsedSchedule.weekdays);
+    setEditScheduleStartTime(parsedSchedule.startTime);
+    setEditScheduleEndTime(parsedSchedule.endTime);
     setEditPosterFileName("");
     setShowEditClassForm(true);
   };
@@ -893,6 +1102,21 @@ const TeacherClassDashboard = ({
       return;
     }
 
+    if (editScheduleWeekdays.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 thứ học.");
+      return;
+    }
+
+    if (!editScheduleStartTime || !editScheduleEndTime) {
+      toast.error("Vui lòng chọn đầy đủ giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+
+    if (!isEndTimeAfterStartTime(editScheduleStartTime, editScheduleEndTime)) {
+      toast.error("Giờ kết thúc phải sau gi��� bắt đầu.");
+      return;
+    }
+
     if (editClassForm.poster.trim().length > MAX_POSTER_LENGTH) {
       toast.error(`Poster không được vượt quá ${MAX_POSTER_LENGTH} ký tự.`);
       return;
@@ -906,7 +1130,7 @@ const TeacherClassDashboard = ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       maxStudents: Number(editClassForm.maxStudents || 1),
-      schedule: editClassForm.schedule.trim() || "Chưa lên lịch",
+      schedule: editSchedulePreview || "Chưa lên lịch",
       poster: normalizePoster(editClassForm.poster),
     };
 
@@ -1047,22 +1271,66 @@ const TeacherClassDashboard = ({
                 />
               </label>
 
-              <label className="flex flex-col gap-1">
+              <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-xs font-semibold text-slate-600">
                   Lịch học
                 </span>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: T2-T4-T6 19:30"
-                  value={classForm.schedule}
-                  onChange={(event) =>
-                    setClassForm((prev) => ({
-                      ...prev,
-                      schedule: event.target.value,
-                    }))
-                  }
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
-                />
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="mb-2 text-xs text-slate-500">
+                    Chọn nhiều thứ và 1 khung giờ dùng chung.
+                  </p>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {WEEKDAY_OPTIONS.map((day) => {
+                      const isActive = createScheduleWeekdays.includes(day.value);
+                      return (
+                        <button
+                          key={`create-day-${day.value}`}
+                          type="button"
+                          onClick={() => toggleCreateScheduleDay(day.value)}
+                          className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                            isActive
+                              ? "border-sky-500 bg-sky-100 text-sky-700"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-300"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        Giờ bắt đầu
+                      </span>
+                      <input
+                        type="time"
+                        value={createScheduleStartTime}
+                        onChange={(event) =>
+                          setCreateScheduleStartTime(event.target.value)
+                        }
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        Giờ kết thúc
+                      </span>
+                      <input
+                        type="time"
+                        value={createScheduleEndTime}
+                        onChange={(event) =>
+                          setCreateScheduleEndTime(event.target.value)
+                        }
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <input type="hidden" value={createSchedulePreview} readOnly />
+                <span className="text-[11px] text-slate-600">
+                  Định dạng: {createSchedulePreview || "Chưa chọn lịch"}
+                </span>
               </label>
 
               <label className="flex flex-col gap-1">
@@ -1229,6 +1497,9 @@ const TeacherClassDashboard = ({
                 type="button"
                 onClick={() => {
                   setClassForm(INITIAL_CLASS_FORM);
+                  setCreateScheduleWeekdays([]);
+                  setCreateScheduleStartTime("");
+                  setCreateScheduleEndTime("");
                   setShowClassForm(false);
                 }}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -1293,21 +1564,66 @@ const TeacherClassDashboard = ({
                   />
                 </label>
 
-                <label className="flex flex-col gap-1">
+                <label className="flex flex-col gap-1 md:col-span-2">
                   <span className="text-xs font-semibold text-slate-600">
                     Lịch học
                   </span>
-                  <input
-                    type="text"
-                    value={editClassForm.schedule}
-                    onChange={(event) =>
-                      setEditClassForm((prev) => ({
-                        ...prev,
-                        schedule: event.target.value,
-                      }))
-                    }
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
-                  />
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <p className="mb-2 text-xs text-slate-500">
+                      Chọn nhiều thứ và 1 khung giờ dùng chung.
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {WEEKDAY_OPTIONS.map((day) => {
+                        const isActive = editScheduleWeekdays.includes(day.value);
+                        return (
+                          <button
+                            key={`edit-day-${day.value}`}
+                            type="button"
+                            onClick={() => toggleEditScheduleDay(day.value)}
+                            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                              isActive
+                                ? "border-amber-500 bg-amber-100 text-amber-700"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-amber-300"
+                            }`}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          Giờ bắt đầu
+                        </span>
+                        <input
+                          type="time"
+                          value={editScheduleStartTime}
+                          onChange={(event) =>
+                            setEditScheduleStartTime(event.target.value)
+                          }
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          Giờ kết thúc
+                        </span>
+                        <input
+                          type="time"
+                          value={editScheduleEndTime}
+                          onChange={(event) =>
+                            setEditScheduleEndTime(event.target.value)
+                          }
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <input type="hidden" value={editSchedulePreview} readOnly />
+                  <span className="text-[11px] text-slate-600">
+                    Định dạng: {editSchedulePreview || "Chưa chọn lịch"}
+                  </span>
                 </label>
 
                 <label className="flex flex-col gap-1">
@@ -1474,6 +1790,9 @@ const TeacherClassDashboard = ({
                   onClick={() => {
                     setShowEditClassForm(false);
                     setEditClassForm(INITIAL_CLASS_FORM);
+                    setEditScheduleWeekdays([]);
+                    setEditScheduleStartTime("");
+                    setEditScheduleEndTime("");
                     setEditPosterFileName("");
                   }}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"

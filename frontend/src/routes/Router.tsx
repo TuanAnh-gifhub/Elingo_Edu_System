@@ -23,6 +23,7 @@ import ConfirmRegister from "../pages/Customer/LoginPage/ConfirmRegister";
 import ClassListPage from "../pages/Customer/ClassRoom/ClassListPage";
 import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
+import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 
 export const router = createBrowserRouter([
   {
@@ -134,6 +135,11 @@ export const router = createBrowserRouter([
         path: "community",
         element: <CommunityPage />,
         handle: { breadcrumb: "Cộng đồng" },
+      },
+      {
+        path: "profile",
+        element: <ProfilePage />,
+        handle: { breadcrumb: "Thông tin cá nhân" },
       },
     ],
   },

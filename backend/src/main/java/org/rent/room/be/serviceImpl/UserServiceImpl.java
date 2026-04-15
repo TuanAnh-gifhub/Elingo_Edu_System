@@ -214,6 +214,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countActiveTeachers() {
+        return userRepository.countActiveTeachers();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PageResponse<UserResponse> getTeachers(int page, int size, Boolean active, String keyword) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by("createdAt").descending());
         String normalizedKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();

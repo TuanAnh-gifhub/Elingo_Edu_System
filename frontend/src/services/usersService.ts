@@ -58,6 +58,10 @@ export const userService = {
     return api.get<any, ApiResponse<UserResponse>>("/users/me");
   },
 
+  getActiveTeachersCount: () => {
+    return api.get<any, ApiResponse<number>>("/users/teachers/active/count");
+  },
+
   getAllUsers: (
     page: number,
     size: number,

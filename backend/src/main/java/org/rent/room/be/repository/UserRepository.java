@@ -32,4 +32,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u JOIN u.role r WHERE r.roleName = 'TEACHER' AND (:active IS NULL OR u.active = :active) AND (:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> findTeachers(@Param("active") Boolean active, @Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.roleName = 'TEACHER' AND u.active = true")
+    long countActiveTeachers();
 }

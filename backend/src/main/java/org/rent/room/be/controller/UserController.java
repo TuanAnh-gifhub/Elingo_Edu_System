@@ -50,6 +50,17 @@ public class UserController {
         );
     }
 
+    @GetMapping("/teachers/active/count")
+    public ResponseEntity<ApiResponse<Long>> getActiveTeachersCount() {
+        return ResponseEntity.ok(
+                ApiResponse.<Long>builder()
+                        .code(200)
+                        .message("Get active teachers count successfully")
+                        .result(userService.countActiveTeachers())
+                        .build()
+        );
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(

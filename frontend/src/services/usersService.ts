@@ -13,6 +13,7 @@ export interface UserResponse {
   createdAt: string;
   updatedAt: string;
   active: boolean;
+  emailVerified?: boolean;
 }
 
 // 2. Định nghĩa Wrapper (ApiResponse)

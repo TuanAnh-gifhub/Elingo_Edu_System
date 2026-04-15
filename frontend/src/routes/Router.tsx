@@ -26,6 +26,8 @@ import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassMana
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
+import TeacherVerificationPage from "../pages/Customer/TeacherVerification/TeacherVerificationPage";
+import TeacherVerificationManagementPage from "../pages/Admin/TeacherVerificationManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -153,6 +155,11 @@ export const router = createBrowserRouter([
         element: <ProfilePage />,
         handle: { breadcrumb: "Thông tin cá nhân" },
       },
+      {
+        path: "teacher-verification",
+        element: <TeacherVerificationPage />,
+        handle: { breadcrumb: "Xác minh giáo viên" },
+      },
     ],
   },
   // Admin routes
@@ -203,6 +210,10 @@ export const router = createBrowserRouter([
       {
         path: "wallet-freeze",
         element: <WalletFreezeManagementPage />,
+      },
+      {
+        path: "teacher-verification",
+        element: <TeacherVerificationManagementPage />,
       },
     ],
   },

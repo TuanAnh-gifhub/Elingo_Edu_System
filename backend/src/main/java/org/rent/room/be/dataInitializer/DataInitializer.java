@@ -43,6 +43,7 @@ public class DataInitializer implements CommandLineRunner {
                 .phone("0987654321")
                 .dateOfBirth(LocalDate.of(2000, 1, 2))
                 .role(renterRole)
+                .emailVerified(true)
                 .active(true).build();
 
         User user2 = User.builder()
@@ -53,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
                 .phone("0123456789")
                 .dateOfBirth(LocalDate.of(1990, 1, 2))
                 .role(ownerRole)
+                .emailVerified(true)
                 .active(true).build();
 
         User user3 = User.builder()
@@ -63,6 +65,7 @@ public class DataInitializer implements CommandLineRunner {
                 .phone("1234567890")
                 .dateOfBirth(LocalDate.of(2008, 1, 2))
                 .role(adminRole)
+                .emailVerified(true)
                 .active(true).build();
 
         userRepository.saveAll(List.of(user1, user2, user3));

@@ -36,7 +36,7 @@ export interface CreateUsersRequest {
   password?: string;
   phone: string;
   dateOfBirth: string;
-  roleName: string;
+  roleName?: string;
   otp?: string;
 }
 

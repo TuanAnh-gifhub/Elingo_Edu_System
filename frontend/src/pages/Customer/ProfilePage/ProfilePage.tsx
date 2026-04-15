@@ -1,4 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   FiCalendar,
   FiMail,
@@ -9,6 +10,10 @@ import {
   FiCreditCard,
 } from "react-icons/fi";
 import { useAuth } from "../../../context/AuthContext";
+import {
+  teacherService,
+  type TeacherVerificationResponse,
+} from "../../../services/teachers/teacherService";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "Chưa cập nhật";
@@ -19,6 +24,33 @@ const formatDate = (dateString?: string) => {
 
 const ProfilePage = () => {
   const { isAuthenticated, user } = useAuth();
+  const [verificationRequest, setVerificationRequest] =
+    useState<TeacherVerificationResponse | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      return;
+    }
+
+    let isMounted = true;
+
+    teacherService
+      .getMyVerificationRequest()
+      .then((request) => {
+        if (isMounted) {
+          setVerificationRequest(request);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setVerificationRequest(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, user]);
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/" replace />;
@@ -93,6 +125,12 @@ const ProfilePage = () => {
                 </span>
               </div>
               <div className="flex items-center gap-2">
+                <FiMail className="h-4 w-4 text-sky-600" />
+                <span>
+                  Trạng thái email: {user.emailVerified === false ? "Chưa xác minh" : "Đã xác minh"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <FiShield className="h-4 w-4 text-sky-600" />
                 <span>Giới tính: {user.gender || "Chưa cập nhật"}</span>
               </div>
@@ -110,7 +148,31 @@ const ProfilePage = () => {
                 <FiCreditCard className="h-4 w-4" />
                 Đi tới ví
               </Link>
+              <Link
+                to="/teacher-verification"
+                className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+              >
+                <FiShield className="h-4 w-4" />
+                Xác minh giáo viên
+              </Link>
             </div>
+
+            {verificationRequest ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                {verificationRequest.status === "PENDING" ? (
+                  <span>Đang chờ duyệt</span>
+                ) : null}
+                {verificationRequest.status === "APPROVED" ? (
+                  <span>Bạn đã là giáo viên</span>
+                ) : null}
+                {verificationRequest.status === "REJECTED" ? (
+                  <span>
+                    Đã bị từ chối
+                    {verificationRequest.adminNote ? ` - ${verificationRequest.adminNote}` : ""}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

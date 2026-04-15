@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { FiMessageCircle, FiMoon, FiSun } from "react-icons/fi";
-import { FaHeart } from "react-icons/fa";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -70,6 +69,7 @@ const Header = () => {
   const [isHeaderTransparent, setIsHeaderTransparent] =
     useState<boolean>(false);
   const [isNavPointerDown, setIsNavPointerDown] = useState(false);
+  const [hoveredNavPath, setHoveredNavPath] = useState<string | null>(null);
 
   // --- 2. CÁC STATE UI (Giao diện) ---
   const [headerHeight, setHeaderHeight] = useState<number>(
@@ -168,6 +168,9 @@ const Header = () => {
     navigate(path, { viewTransition: true });
   };
 
+  const highlightedNavPath =
+    hoveredNavPath ?? NAV_LINKS.find((item) => isNavItemActive(item.to))?.to;
+
   // Chuẩn bị dữ liệu hiển thị cho UserMenu
   // UserResponse currently exposes userName (no fullName)
   const displayUser = user
@@ -191,7 +194,7 @@ const Header = () => {
         <div
           className={`w-full max-w-screen-2xl mx-auto px-2 md:px-4 flex flex-col items-center justify-center h-auto ${headerHeightClass}`}
         >
-          <div className="flex items-center justify-between w-full gap-2 md:gap-4">
+          <div className="relative flex items-center justify-between w-full gap-2 md:gap-4">
             {/* LOGO */}
             <div className="flex items-center shrink-0 gap-1 md:gap-3">
               <Link
@@ -258,9 +261,12 @@ const Header = () => {
             </div>
 
             <nav
-              className="hidden md:flex flex-1 justify-center px-4"
+              className="hidden md:flex absolute left-1/2 -translate-x-1/2 z-10"
               onMouseDown={() => setIsNavPointerDown(true)}
-              onMouseLeave={() => setIsNavPointerDown(false)}
+              onMouseLeave={() => {
+                setIsNavPointerDown(false);
+                setHoveredNavPath(null);
+              }}
             >
               <div
                 className={`inline-flex items-center rounded-full border px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md ${
@@ -270,33 +276,29 @@ const Header = () => {
                 }`}
               >
                 {NAV_LINKS.map((item) => {
-                  const isActive = isNavItemActive(item.to);
+                  const isHighlighted = highlightedNavPath === item.to;
 
                   return (
                     <Link
                       key={item.to}
                       to={item.to}
                       viewTransition
-                      onMouseEnter={() => handleNavPointerEnter(item.to)}
-                      className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-200 select-none ${
-                        isActive
-                          ? "text-white drop-shadow-[0_1px_1px_rgba(3,37,84,0.28)]"
-                          : isHeaderTransparent
-                            ? "text-slate-900 hover:text-slate-950"
-                            : "text-slate-600 hover:text-slate-900"
-                      }`}
+                      onMouseEnter={() => {
+                        setHoveredNavPath(item.to);
+                        handleNavPointerEnter(item.to);
+                      }}
+                      className="relative isolate rounded-full px-5 py-2.5 text-sm font-semibold !text-[#2563eb] hover:!text-[#2563eb] visited:!text-[#2563eb] focus:!text-[#2563eb] transition-colors duration-200 select-none"
                     >
-                      {isActive ? (
+                      {isHighlighted ? (
                         <motion.span
                           layoutId="header-nav-pill"
                           transition={NAV_PILL_TRANSITION}
-                          className="absolute inset-0 rounded-full border border-[#0c69db]/40 bg-[linear-gradient(135deg,#2f9bff_0%,#0f6fe8_52%,#0957c7_100%)] shadow-[0_12px_26px_rgba(16,94,205,0.34)]"
+                          className="absolute inset-0 z-0 rounded-full border border-[#0c69db]/40 bg-[#60a5fa] shadow-[0_12px_26px_rgba(16,94,205,0.34)]"
                         />
                       ) : null}
                       <motion.span
-                        whileHover={{ y: -0.5 }}
                         transition={{ duration: 0.18 }}
-                        className="relative z-10"
+                        className="relative z-20 !text-[#2563eb]"
                       >
                         {item.label}
                       </motion.span>
@@ -312,9 +314,6 @@ const Header = () => {
                 const iconBgClass = isHeaderTransparent
                   ? "bg-transparent hover:bg-white/10"
                   : "";
-                const wishlistBgClass = isHeaderTransparent
-                  ? iconBgClass
-                  : "bg-red-50 hover:bg-red-100";
                 const chatBgClass = isHeaderTransparent
                   ? iconBgClass
                   : "bg-blue-50 hover:bg-blue-100";
@@ -357,17 +356,6 @@ const Header = () => {
                       </span>
                     </button>
 
-                    {/* Wishlist */}
-                    <Link
-                      to="/wishlist"
-                      className={`${ICON_BUTTON_CLASS} ${wishlistBgClass}`}
-                      title="Yêu thích"
-                    >
-                      <FaHeart
-                        size={18}
-                        className="md:text-[20px] text-[#ff3b6b] m-auto"
-                      />
-                    </Link>
 
                     {/* Chat */}
                     <button

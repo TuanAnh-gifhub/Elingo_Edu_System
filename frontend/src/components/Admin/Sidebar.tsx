@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Layout, Menu, type MenuProps } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -11,8 +11,8 @@ import {
   LogoutOutlined,
   StarOutlined,
   CrownOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
-import type { UserResponse } from "../../services/usersService";
 
 const { Sider } = Layout;
 
@@ -36,23 +36,16 @@ interface SidebarProps {
   collapsed: boolean;
   toggleCollapsed: () => void;
   isDark: boolean;
-  adminUser: UserResponse | null;
   handleLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   isDark,
-  adminUser,
   handleLogout,
 }) => {
   const location = useLocation();
-  const [activeKey, setActiveKey] = useState<string>(location.pathname);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    setActiveKey(location.pathname);
-  }, [location.pathname]);
 
   const onOpenChange: MenuProps["onOpenChange"] = (keys) => {
     setOpenKeys(keys);
@@ -130,6 +123,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       <CrownOutlined />,
     ),
 
+    // Quản lý bài viết cộng đồng
+    getItem(
+      <Link to="/admin/community-posts">Bài viết cộng đồng</Link>,
+      "/admin/community-posts",
+      <MessageOutlined />,
+    ),
+
     getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
       getItem(
         <Link to="/admin/room-types">Loại phòng</Link>,
@@ -190,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar py-2">
         <Menu
           mode="inline"
-          selectedKeys={[activeKey]}
+          selectedKeys={[location.pathname]}
           openKeys={openKeys}
           onOpenChange={onOpenChange}
           items={items}

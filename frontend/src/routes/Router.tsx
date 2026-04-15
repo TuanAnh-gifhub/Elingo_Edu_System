@@ -28,6 +28,7 @@ import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
+import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -214,6 +215,10 @@ export const router = createBrowserRouter([
       {
         path: "packages",
         element: <AdminPackageManagementPage />,
+      },
+      {
+        path: "community-posts",
+        element: <AdminCommunityPostManagementPage />,
       },
     ],
   },

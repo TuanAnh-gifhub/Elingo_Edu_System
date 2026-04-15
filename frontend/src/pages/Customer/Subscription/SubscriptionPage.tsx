@@ -250,7 +250,7 @@ const SubscriptionPage = () => {
         </div>
         <div className="max-w-5xl mx-auto text-center relative">
           <span className="inline-block px-4 py-1 rounded-full bg-white/20 text-sm font-medium mb-4 backdrop-blur-sm">
-            ✨ Nâng cấp trải nghiệm học tập
+            Nâng cấp trải nghiệm học tập
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
             Chọn gói phù hợp với bạn
@@ -296,7 +296,7 @@ const SubscriptionPage = () => {
         {/* Alert Messages */}
         {purchaseError && (
           <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-3">
-            <span className="text-xl">❌</span>
+            <span className="text-sm font-semibold">Lỗi</span>
             <span>{purchaseError}</span>
             <button
               onClick={() => setPurchaseError(null)}
@@ -308,7 +308,7 @@ const SubscriptionPage = () => {
         )}
         {purchaseSuccess && (
           <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-3">
-            <span className="text-xl">🎉</span>
+            <span className="text-sm font-semibold">Thành công</span>
             <span>{purchaseSuccess}</span>
             <button
               onClick={() => setPurchaseSuccess(null)}
@@ -335,7 +335,6 @@ const SubscriptionPage = () => {
               <div
                 className={`text-center py-20 rounded-2xl border ${cardBg}`}
               >
-                <p className="text-5xl mb-4">📭</p>
                 <p
                   className={`text-lg ${
                     isDarkMode ? "text-gray-300" : "text-gray-500"
@@ -366,7 +365,6 @@ const SubscriptionPage = () => {
                   : "bg-blue-50 border-blue-200 text-blue-800"
               }`}
             >
-              <span className="text-2xl mt-0.5">💡</span>
               <div className="text-sm">
                 <p className="font-semibold mb-1">Thanh toán qua ví Elingo</p>
                 <p>
@@ -449,10 +447,10 @@ const SubscriptionPage = () => {
                           }`}
                         >
                           <p>
-                            🗓️ Từ {formatDate(sub.startDate)} → {formatDate(sub.endDate)}
+                            Từ {formatDate(sub.startDate)} → {formatDate(sub.endDate)}
                           </p>
                           <p>
-                            🧾 Mua lúc: {new Date(sub.createdAt).toLocaleString("vi-VN")}
+                            Mua lúc: {new Date(sub.createdAt).toLocaleString("vi-VN")}
                           </p>
                         </div>
                       </div>

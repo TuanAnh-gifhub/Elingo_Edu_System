@@ -12,8 +12,8 @@ import {
   StarOutlined,
   SafetyOutlined,
   CrownOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
-import type { UserResponse } from "../../services/usersService";
 
 const { Sider } = Layout;
 
@@ -37,7 +37,6 @@ interface SidebarProps {
   collapsed: boolean;
   toggleCollapsed: () => void;
   isDark: boolean;
-  adminUser: UserResponse | null;
   handleLogout: () => void;
 }
 
@@ -129,6 +128,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Link to="/admin/packages">Gói đăng ký</Link>,
       "/admin/packages",
       <CrownOutlined />,
+    ),
+
+    // Quản lý bài viết cộng đồng
+    getItem(
+      <Link to="/admin/community-posts">Bài viết cộng đồng</Link>,
+      "/admin/community-posts",
+      <MessageOutlined />,
     ),
 
     getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [

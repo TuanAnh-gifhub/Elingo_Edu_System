@@ -40,6 +40,8 @@ interface PostComment {
   role: AudienceType;
   time: string;
   content: string;
+  isHiddenByAdmin?: boolean;
+  hiddenReason?: string;
 }
 
 interface CommunityMedia {
@@ -107,6 +109,8 @@ const mediaCardTones = [
 ];
 
 const SUCCESS_CODES = new Set([0, 200]);
+const COMMUNITY_RULES_VIOLATION_NOTE =
+  "Bình luận này đã bị ẩn vì vi phạm quy tắc cộng đồng.";
 
 const SUCCESS_TOAST_OPTIONS = {
   style: {
@@ -170,6 +174,8 @@ function formatRelativeTime(isoDate?: string | null) {
 function mapCommentFromApi(
   comment: Partial<CommunityApiCommentResponse>,
 ): PostComment {
+  const isHiddenByAdmin = comment.active === false;
+
   return {
     id:
       comment.commentId ||
@@ -178,7 +184,11 @@ function mapCommentFromApi(
     author: comment.authorName || "Thành viên Elingo",
     role: "Học sinh",
     time: formatRelativeTime(comment.createdAt),
-    content: comment.content || "",
+    content: isHiddenByAdmin
+      ? COMMUNITY_RULES_VIOLATION_NOTE
+      : (comment.content || ""),
+    isHiddenByAdmin,
+    hiddenReason: isHiddenByAdmin ? COMMUNITY_RULES_VIOLATION_NOTE : undefined,
   };
 }
 
@@ -187,6 +197,8 @@ function mapCreatedCommentToFeed(
   role?: string | null,
   fallback?: { content?: string; authorName?: string },
 ): PostComment {
+  const isHiddenByAdmin = comment.active === false;
+
   return {
     id:
       comment.commentId ||
@@ -195,7 +207,11 @@ function mapCreatedCommentToFeed(
     author: comment.authorName || fallback?.authorName || "Thành viên Elingo",
     role: normalizeRole(role),
     time: formatRelativeTime(comment.createdAt),
-    content: comment.content ?? fallback?.content ?? "",
+    content: isHiddenByAdmin
+      ? COMMUNITY_RULES_VIOLATION_NOTE
+      : (comment.content ?? fallback?.content ?? ""),
+    isHiddenByAdmin,
+    hiddenReason: isHiddenByAdmin ? COMMUNITY_RULES_VIOLATION_NOTE : undefined,
   };
 }
 
@@ -372,6 +388,7 @@ function Avatar({ name, tone }: { name: string; tone: string }) {
 
 function CommunityPage() {
   const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role === "ADMIN" || user?.role === "ROLE_ADMIN";
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [communityInsights, setCommunityInsights] =
     useState<CommunityInsightStats>(initialInsightStats);
@@ -743,6 +760,17 @@ function CommunityPage() {
     setEditCommentContent("");
   };
 
+  const canCurrentUserSeeComment = (comment: PostComment) => {
+    if (!comment.isHiddenByAdmin) {
+      return true;
+    }
+
+    return Boolean(user?.userId) && comment.authorId === user?.userId;
+  };
+
+  const getVisibleComments = (comments: PostComment[]) =>
+    comments.filter(canCurrentUserSeeComment);
+
   useEffect(() => {
     if (!activeCommentsPostId) {
       return;
@@ -838,7 +866,7 @@ function CommunityPage() {
   };
 
   const startEditingComment = (comment: PostComment) => {
-    if (typeof comment.id !== "string") {
+    if (typeof comment.id !== "string" || comment.isHiddenByAdmin) {
       return;
     }
 
@@ -881,6 +909,38 @@ function CommunityPage() {
           ...currentPost,
           commentsPreview: currentPost.commentsPreview.filter(
             (comment) => String(comment.id) !== commentId,
+          ),
+          stats: {
+            ...currentPost.stats,
+            comments: Math.max(0, currentPost.stats.comments - 1),
+          },
+        };
+      }),
+    );
+  };
+
+  const hideCommentAsViolationInPosts = (commentId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((currentPost) => {
+        const hasComment = currentPost.commentsPreview.some(
+          (comment) => String(comment.id) === commentId,
+        );
+
+        if (!hasComment) {
+          return currentPost;
+        }
+
+        return {
+          ...currentPost,
+          commentsPreview: currentPost.commentsPreview.map((comment) =>
+            String(comment.id) === commentId
+              ? {
+                  ...comment,
+                  isHiddenByAdmin: true,
+                  hiddenReason: COMMUNITY_RULES_VIOLATION_NOTE,
+                  content: COMMUNITY_RULES_VIOLATION_NOTE,
+                }
+              : comment,
           ),
           stats: {
             ...currentPost.stats,
@@ -942,8 +1002,23 @@ function CommunityPage() {
       return;
     }
 
+    if (comment.isHiddenByAdmin) {
+      toast.info("Bình luận này đã bị ẩn vì vi phạm quy tắc cộng đồng.");
+      return;
+    }
+
+    const isCommentOwner =
+      Boolean(user?.userId) && comment.authorId === user?.userId;
+
+    if (!isCommentOwner && !isAdmin) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      "Bạn có chắc muốn xóa bình luận này không?",
+      isAdmin && !isCommentOwner
+        ? "Bạn có chắc muốn ẩn bình luận này vì vi phạm quy tắc cộng đồng không?"
+        : "Bạn có chắc muốn xóa bình luận này không?",
     );
     if (!confirmed) {
       return;
@@ -959,11 +1034,17 @@ function CommunityPage() {
         throw new Error(response.message || "Không thể xóa bình luận.");
       }
 
-      removeCommentFromPosts(comment.id);
+      if (isAdmin && !isCommentOwner) {
+        hideCommentAsViolationInPosts(comment.id);
+        toast.success("Đã ẩn bình luận vi phạm.", SUCCESS_TOAST_OPTIONS);
+      } else {
+        removeCommentFromPosts(comment.id);
+        toast.success("Xóa bình luận thành công.", SUCCESS_TOAST_OPTIONS);
+      }
+
       if (editingCommentId === comment.id) {
         cancelEditingComment();
       }
-      toast.success("Xóa bình luận thành công.", SUCCESS_TOAST_OPTIONS);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Xóa bình luận thất bại.";
@@ -976,6 +1057,9 @@ function CommunityPage() {
   const activeCommentsPost = posts.find(
     (post) => typeof post.id === "string" && post.id === activeCommentsPostId,
   );
+  const visibleActiveComments = activeCommentsPost
+    ? getVisibleComments(activeCommentsPost.commentsPreview)
+    : [];
 
   const communityStats = [
     {
@@ -1593,7 +1677,7 @@ function CommunityPage() {
               </div>
 
               <div className="space-y-4 bg-slate-50/70 px-4 py-4 md:px-6">
-                {post.commentsPreview
+                {getVisibleComments(post.commentsPreview)
                   .slice(0, 2)
                   .map((comment, commentIndex) => (
                     <div key={comment.id} className="flex gap-3">
@@ -1623,10 +1707,15 @@ function CommunityPage() {
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {comment.content}
                         </p>
+                        {comment.isHiddenByAdmin ? (
+                          <p className="mt-2 text-xs italic text-amber-700">
+                            {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   ))}
-                {post.commentsPreview.length > 2 ? (
+                {getVisibleComments(post.commentsPreview).length > 2 ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -1636,7 +1725,7 @@ function CommunityPage() {
                     }}
                     className="text-sm font-medium text-sky-700 transition hover:text-sky-800"
                   >
-                    Xem thêm {post.commentsPreview.length - 2} bình luận
+                    Xem thêm {getVisibleComments(post.commentsPreview).length - 2} bình luận
                   </button>
                 ) : null}
               </div>
@@ -1765,17 +1854,25 @@ function CommunityPage() {
 
               <div className="flex min-h-0 flex-col border-t border-slate-100 bg-slate-50/70 lg:border-l lg:border-t-0">
                 <div className="border-b border-slate-100 px-6 py-4 text-sm font-semibold text-slate-700">
-                  {activeCommentsPost.stats.comments} bình luận
+                  {visibleActiveComments.length} bình luận
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-                  {activeCommentsPost.commentsPreview.length > 0 ? (
-                    activeCommentsPost.commentsPreview.map(
+                  {visibleActiveComments.length > 0 ? (
+                    visibleActiveComments.map(
                       (comment, commentIndex) => {
-                        const canManageComment =
+                        const isCommentOwner =
                           typeof comment.id === "string" &&
                           Boolean(user?.userId) &&
                           comment.authorId === user?.userId;
+                        const canEditComment =
+                          isCommentOwner && !comment.isHiddenByAdmin;
+                        const canDeleteComment =
+                          isCommentOwner && !comment.isHiddenByAdmin;
+                        const canHideComment =
+                          isAdmin && !isCommentOwner && !comment.isHiddenByAdmin;
+                        const canManageComment =
+                          canEditComment || canDeleteComment || canHideComment;
                         const isCommentMenuOpen =
                           openCommentMenuId === comment.id;
                         const isEditingComment =
@@ -1832,37 +1929,43 @@ function CommunityPage() {
 
                                     {isCommentMenuOpen ? (
                                       <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            isEditingComment
-                                              ? cancelEditingComment()
-                                              : startEditingComment(comment)
-                                          }
-                                          disabled={isDeletingComment}
-                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          <FiEdit3 className="text-slate-500" />
-                                          {isEditingComment
-                                            ? "Đóng chỉnh sửa"
-                                            : "Chỉnh sửa bình luận"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void deleteComment(comment)
-                                          }
-                                          disabled={
-                                            isDeletingComment ||
-                                            isUpdatingComment
-                                          }
-                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          <FiTrash2 className="text-rose-500" />
-                                          {isDeletingComment
-                                            ? "Đang xóa bình luận"
-                                            : "Xóa bình luận"}
-                                        </button>
+                                        {canEditComment ? (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              isEditingComment
+                                                ? cancelEditingComment()
+                                                : startEditingComment(comment)
+                                            }
+                                            disabled={isDeletingComment}
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                          >
+                                            <FiEdit3 className="text-slate-500" />
+                                            {isEditingComment
+                                              ? "Đóng chỉnh sửa"
+                                              : "Chỉnh sửa bình luận"}
+                                          </button>
+                                        ) : null}
+                                        {canDeleteComment || canHideComment ? (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              void deleteComment(comment)
+                                            }
+                                            disabled={
+                                              isDeletingComment ||
+                                              isUpdatingComment
+                                            }
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                          >
+                                            <FiTrash2 className="text-rose-500" />
+                                            {isDeletingComment
+                                              ? "Đang xử lý"
+                                              : canHideComment
+                                                ? "Ẩn vì vi phạm"
+                                                : "Xóa bình luận"}
+                                          </button>
+                                        ) : null}
                                       </div>
                                     ) : null}
                                   </div>
@@ -1902,9 +2005,16 @@ function CommunityPage() {
                                   </div>
                                 </div>
                               ) : (
-                                <p className="mt-2 text-sm leading-6 text-slate-600">
-                                  {comment.content}
-                                </p>
+                                <>
+                                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                                    {comment.content}
+                                  </p>
+                                  {comment.isHiddenByAdmin ? (
+                                    <p className="mt-2 text-xs italic text-amber-700">
+                                      {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
+                                    </p>
+                                  ) : null}
+                                </>
                               )}
                             </div>
                           </div>
@@ -1968,3 +2078,4 @@ function CommunityPage() {
 }
 
 export default CommunityPage;
+

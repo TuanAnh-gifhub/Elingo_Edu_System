@@ -30,6 +30,7 @@ import TeacherVerificationPage from "../pages/Customer/TeacherVerification/Teach
 import TeacherVerificationManagementPage from "../pages/Admin/TeacherVerificationManagementPage";
 import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
+import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -221,6 +222,10 @@ export const router = createBrowserRouter([
         element: <TeacherVerificationManagementPage />,
         path: "packages",
         element: <AdminPackageManagementPage />,
+      },
+      {
+        path: "community-posts",
+        element: <AdminCommunityPostManagementPage />,
       },
     ],
   },

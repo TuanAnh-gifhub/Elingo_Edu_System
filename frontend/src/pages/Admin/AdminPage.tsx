@@ -48,7 +48,6 @@ const AdminPage: React.FC = () => {
           collapsed={collapsed}
           toggleCollapsed={() => setCollapsed(!collapsed)}
           isDark={isDark}
-          adminUser={user} // <-- Truyền user từ Context vào
           handleLogout={handleLogoutClick} // <-- Truyền hàm gọi context logout
         />
 

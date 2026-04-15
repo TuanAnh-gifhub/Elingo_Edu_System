@@ -5,6 +5,7 @@ import {
   type PackageResponse,
   type UserSubscriptionResponse,
 } from "../../../services/subscription/subscriptionService";
+import { walletService } from "../../../services/wallet/walletService";
 import ParallaxBackground from "../LandingPage/ParallaxBackground";
 import Footer from "../../../components/Footer/Footer";
 import { useAuth } from "../../../context/AuthContext";
@@ -20,6 +21,22 @@ const formatDate = (dateStr: string) =>
     month: "2-digit",
     year: "numeric",
   });
+
+const MIN_RECHARGE_AMOUNT = 10000;
+
+const isInsufficientFundsMessage = (message?: string | null) => {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("không đủ") ||
+    normalized.includes("so du") ||
+    normalized.includes("số dư") ||
+    normalized.includes("insufficient")
+  );
+};
 
 const statusConfig: Record<
   string,
@@ -162,6 +179,16 @@ const SubscriptionPage = () => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
+  const [insufficientTopUpAmount, setInsufficientTopUpAmount] =
+    useState<number | null>(null);
+  const [insufficientMissingAmount, setInsufficientMissingAmount] =
+    useState<number | null>(null);
+  const [insufficientPackageName, setInsufficientPackageName] = useState<string | null>(
+    null,
+  );
+  const [walletAvailableBalance, setWalletAvailableBalance] = useState<number | null>(
+    null,
+  );
   const [tab, setTab] = useState<"packages" | "history">("packages");
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -186,14 +213,22 @@ const SubscriptionPage = () => {
 
       // Only fetch user-specific data when authenticated
       if (isAuthenticated) {
-        const [mySubRes, activeRes] = await Promise.allSettled([
+        const [mySubRes, activeRes, walletRes] = await Promise.allSettled([
           subscriptionService.getMySubscriptions(),
           subscriptionService.getMyActiveSubscription(),
+          walletService.getMyWallet(),
         ]);
         if (mySubRes.status === "fulfilled")
           setMySubscriptions(mySubRes.value.data.result?.data ?? []);
         if (activeRes.status === "fulfilled")
           setActiveSubscription(activeRes.value.data.result ?? null);
+        if (walletRes.status === "fulfilled") {
+          const wallet = walletRes.value.data.result;
+          const available = Number(wallet.balance ?? 0) - Number(wallet.frozenAmount ?? 0);
+          setWalletAvailableBalance(Math.max(0, available));
+        }
+      } else {
+        setWalletAvailableBalance(null);
       }
     } finally {
       setLoading(false);
@@ -213,6 +248,12 @@ const SubscriptionPage = () => {
     setPurchasing(packageId);
     setPurchaseError(null);
     setPurchaseSuccess(null);
+    setInsufficientTopUpAmount(null);
+    setInsufficientMissingAmount(null);
+    setInsufficientPackageName(null);
+
+    const selectedPackage = packages.find((pkg) => pkg.packageId === packageId);
+
     try {
       const res = await subscriptionService.purchasePackage(packageId);
       const sub = res.data.result;
@@ -223,9 +264,26 @@ const SubscriptionPage = () => {
       setTab("history");
     } catch (e: unknown) {
       const err = e as ErrorWithResponse;
-      setPurchaseError(
-        err?.response?.data?.message ?? "Không thể mua gói. Vui lòng thử lại."
-      );
+      const errorMessage = err?.response?.data?.message ?? "Không thể mua gói. Vui lòng thử lại.";
+
+      if (isInsufficientFundsMessage(errorMessage) && selectedPackage) {
+        const available = Math.max(0, walletAvailableBalance ?? 0);
+        const missingAmount = Math.max(0, selectedPackage.price - available);
+        const topUpAmount = Math.max(
+          MIN_RECHARGE_AMOUNT,
+          Math.ceil(missingAmount / 1000) * 1000,
+        );
+
+        setInsufficientPackageName(selectedPackage.name);
+        setInsufficientMissingAmount(missingAmount);
+        setInsufficientTopUpAmount(topUpAmount);
+        setPurchaseError(
+          `Số dư ví không đủ để mua gói \"${selectedPackage.name}\". Vui lòng nạp thêm tiền rồi thử lại.`,
+        );
+        return;
+      }
+
+      setPurchaseError(errorMessage);
     } finally {
       setPurchasing(null);
     }
@@ -296,10 +354,36 @@ const SubscriptionPage = () => {
         {/* Alert Messages */}
         {purchaseError && (
           <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-3">
-            <span className="text-sm font-semibold">Lỗi</span>
-            <span>{purchaseError}</span>
+            <div className="space-y-1">
+              <div>{purchaseError}</div>
+              {insufficientTopUpAmount != null ? (
+                <div className="text-sm">
+                  {insufficientMissingAmount != null ? (
+                    <span>
+                      Thiếu khoảng <strong>{formatCurrency(insufficientMissingAmount)}</strong>
+                      {insufficientPackageName
+                        ? ` để mua gói \"${insufficientPackageName}\".`
+                        : "."}
+                    </span>
+                  ) : null}
+                  <button
+                    onClick={() =>
+                      navigate(`/wallet/recharge?amount=${insufficientTopUpAmount}`)
+                    }
+                    className="ml-2 font-semibold underline hover:opacity-80"
+                  >
+                    Nạp {formatCurrency(insufficientTopUpAmount)} ngay
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <button
-              onClick={() => setPurchaseError(null)}
+              onClick={() => {
+                setPurchaseError(null);
+                setInsufficientTopUpAmount(null);
+                setInsufficientMissingAmount(null);
+                setInsufficientPackageName(null);
+              }}
               className="ml-auto text-red-400 hover:text-red-600"
             >
               ✕

@@ -72,6 +72,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    public List<CommentResponse> getHiddenCommentsByPostId(UUID postId) {
+        List<Comment> comments = commentRepository
+                .findAllByPostPostIdAndParentCommentIsNullAndActiveFalseOrderByCreatedAtDesc(postId);
+        return commentMapper.toResponseList(comments);
+    }
+
+    @Override
     @Transactional
     public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, String email) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
@@ -104,11 +111,12 @@ public class CommentServiceImpl implements CommentService {
         }
 
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        if (!comment.getAuthor().getUserId().equals(user.getUserId())) {
-            boolean isAdmin = user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().getRoleName());
-            if (!isAdmin) {
-                throw new AppException(ErrorCode.FORBIDDEN);
-            }
+        boolean isAdmin = user.getRole() != null && (
+                "ROLE_ADMIN".equals(user.getRole().getRoleName())
+                        || "ADMIN".equals(user.getRole().getRoleName())
+        );
+        if (!isAdmin) {
+            throw new AppException(ErrorCode.FORBIDDEN);
         }
 
         // soft delete
@@ -118,6 +126,31 @@ public class CommentServiceImpl implements CommentService {
         // decrement post comment count safely
         Post post = comment.getPost();
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+        postRepository.save(post);
+    }
+
+    @Override
+    @Transactional
+    public void restoreComment(UUID commentId, String email) {
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
+        if (comment.isActive()) {
+            return;
+        }
+
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        boolean isAdmin = user.getRole() != null && (
+                "ROLE_ADMIN".equals(user.getRole().getRoleName())
+                        || "ADMIN".equals(user.getRole().getRoleName())
+        );
+        if (!isAdmin) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        comment.setActive(true);
+        commentRepository.save(comment);
+
+        Post post = comment.getPost();
+        post.setCommentCount((post.getCommentCount() == null ? 0 : post.getCommentCount()) + 1);
         postRepository.save(post);
     }
 }

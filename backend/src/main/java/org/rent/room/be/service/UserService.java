@@ -34,6 +34,8 @@ public interface UserService {
 
     List<TeacherProfileResponse> getTopTeachers(int limit);
 
+    long countActiveTeachers();
+
     PageResponse<UserResponse> getTeachers(int page, int size, Boolean active, String keyword);
 
     void updateTeacherStatus(UUID teacherId, Boolean active);

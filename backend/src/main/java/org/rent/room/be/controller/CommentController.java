@@ -70,6 +70,21 @@ public class    CommentController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/hidden")
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getHiddenComments(
+            @RequestParam UUID postId
+    ) {
+        List<CommentResponse> responses = commentService.getHiddenCommentsByPostId(postId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<CommentResponse>>builder()
+                        .code(200)
+                        .message("Get hidden comments successfully")
+                        .result(responses)
+                        .build()
+        );
+    }
+
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PutMapping("/{commentId}")
     public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
@@ -88,7 +103,7 @@ public class    CommentController {
         );
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable UUID commentId,
@@ -100,6 +115,22 @@ public class    CommentController {
                 ApiResponse.<Void>builder()
                         .code(200)
                         .message("Delete comment successfully")
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{commentId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreComment(
+            @PathVariable UUID commentId,
+            Authentication authentication
+    ) {
+        String email = getEmailFromAuthentication(authentication);
+        commentService.restoreComment(commentId, email);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(200)
+                        .message("Restore comment successfully")
                         .build()
         );
     }

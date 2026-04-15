@@ -1,6 +1,5 @@
 package org.rent.room.be.service;
 
-import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.comment.CreateCommentRequest;
 import org.rent.room.be.dto.request.comment.UpdateCommentRequest;
 import org.rent.room.be.dto.response.comment.CommentResponse;
@@ -15,7 +14,11 @@ public interface CommentService {
 
     List<CommentResponse> getAllCommentsByPostId(UUID postId);
 
+    List<CommentResponse> getHiddenCommentsByPostId(UUID postId);
+
     CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, String email);
 
     void deleteComment(UUID commentId, String email);
+
+    void restoreComment(UUID commentId, String email);
 }

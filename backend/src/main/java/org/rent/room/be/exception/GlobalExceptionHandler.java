@@ -83,15 +83,27 @@ public class GlobalExceptionHandler {
                 );
         }
 
-    // 6. CATCH-ALL: Bắt tất cả các lỗi còn lại (RuntimeException, NullPointer, DB Error...)
-    // Đây là chốt chặn cuối cùng để API không bao giờ chết hoặc trả về stacktrace xấu xí
+    // 6a. RuntimeException với message cụ thể (business logic errors)
+    // Trả message thật cho frontend thay vì "Uncategorized error"
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<?>> handleRuntimeException(RuntimeException e) {
+        log.error("RuntimeException: {}", e.getMessage());
+        String message = (e.getMessage() != null && !e.getMessage().isBlank())
+                ? e.getMessage()
+                : ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.builder()
+                        .code(HttpStatus.BAD_REQUEST.value())
+                        .message(message)
+                        .build());
+    }
+
+    // 6b. CATCH-ALL: Bắt tất cả các lỗi còn lại (NullPointer, DB Error...)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleUnwantedException(Exception e) {
-        // Ghi log lỗi ra console server để Developer sửa
         log.error("Uncaught Exception: ", e);
-
         ErrorCode errorCode = ErrorCode.UNCATEGORIZED_EXCEPTION;
-
         return ResponseEntity
                 .status(errorCode.getHttpStatusCode())
                 .body(ApiResponse.builder()

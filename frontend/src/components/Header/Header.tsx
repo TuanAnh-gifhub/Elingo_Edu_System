@@ -48,6 +48,7 @@ const NAV_LINKS = [
   { to: "/", label: "Trang chủ" },
   { to: "/classes", label: "Lớp học" },
   { to: "/community", label: "Cộng đồng" },
+  { to: "/subscription", label: "👑 Gói Premium" },
 ];
 
 const NAV_PILL_TRANSITION = {

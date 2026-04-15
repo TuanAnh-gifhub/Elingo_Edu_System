@@ -26,6 +26,8 @@ import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassMana
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
+import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
+import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -153,6 +155,11 @@ export const router = createBrowserRouter([
         element: <ProfilePage />,
         handle: { breadcrumb: "Thông tin cá nhân" },
       },
+      {
+        path: "subscription",
+        element: <SubscriptionPage />,
+        handle: { breadcrumb: "Gói đăng ký" },
+      },
     ],
   },
   // Admin routes
@@ -203,6 +210,10 @@ export const router = createBrowserRouter([
       {
         path: "wallet-freeze",
         element: <WalletFreezeManagementPage />,
+      },
+      {
+        path: "packages",
+        element: <AdminPackageManagementPage />,
       },
     ],
   },

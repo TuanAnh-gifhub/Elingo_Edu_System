@@ -5,6 +5,7 @@ import {
   type ClassRoomDto,
   type CreateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
+import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
@@ -12,6 +13,54 @@ import RoomCard, { type RoomCardProps } from "../LandingPage/RoomCard";
 
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
+
+const WEEKDAY_OPTIONS = [
+  { value: "2", label: "Thứ 2", order: 2 },
+  { value: "3", label: "Thứ 3", order: 3 },
+  { value: "4", label: "Thứ 4", order: 4 },
+  { value: "5", label: "Thứ 5", order: 5 },
+  { value: "6", label: "Thứ 6", order: 6 },
+  { value: "7", label: "Thứ 7", order: 7 },
+  { value: "CN", label: "Chủ nhật", order: 8 },
+];
+
+const formatTimeToSchedule = (time: string): string => {
+  const [hourRaw, minuteRaw] = time.split(":");
+  const hour = Number(hourRaw);
+  const minute = Number(minuteRaw || "0");
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return "";
+  }
+
+  if (minute === 0) {
+    return `${hour}h`;
+  }
+
+  return `${hour}h${String(minute).padStart(2, "0")}`;
+};
+
+const buildScheduleText = (
+  selectedDays: string[],
+  startTime: string,
+  endTime: string,
+): string => {
+  if (!selectedDays.length || !startTime || !endTime) {
+    return "";
+  }
+
+  const dayLookup = new Map(WEEKDAY_OPTIONS.map((option) => [option.value, option]));
+  const sortedDays = Array.from(new Set(selectedDays))
+    .map((value) => dayLookup.get(value))
+    .filter((value): value is (typeof WEEKDAY_OPTIONS)[number] => Boolean(value))
+    .sort((first, second) => first.order - second.order)
+    .map((day) => (day.value === "CN" ? "CN" : day.value));
+
+  if (!sortedDays.length) {
+    return "";
+  }
+
+  return `thứ ${sortedDays.join(" - ")} (${formatTimeToSchedule(startTime)}-${formatTimeToSchedule(endTime)})`;
+};
 
 const isTeacherRole = (role?: string): boolean => {
   if (!role) {
@@ -70,7 +119,9 @@ const validatePosterFile = (file: File): string | null => {
 };
 
 const ClassListPage = () => {
+  const [activeStudentTab, setActiveStudentTab] = useState<"all" | "enrolled">("all");
   const [classes, setClasses] = useState<ClassRoomDto[]>([]);
+  const [enrolledClassIds, setEnrolledClassIds] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
   const [minPriceInput, setMinPriceInput] = useState("");
@@ -87,6 +138,9 @@ const ClassListPage = () => {
   const [creatingClass, setCreatingClass] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [posterFileName, setPosterFileName] = useState("");
+  const [createScheduleDays, setCreateScheduleDays] = useState<string[]>([]);
+  const [createScheduleStartTime, setCreateScheduleStartTime] = useState("");
+  const [createScheduleEndTime, setCreateScheduleEndTime] = useState("");
   const [createForm, setCreateForm] = useState<CreateClassRoomRequest>({
     className: "",
     description: "",
@@ -110,6 +164,35 @@ const ClassListPage = () => {
 
     setCreateForm((prev) => ({ ...prev, teacherId: user.userId }));
   }, [user?.userId]);
+
+  useEffect(() => {
+    setCreateForm((prev) => ({
+      ...prev,
+      schedule: buildScheduleText(
+        createScheduleDays,
+        createScheduleStartTime,
+        createScheduleEndTime,
+      ),
+    }));
+  }, [createScheduleDays, createScheduleStartTime, createScheduleEndTime]);
+
+  useEffect(() => {
+    if (isTeacher || !user?.userId) {
+      setEnrolledClassIds([]);
+      return;
+    }
+
+    const loadMyEnrollments = async () => {
+      try {
+        const enrollments = await enrollmentService.getMyEnrollments();
+        setEnrolledClassIds(enrollments.map((item) => item.classId));
+      } catch {
+        setEnrolledClassIds([]);
+      }
+    };
+
+    loadMyEnrollments();
+  }, [isTeacher, user?.userId]);
 
   const loadClasses = useCallback(
     async (
@@ -186,6 +269,18 @@ const ClassListPage = () => {
     return ownClasses.length > 0 ? ownClasses : classes;
   }, [classes, user?.userId]);
 
+  const enrolledClassIdSet = useMemo(
+    () => new Set(enrolledClassIds),
+    [enrolledClassIds],
+  );
+
+  const classesForStudentView = useMemo(() => {
+    if (activeStudentTab === "enrolled") {
+      return classes.filter((item) => enrolledClassIdSet.has(item.classId));
+    }
+    return classes;
+  }, [activeStudentTab, classes, enrolledClassIdSet]);
+
   const toRoomProps = (c: ClassRoomDto): RoomCardProps => ({
     id: c.classId,
     title: c.className,
@@ -209,6 +304,21 @@ const ClassListPage = () => {
 
     if (!createForm.startDate || !createForm.endDate) {
       setError("Vui lòng chọn ngày bắt đầu và ngày kết thúc.");
+      return;
+    }
+
+    if (createScheduleDays.length === 0) {
+      setError("Vui lòng chọn ít nhất một thứ học.");
+      return;
+    }
+
+    if (!createScheduleStartTime || !createScheduleEndTime) {
+      setError("Vui lòng chọn giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+
+    if (createScheduleStartTime >= createScheduleEndTime) {
+      setError("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
       return;
     }
 
@@ -243,6 +353,9 @@ const ClassListPage = () => {
         poster: "",
       }));
       setPosterFileName("");
+      setCreateScheduleDays([]);
+      setCreateScheduleStartTime("");
+      setCreateScheduleEndTime("");
     } catch (createError) {
       const message =
         createError instanceof Error
@@ -285,6 +398,15 @@ const ClassListPage = () => {
       setUploadingPoster(false);
     }
   };
+
+  const toggleCreateScheduleDay = (dayValue: string) => {
+    setCreateScheduleDays((prev) =>
+      prev.includes(dayValue)
+        ? prev.filter((value) => value !== dayValue)
+        : [...prev, dayValue],
+    );
+  };
+
   const renderSearchBar = () => (
     <form
       onSubmit={handleSearchSubmit}
@@ -432,17 +554,54 @@ const ClassListPage = () => {
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
                 <span className="font-medium">Lịch học</span>
-                <input
-                  value={createForm.schedule}
-                  onChange={(event) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      schedule: event.target.value,
-                    }))
-                  }
-                  placeholder="Ví dụ: Thứ 2 - 4 - 6, 19:00"
-                  className="rounded-xl border border-slate-300 px-3 py-2"
-                />
+                <div className="rounded-xl border border-slate-300 p-3 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {WEEKDAY_OPTIONS.map((option) => {
+                      const selected = createScheduleDays.includes(option.value);
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => toggleCreateScheduleDay(option.value)}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                            selected
+                              ? "bg-cyan-600 text-white"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label className="flex flex-col gap-1 text-xs text-slate-600">
+                      <span>Giờ bắt đầu</span>
+                      <input
+                        type="time"
+                        value={createScheduleStartTime}
+                        onChange={(event) =>
+                          setCreateScheduleStartTime(event.target.value)
+                        }
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs text-slate-600">
+                      <span>Giờ kết thúc</span>
+                      <input
+                        type="time"
+                        value={createScheduleEndTime}
+                        onChange={(event) =>
+                          setCreateScheduleEndTime(event.target.value)
+                        }
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {createForm.schedule || "Chưa chọn lịch học."}
+                  </p>
+                </div>
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -667,16 +826,46 @@ const ClassListPage = () => {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold mb-4">Danh sách lớp học</h1>
+      <div className="rounded-2xl border border-cyan-100 bg-white p-2 flex flex-wrap gap-2 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setActiveStudentTab("all")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+            activeStudentTab === "all"
+              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow"
+              : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+          }`}
+        >
+          Lớp học tìm kiếm
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveStudentTab("enrolled")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+            activeStudentTab === "enrolled"
+              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow"
+              : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+          }`}
+        >
+          Lớp đã enroll
+        </button>
+      </div>
       {renderSearchBar()}
-      {classes.length === 0 ? (
+      {classesForStudentView.length === 0 ? (
         <div>Chưa có lớp học nào.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((c) => (
+          {classesForStudentView.map((c) => (
             <RoomCard
               key={c.classId}
               {...toRoomProps(c)}
-              onClick={() => navigate(`/classes/${c.classId}`)}
+              onClick={() =>
+                navigate(
+                  enrolledClassIdSet.has(c.classId)
+                    ? `/classes/${c.classId}/learning`
+                    : `/classes/${c.classId}`,
+                )
+              }
             />
           ))}
         </div>

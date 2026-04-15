@@ -1,28 +1,31 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   classRoomService,
   type ClassRoomDto,
 } from "../../../services/classes/classRoomService";
 import RichTextContent from "../../../components/common/RichTextContent";
+import { enrollmentService } from "../../../services/classes/enrollmentService";
+import { walletService } from "../../../services/wallet/walletService";
+import { useAuth } from "../../../context/AuthContext";
 
-const JAAS_SCRIPT_SRC =
-  "https://8x8.vc/vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/external_api.js";
-
-declare global {
-  interface Window {
-    JitsiMeetExternalAPI?: new (
-      domain: string,
-      options: { roomName: string; parentNode: HTMLElement },
-    ) => unknown;
-  }
-}
+const isStudentRole = (role?: string) => role?.toUpperCase().includes("STUDENT");
 
 const ClassDetailPage = () => {
   const { classId } = useParams<{ classId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [clazz, setClazz] = useState<ClassRoomDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [showConfirmEnroll, setShowConfirmEnroll] = useState(false);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+
+  const isStudent = useMemo(() => isStudentRole(user?.role), [user?.role]);
 
   useEffect(() => {
     if (!classId) return;
@@ -43,28 +46,55 @@ const ClassDetailPage = () => {
   }, [classId]);
 
   useEffect(() => {
-    // load Jitsi external script when user is on this page
-    const script = document.createElement("script");
-    script.src = JAAS_SCRIPT_SRC;
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
+    if (!classId || !isStudent || !user?.userId) {
+      setIsEnrolled(false);
+      return;
+    }
+
+    const checkEnrollment = async () => {
+      try {
+        setCheckingEnrollment(true);
+        const enrolled = await enrollmentService.checkEnrollment(classId);
+        setIsEnrolled(enrolled);
+      } catch {
+        setIsEnrolled(false);
+      } finally {
+        setCheckingEnrollment(false);
+      }
     };
-  }, []);
 
-  const handleJoinClass = () => {
-    if (!clazz) return;
-    const container = document.getElementById("jaas-container");
-    if (!container || !window.JitsiMeetExternalAPI) return;
+    checkEnrollment();
+  }, [classId, isStudent, user?.userId]);
 
-    const roomName = `vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/${clazz.classId}`;
+  const handleConfirmEnroll = async () => {
+    if (!classId || !clazz) {
+      return;
+    }
 
-    // eslint-disable-next-line no-new
-    new window.JitsiMeetExternalAPI("8x8.vc", {
-      roomName,
-      parentNode: container,
-    });
+    try {
+      setEnrolling(true);
+      const walletRes = await walletService.getMyWallet();
+      const currentBalance = Number(walletRes.data.result.balance || 0);
+      const price = Number(clazz.price || 0);
+
+      if (currentBalance < price) {
+        setShowConfirmEnroll(false);
+        setShowInsufficientModal(true);
+        return;
+      }
+
+      await enrollmentService.createEnrollment({ classId });
+      setIsEnrolled(true);
+      setShowConfirmEnroll(false);
+      toast.success("Nhập học thành công.");
+      navigate(`/classes/${classId}/learning`);
+    } catch (enrollError) {
+      const message =
+        enrollError instanceof Error ? enrollError.message : "Không thể nhập học.";
+      toast.error(message);
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   if (!classId) return <div className="p-6">Thiếu classId trên URL</div>;
@@ -73,9 +103,9 @@ const ClassDetailPage = () => {
   if (!clazz) return <div className="p-6">Không tìm thấy lớp học</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       {clazz.poster && (
-        <div className="w-full h-64 rounded-lg overflow-hidden mb-4">
+        <div className="w-full h-72 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
           <img
             src={clazz.poster}
             alt={clazz.className}
@@ -86,30 +116,123 @@ const ClassDetailPage = () => {
           />
         </div>
       )}
-      <div>
-        <h1 className="text-2xl font-bold mb-2">{clazz.className}</h1>
-        <RichTextContent
-          content={clazz.description}
-          emptyFallback=""
-          className="text-gray-700 mb-2 wrap-break-word [&_a]:text-blue-600 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-200 [&_blockquote]:pl-3"
-        />
-        <p className="text-sm text-gray-600">
-          Lịch học: {clazz.schedule || "Chưa cập nhật"} | Sĩ số:{" "}
-          {clazz.currentStudents ?? 0}/{clazz.maxStudents ?? "-"}
-        </p>
-        <p className="mt-2 font-semibold text-blue-600">
-          Học phí: {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ
-        </p>
-      </div>
 
-      <button
-        onClick={handleJoinClass}
-        className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-      >
-        Vào lớp học trực tuyến
-      </button>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{clazz.className}</h1>
+            <RichTextContent
+              content={clazz.description}
+              emptyFallback=""
+              className="text-slate-700 wrap-break-word [&_a]:text-blue-600 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-200 [&_blockquote]:pl-3"
+            />
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="inline-flex rounded-full bg-blue-100 text-blue-700 px-3 py-1">
+                Lịch học: {clazz.schedule || "Chưa cập nhật"}
+              </span>
+              <span className="inline-flex rounded-full bg-emerald-100 text-emerald-700 px-3 py-1">
+                Sĩ số: {clazz.currentStudents ?? 0}/{clazz.maxStudents ?? "-"}
+              </span>
+            </div>
+          </div>
 
-      <div id="jaas-container" className="w-full h-150 border rounded mt-4" />
+          <div className="w-full md:w-72 shrink-0 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4 space-y-2">
+            <p className="text-sm text-slate-500">Giá vào lớp</p>
+            <p className="text-2xl font-bold text-cyan-700">
+              {Number(clazz.price || 0).toLocaleString("vi-VN")} đ
+            </p>
+            {isStudent ? (
+              isEnrolled ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/classes/${clazz.classId}/learning`)}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold"
+                >
+                  Vào lớp học của tôi
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmEnroll(true)}
+                  disabled={checkingEnrollment || enrolling}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                >
+                  {enrolling ? "Đang xử lý..." : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
+                </button>
+              )
+            ) : (
+              <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Thông tin giáo viên</h2>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700">
+          <p>
+            <span className="font-medium">Tên:</span> {clazz.teacherName || "Đang cập nhật"}
+          </p>
+          <p>
+            <span className="font-medium">Email:</span> {clazz.teacherEmail || "Đang cập nhật"}
+          </p>
+        </div>
+      </section>
+
+      {showConfirmEnroll ? (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900">Xác nhận nhập học</h3>
+            <p className="text-sm text-slate-600">
+              Bạn có chắc chắn muốn bỏ ra {Number(clazz.price || 0).toLocaleString("vi-VN")} đ để vào lớp này không?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmEnroll(false)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+              >
+                Không
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEnroll}
+                disabled={enrolling}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                {enrolling ? "Đang xử lý..." : "Có"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showInsufficientModal ? (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl space-y-4">
+            <h3 className="text-lg font-semibold text-rose-700">Ví không đủ tiền</h3>
+            <p className="text-sm text-slate-600">
+              Bạn không có đủ số dư để vào lớp này. Vui lòng nạp thêm tiền vào ví.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowInsufficientModal(false)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/wallet")}
+                className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
+              >
+                Đi đến ví
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

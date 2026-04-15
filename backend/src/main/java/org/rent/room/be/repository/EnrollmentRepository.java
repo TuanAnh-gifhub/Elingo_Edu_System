@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     Optional<Enrollment> findByStudentIdAndClassId(@Param("studentId") UUID studentId, @Param("classId") UUID classId);
 
     boolean existsByStudent_UserIdAndEnrolledClass_ClassId(UUID studentId, UUID classId);
+
+    List<Enrollment> findByStudent_UserId(UUID studentId);
 }

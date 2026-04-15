@@ -8,12 +8,15 @@ import org.rent.room.be.dto.request.course.UpdateCourseRequest;
 import org.rent.room.be.dto.response.course.CourseResponse;
 import org.rent.room.be.entity.ClassRoom;
 import org.rent.room.be.entity.Course;
+import org.rent.room.be.entity.User;
 import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.CourseMapper;
 import org.rent.room.be.repository.ClassRoomRepository;
 import org.rent.room.be.repository.CourseRepository;
+import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.service.CourseService;
+import org.rent.room.be.service.UserService;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -37,6 +40,8 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final UserService userService;
     private final CourseMapper courseMapper;
 
     @Override
@@ -60,6 +65,7 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourse(UUID courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+        ensureStudentEnrolledIfNeeded(course.getClassRoom());
         return courseMapper.toResponse(course);
     }
 
@@ -70,6 +76,9 @@ public class CourseServiceImpl implements CourseService {
 
         Page<Course> pageData;
         if (classId != null) {
+            ClassRoom classRoom = classRoomRepository.findById(classId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+            ensureStudentEnrolledIfNeeded(classRoom);
             pageData = courseRepository.findByClassRoom_ClassId(classId, pageable);
         } else {
             pageData = courseRepository.findAll(pageable);
@@ -120,6 +129,7 @@ public class CourseServiceImpl implements CourseService {
     public Resource downloadFile(UUID courseId, String fileUrl) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+        ensureStudentEnrolledIfNeeded(course.getClassRoom());
 
         // Kiểm tra xem fileUrl có trong danh sách fileUrls của course không
         if (course.getFileUrls() == null || !course.getFileUrls().contains(fileUrl)) {
@@ -164,6 +174,32 @@ public class CourseServiceImpl implements CourseService {
             return fileName;
         } catch (Exception e) {
             return "course_file_" + System.currentTimeMillis();
+        }
+    }
+
+    private void ensureStudentEnrolledIfNeeded(ClassRoom classRoom) {
+        User currentUser;
+        try {
+            currentUser = userService.getCurrentUserEntity();
+        } catch (AppException ex) {
+            return;
+        }
+
+        if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
+            return;
+        }
+
+        String roleName = currentUser.getRole().getRoleName();
+        if (!"STUDENT".equalsIgnoreCase(roleName)) {
+            return;
+        }
+
+        boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
+                currentUser.getUserId(),
+                classRoom.getClassId()
+        );
+        if (!enrolled) {
+            throw new AppException(ErrorCode.QUIZ_ACCESS_DENIED);
         }
     }
 }

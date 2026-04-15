@@ -24,6 +24,7 @@ import ClassListPage from "../pages/Customer/ClassRoom/ClassListPage";
 import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassManagePage";
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
+import StudentClassLearningPage from "../pages/Customer/ClassRoom/StudentClassLearningPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 import TeacherVerificationPage from "../pages/Customer/TeacherVerification/TeacherVerificationPage";
@@ -142,6 +143,11 @@ export const router = createBrowserRouter([
         path: "classes/:classId/manage",
         element: <TeacherClassManagePage />,
         handle: { breadcrumb: "Quản lý lớp học" },
+      },
+      {
+        path: "classes/:classId/learning",
+        element: <StudentClassLearningPage />,
+        handle: { breadcrumb: "Lớp học của tôi" },
       },
       {
         path: "classes/:classId/lessons/:lessonId/quiz",

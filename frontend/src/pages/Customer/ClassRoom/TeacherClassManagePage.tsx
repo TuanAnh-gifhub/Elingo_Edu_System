@@ -36,8 +36,15 @@ import {
   type QuizDto,
   type QuizImportResult,
 } from "../../../services/quizzes/quizService";
+import { createJitsiRoom, type JitsiApi } from "../../../utils/jitsiHelper";
 
-type TeacherTab = "overview" | "courses" | "quizzes" | "students" | "feedback";
+type TeacherTab =
+  | "overview"
+  | "courses"
+  | "quizzes"
+  | "students"
+  | "feedback"
+  | "online";
 
 interface NewCourseForm {
   title: string;
@@ -81,6 +88,107 @@ const INITIAL_EDIT_CLASS_FORM: EditClassForm = {
   price: 0,
   startDate: "",
   endDate: "",
+};
+
+const WEEKDAY_OPTIONS = [
+  { value: "2", label: "Thứ 2", order: 2 },
+  { value: "3", label: "Thứ 3", order: 3 },
+  { value: "4", label: "Thứ 4", order: 4 },
+  { value: "5", label: "Thứ 5", order: 5 },
+  { value: "6", label: "Thứ 6", order: 6 },
+  { value: "7", label: "Thứ 7", order: 7 },
+  { value: "CN", label: "Chủ nhật", order: 8 },
+];
+
+const formatTimeToSchedule = (time: string): string => {
+  const [hourRaw, minuteRaw] = time.split(":");
+  const hour = Number(hourRaw);
+  const minute = Number(minuteRaw || "0");
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return "";
+  }
+
+  if (minute === 0) {
+    return `${hour}h`;
+  }
+
+  return `${hour}h${String(minute).padStart(2, "0")}`;
+};
+
+const parseScheduleTimeToInput = (timeText: string): string => {
+  const normalized = timeText.trim().toLowerCase();
+  const match = normalized.match(/^(\d{1,2})h(\d{1,2})?$/);
+  if (!match) {
+    return "";
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2] || "0");
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return "";
+  }
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+};
+
+const buildScheduleText = (
+  selectedDays: string[],
+  startTime: string,
+  endTime: string,
+): string => {
+  if (!selectedDays.length || !startTime || !endTime) {
+    return "";
+  }
+
+  const dayLookup = new Map(WEEKDAY_OPTIONS.map((option) => [option.value, option]));
+  const sortedDays = Array.from(new Set(selectedDays))
+    .map((value) => dayLookup.get(value))
+    .filter((value): value is (typeof WEEKDAY_OPTIONS)[number] => Boolean(value))
+    .sort((first, second) => first.order - second.order)
+    .map((day) => (day.value === "CN" ? "CN" : day.value));
+
+  if (!sortedDays.length) {
+    return "";
+  }
+
+  return `thứ ${sortedDays.join(" - ")} (${formatTimeToSchedule(startTime)}-${formatTimeToSchedule(endTime)})`;
+};
+
+const parseScheduleText = (schedule: string): {
+  days: string[];
+  startTime: string;
+  endTime: string;
+} => {
+  const normalized = schedule.trim();
+  if (!normalized) {
+    return { days: [], startTime: "", endTime: "" };
+  }
+
+  const timeMatch = normalized.match(/\(([^)]+)\)/);
+  const timeRange = timeMatch?.[1] || "";
+  const [startTimeRaw, endTimeRaw] = timeRange.split("-").map((item) => item.trim());
+
+  const dayPart = normalized
+    .split("(")[0]
+    .replace(/thứ/gi, "")
+    .trim();
+
+  const days = dayPart
+    .split("-")
+    .map((item) => item.trim().toUpperCase())
+    .map((item) => {
+      if (item === "CHỦ NHẬT" || item === "CHU NHAT") {
+        return "CN";
+      }
+      return item;
+    })
+    .filter((item) => WEEKDAY_OPTIONS.some((option) => option.value === item));
+
+  return {
+    days: Array.from(new Set(days)),
+    startTime: startTimeRaw ? parseScheduleTimeToInput(startTimeRaw) : "",
+    endTime: endTimeRaw ? parseScheduleTimeToInput(endTimeRaw) : "",
+  };
 };
 
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -328,6 +436,9 @@ const TeacherClassManagePage = () => {
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
     INITIAL_EDIT_CLASS_FORM,
   );
+  const [editScheduleDays, setEditScheduleDays] = useState<string[]>([]);
+  const [editScheduleStartTime, setEditScheduleStartTime] = useState("");
+  const [editScheduleEndTime, setEditScheduleEndTime] = useState("");
   const [isUpdatingClass, setIsUpdatingClass] = useState(false);
   const [isUploadingClassPoster, setIsUploadingClassPoster] = useState(false);
   const [editClassPosterFileName, setEditClassPosterFileName] = useState("");
@@ -361,6 +472,36 @@ const TeacherClassManagePage = () => {
   const quizExcelInputRefs = useRef<Record<string, HTMLInputElement | null>>(
     {},
   );
+  const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
+  const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
+  const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
+  const jitsiApiRef = useRef<JitsiApi | null>(null);
+
+  useEffect(() => {
+    if (!showEditClassForm) {
+      return;
+    }
+
+    const formatted = buildScheduleText(
+      editScheduleDays,
+      editScheduleStartTime,
+      editScheduleEndTime,
+    );
+
+    if (!formatted) {
+      return;
+    }
+
+    setEditClassForm((prev) => ({
+      ...prev,
+      schedule: formatted,
+    }));
+  }, [
+    showEditClassForm,
+    editScheduleDays,
+    editScheduleStartTime,
+    editScheduleEndTime,
+  ]);
 
   useEffect(() => {
     if (!classId) {
@@ -512,6 +653,50 @@ const TeacherClassManagePage = () => {
     const lessonIds = new Set(courses.map((course) => course.courseId));
     return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
   }, [courses, quizzes]);
+
+  useEffect(() => {
+    if (activeTab === "online") {
+      setShowOnlineClassModal(true);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!showOnlineClassModal || !classId || !jitsiContainerRef.current) {
+      return;
+    }
+
+    const mountJitsi = async () => {
+      try {
+        setOpeningOnlineClass(true);
+        jitsiApiRef.current = await createJitsiRoom({
+          classId,
+          parentNode: jitsiContainerRef.current as HTMLElement,
+          displayName: user?.userName,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể mở lớp học trực tuyến.";
+        toast.error(message);
+        setShowOnlineClassModal(false);
+      } finally {
+        setOpeningOnlineClass(false);
+      }
+    };
+
+    mountJitsi();
+
+    return () => {
+      if (jitsiApiRef.current?.dispose) {
+        jitsiApiRef.current.dispose();
+      }
+      jitsiApiRef.current = null;
+      if (jitsiContainerRef.current) {
+        jitsiContainerRef.current.innerHTML = "";
+      }
+    };
+  }, [showOnlineClassModal, classId, user?.userName]);
 
   const getQuizzesByCourseId = (courseId: string) => {
     return quizzesOfClass.filter((quiz) => quiz.courseId === courseId);
@@ -853,8 +1038,20 @@ const TeacherClassManagePage = () => {
     }
 
     setEditClassForm(mapClassToEditForm(classInfo));
+    const parsedSchedule = parseScheduleText(classInfo.schedule || "");
+    setEditScheduleDays(parsedSchedule.days);
+    setEditScheduleStartTime(parsedSchedule.startTime);
+    setEditScheduleEndTime(parsedSchedule.endTime);
     setEditClassPosterFileName("");
     setShowEditClassForm(true);
+  };
+
+  const toggleEditScheduleDay = (dayValue: string) => {
+    setEditScheduleDays((prev) =>
+      prev.includes(dayValue)
+        ? prev.filter((value) => value !== dayValue)
+        : [...prev, dayValue],
+    );
   };
 
   const handleUploadClassPoster = async (file: File) => {
@@ -902,6 +1099,21 @@ const TeacherClassManagePage = () => {
       return;
     }
 
+    if (editScheduleDays.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một thứ học.");
+      return;
+    }
+
+    if (!editScheduleStartTime || !editScheduleEndTime) {
+      toast.error("Vui lòng chọn giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+
+    if (editScheduleStartTime >= editScheduleEndTime) {
+      toast.error("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
+      return;
+    }
+
     const resolvedTeacherId =
       classInfo.teacherId || user?.userId || classInfo.teacherEmail || "";
 
@@ -921,7 +1133,11 @@ const TeacherClassManagePage = () => {
         startDate: new Date(editClassForm.startDate).toISOString(),
         endDate: new Date(editClassForm.endDate).toISOString(),
         maxStudents: Number(editClassForm.maxStudents) || 1,
-        schedule: editClassForm.schedule.trim(),
+        schedule: buildScheduleText(
+          editScheduleDays,
+          editScheduleStartTime,
+          editScheduleEndTime,
+        ),
         poster: normalizePoster(editClassForm.poster),
       };
 
@@ -1014,6 +1230,7 @@ const TeacherClassManagePage = () => {
           { key: "quizzes", label: "Quiz" },
           { key: "students", label: "Học sinh" },
           { key: "feedback", label: "Feedback" },
+          { key: "online", label: "Lớp trực tuyến" },
         ].map((item) => (
           <button
             key={item.key}
@@ -1128,17 +1345,56 @@ const TeacherClassManagePage = () => {
 
                   <label className="flex flex-col gap-1 text-sm text-slate-700">
                     <span className="font-medium">Lịch học</span>
-                    <input
-                      value={editClassForm.schedule}
-                      onChange={(event) =>
-                        setEditClassForm((prev) => ({
-                          ...prev,
-                          schedule: event.target.value,
-                        }))
-                      }
-                      placeholder="Ví dụ: Thứ 2 - 4 - 6, 19:00"
-                      className="rounded-xl border border-slate-300 px-3 py-2"
-                    />
+                    <div className="rounded-xl border border-slate-300 p-3 space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {WEEKDAY_OPTIONS.map((option) => {
+                          const selected = editScheduleDays.includes(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => toggleEditScheduleDay(option.value)}
+                              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                                selected
+                                  ? "bg-cyan-600 text-white"
+                                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className="flex flex-col gap-1 text-xs text-slate-600">
+                          <span>Giờ bắt đầu</span>
+                          <input
+                            type="time"
+                            value={editScheduleStartTime}
+                            onChange={(event) =>
+                              setEditScheduleStartTime(event.target.value)
+                            }
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1 text-xs text-slate-600">
+                          <span>Giờ kết thúc</span>
+                          <input
+                            type="time"
+                            value={editScheduleEndTime}
+                            onChange={(event) =>
+                              setEditScheduleEndTime(event.target.value)
+                            }
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          />
+                        </label>
+                      </div>
+
+                      <p className="text-xs text-slate-500">
+                        {editClassForm.schedule || "Chưa chọn lịch học."}
+                      </p>
+                    </div>
                   </label>
 
                   <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -2107,6 +2363,24 @@ const TeacherClassManagePage = () => {
         </section>
       )}
 
+      {activeTab === "online" && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Lớp học trực tuyến
+          </h2>
+          <p className="text-sm text-slate-600">
+            Bấm mở phòng học trực tuyến để bắt đầu buổi học Jitsi.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowOnlineClassModal(true)}
+            className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105"
+          >
+            Mở lớp học trực tuyến
+          </button>
+        </section>
+      )}
+
       {activeTab === "feedback" && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -2146,6 +2420,33 @@ const TeacherClassManagePage = () => {
           )}
         </section>
       )}
+
+      {showOnlineClassModal ? (
+        <div className="fixed inset-0 z-50 bg-black/40 p-4 flex items-center justify-center">
+          <div className="w-full max-w-6xl rounded-2xl bg-white shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Lớp học trực tuyến
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowOnlineClassModal(false)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700"
+              >
+                Đóng
+              </button>
+            </div>
+            <div className="relative">
+              {openingOnlineClass ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/90 text-sm text-slate-600">
+                  Đang mở lớp học trực tuyến...
+                </div>
+              ) : null}
+              <div ref={jitsiContainerRef} className="w-full h-[70vh] min-h-[420px]" />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

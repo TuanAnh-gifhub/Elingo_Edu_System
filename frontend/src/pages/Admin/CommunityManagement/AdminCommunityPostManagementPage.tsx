@@ -8,12 +8,18 @@ import commentService, {
 
 type CommentsByPostId = Record<string, CommunityCommentResponse[]>;
 type CommentsLoadingByPostId = Record<string, boolean>;
+type HiddenCommentsByPostId = Record<string, CommunityCommentResponse[]>;
 type ViolationFilterMode = "all" | "suspected";
 
 type ModerationCommentRow = {
   postId: string;
   postAuthorName: string;
   postContent: string;
+  comment: CommunityCommentResponse;
+};
+
+type HiddenCommentSnapshot = {
+  postId: string;
   comment: CommunityCommentResponse;
 };
 
@@ -78,15 +84,22 @@ const AdminCommunityPostManagementPage = () => {
   const [commentsByPostId, setCommentsByPostId] = useState<CommentsByPostId>({});
   const [commentsLoadingByPostId, setCommentsLoadingByPostId] =
     useState<CommentsLoadingByPostId>({});
+  const [hiddenCommentsByPostId, setHiddenCommentsByPostId] =
+    useState<HiddenCommentsByPostId>({});
   const [commentFilterKeyword, setCommentFilterKeyword] = useState("");
   const [violationFilter, setViolationFilter] =
     useState<ViolationFilterMode>("all");
   const [isLoadingAllComments, setIsLoadingAllComments] = useState(false);
   const [allCommentsLoaded, setAllCommentsLoaded] = useState(false);
+  const [isLoadingHiddenComments, setIsLoadingHiddenComments] = useState(false);
+  const [hiddenCommentsLoaded, setHiddenCommentsLoaded] = useState(false);
 
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [hidingCommentId, setHidingCommentId] = useState<string | null>(null);
+  const [restoringCommentId, setRestoringCommentId] = useState<string | null>(null);
+  const [lastHiddenComment, setLastHiddenComment] =
+    useState<HiddenCommentSnapshot | null>(null);
 
   const loadPosts = async () => {
     setIsLoadingPosts(true);
@@ -98,8 +111,11 @@ const AdminCommunityPostManagementPage = () => {
       setPosts(postData);
       setCommentsByPostId({});
       setCommentsLoadingByPostId({});
+      setHiddenCommentsByPostId({});
       setOpenPostId(null);
       setAllCommentsLoaded(false);
+      setHiddenCommentsLoaded(false);
+      setLastHiddenComment(null);
     } catch (error) {
       const err = error as ErrorWithResponse;
       setPostsError(
@@ -116,7 +132,7 @@ const AdminCommunityPostManagementPage = () => {
   }, []);
 
   const visiblePosts = useMemo(
-    () => posts.filter((post) => post.active !== false),
+    () => posts.filter((post) => post.active),
     [posts],
   );
 
@@ -125,7 +141,7 @@ const AdminCommunityPostManagementPage = () => {
       visiblePosts.flatMap((post) => {
         const postComments = commentsByPostId[post.postId] || [];
         return postComments
-          .filter((comment) => comment.active !== false)
+          .filter((comment) => comment.active)
           .map((comment) => ({
             postId: post.postId,
             postAuthorName: post.authorName,
@@ -162,6 +178,20 @@ const AdminCommunityPostManagementPage = () => {
     [moderationRows, normalizedCommentKeyword, violationFilter],
   );
 
+  const hiddenCommentRows = useMemo<ModerationCommentRow[]>(
+    () =>
+      visiblePosts.flatMap((post) => {
+        const hiddenComments = hiddenCommentsByPostId[post.postId] || [];
+        return hiddenComments.map((comment) => ({
+          postId: post.postId,
+          postAuthorName: post.authorName,
+          postContent: post.content || "",
+          comment,
+        }));
+      }),
+    [hiddenCommentsByPostId, visiblePosts],
+  );
+
   const loadAllComments = async () => {
     if (visiblePosts.length === 0) {
       return;
@@ -169,6 +199,7 @@ const AdminCommunityPostManagementPage = () => {
 
     setActionError(null);
     setActionMessage(null);
+    setLastHiddenComment(null);
     setIsLoadingAllComments(true);
 
     const postsToLoad = visiblePosts.filter(
@@ -237,9 +268,71 @@ const AdminCommunityPostManagementPage = () => {
     }
   };
 
+  const loadHiddenComments = async () => {
+    if (visiblePosts.length === 0) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+    setIsLoadingHiddenComments(true);
+
+    try {
+      const results = await Promise.allSettled(
+        visiblePosts.map(async (post) => {
+          const response = await commentService.getHiddenCommentsByPostId(post.postId);
+          return {
+            postId: post.postId,
+            comments: Array.isArray(response.result) ? response.result : [],
+          };
+        }),
+      );
+
+      const nextHiddenCommentsByPostId: HiddenCommentsByPostId = {};
+      let failedCount = 0;
+
+      results.forEach((result, index) => {
+        const postId = visiblePosts[index]?.postId;
+        if (!postId) {
+          return;
+        }
+
+        if (result.status === "fulfilled") {
+          nextHiddenCommentsByPostId[postId] = result.value.comments;
+          return;
+        }
+
+        failedCount += 1;
+        nextHiddenCommentsByPostId[postId] = [];
+      });
+
+      setHiddenCommentsByPostId(nextHiddenCommentsByPostId);
+
+      if (failedCount > 0) {
+        setHiddenCommentsLoaded(false);
+        setActionError(
+          `Đã tải danh sách ẩn, nhưng có ${failedCount} bài viết không thể lấy dữ liệu.`,
+        );
+      } else {
+        setHiddenCommentsLoaded(true);
+        setActionMessage("Đã tải danh sách bình luận đã ẩn.");
+      }
+    } catch (error) {
+      const err = error as ErrorWithResponse;
+      setHiddenCommentsLoaded(false);
+      setActionError(
+        err?.response?.data?.message ||
+          "Không thể tải danh sách bình luận đã ẩn. Vui lòng thử lại.",
+      );
+    } finally {
+      setIsLoadingHiddenComments(false);
+    }
+  };
+
   const togglePostComments = async (postId: string) => {
     setActionError(null);
     setActionMessage(null);
+    setLastHiddenComment(null);
 
     if (openPostId === postId) {
       setOpenPostId(null);
@@ -292,11 +385,15 @@ const AdminCommunityPostManagementPage = () => {
     setActionError(null);
     setActionMessage(null);
     setHidingCommentId(commentId);
+    const hiddenComment = (commentsByPostId[postId] || []).find(
+      (comment) => comment.commentId === commentId,
+    );
 
     try {
       const response = await commentService.deleteComment(commentId);
       if (response.code !== 0 && response.code !== 200) {
-        throw new Error(response.message || "Không thể ẩn bình luận.");
+        setActionError(response.message || "Không thể ẩn bình luận.");
+        return;
       }
 
       setCommentsByPostId((current) => ({
@@ -305,6 +402,20 @@ const AdminCommunityPostManagementPage = () => {
           (comment) => comment.commentId !== commentId,
         ),
       }));
+
+      if (hiddenComment) {
+        setHiddenCommentsByPostId((current) => {
+          const currentHiddenComments = current[postId] || [];
+          const withoutDuplicate = currentHiddenComments.filter(
+            (comment) => comment.commentId !== commentId,
+          );
+
+          return {
+            ...current,
+            [postId]: [{ ...hiddenComment, active: false }, ...withoutDuplicate],
+          };
+        });
+      }
 
       setPosts((currentPosts) =>
         currentPosts.map((post) =>
@@ -318,6 +429,14 @@ const AdminCommunityPostManagementPage = () => {
       );
 
       setActionMessage("Đã ẩn bình luận vi phạm quy tắc cộng đồng.");
+      setLastHiddenComment(
+        hiddenComment
+          ? {
+              postId,
+              comment: hiddenComment,
+            }
+          : null,
+      );
     } catch (error) {
       const err = error as ErrorWithResponse;
       setActionError(
@@ -326,9 +445,88 @@ const AdminCommunityPostManagementPage = () => {
             ? error.message
             : "Ẩn bình luận thất bại. Vui lòng thử lại."),
       );
+      setLastHiddenComment(null);
     } finally {
       setHidingCommentId(null);
     }
+  };
+
+  const restoreHiddenComment = async (
+    target: HiddenCommentSnapshot,
+    successMessage: string,
+  ) => {
+    setActionError(null);
+    setActionMessage(null);
+    setRestoringCommentId(target.comment.commentId);
+
+    try {
+      const response = await commentService.restoreComment(target.comment.commentId);
+
+      if (response.code !== 0 && response.code !== 200) {
+        setActionError(response.message || "Không thể hiện lại bình luận.");
+        return;
+      }
+
+      setCommentsByPostId((current) => {
+        const currentComments = current[target.postId] || [];
+        const exists = currentComments.some(
+          (comment) => comment.commentId === target.comment.commentId,
+        );
+
+        if (exists) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [target.postId]: [
+            ...currentComments,
+            {
+              ...target.comment,
+              active: true,
+            },
+          ],
+        };
+      });
+
+      setHiddenCommentsByPostId((current) => ({
+        ...current,
+        [target.postId]: (current[target.postId] || []).filter(
+          (comment) => comment.commentId !== target.comment.commentId,
+        ),
+      }));
+
+      setPosts((currentPosts) =>
+        currentPosts.map((post) =>
+          post.postId === target.postId
+            ? {
+                ...post,
+                commentCount: (post.commentCount || 0) + 1,
+              }
+            : post,
+        ),
+      );
+
+      setActionMessage(successMessage);
+      setLastHiddenComment((current) =>
+        current?.comment.commentId === target.comment.commentId ? null : current,
+      );
+    } catch (error) {
+      const err = error as ErrorWithResponse;
+      setActionError(
+        err?.response?.data?.message || "Hiện lại bình luận thất bại. Vui lòng thử lại.",
+      );
+    } finally {
+      setRestoringCommentId(null);
+    }
+  };
+
+  const handleRestoreHiddenComment = async () => {
+    if (!lastHiddenComment) {
+      return;
+    }
+
+    await restoreHiddenComment(lastHiddenComment, "Đã hiện lại bình luận vừa ẩn.");
   };
 
   return (
@@ -354,7 +552,21 @@ const AdminCommunityPostManagementPage = () => {
 
       {actionMessage ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {actionMessage}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span>{actionMessage}</span>
+            {lastHiddenComment ? (
+              <button
+                type="button"
+                onClick={() => void handleRestoreHiddenComment()}
+                disabled={restoringCommentId === lastHiddenComment.comment.commentId}
+                className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {restoringCommentId === lastHiddenComment.comment.commentId
+                  ? "Đang hiện lại..."
+                  : "Hiện lại bình luận"}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -494,6 +706,89 @@ const AdminCommunityPostManagementPage = () => {
                 </article>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-base font-semibold text-indigo-900">
+              Danh sách bình luận đã ẩn
+            </h2>
+            <p className="mt-1 text-xs text-indigo-800">
+              Theo dõi toàn bộ bình luận đã bị ẩn và có thể hiện lại khi cần.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadHiddenComments()}
+            disabled={isLoadingHiddenComments}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed transition"
+          >
+            {isLoadingHiddenComments
+              ? "Đang tải danh sách ẩn..."
+              : "Tải bình luận đã ẩn"}
+          </button>
+        </div>
+
+        <div className="text-xs text-indigo-900 flex flex-wrap gap-x-4 gap-y-1">
+          <span>{hiddenCommentRows.length} bình luận đã ẩn</span>
+          <span>{hiddenCommentsLoaded ? "Dữ liệu đã đồng bộ." : "Dữ liệu chưa đồng bộ."}</span>
+        </div>
+
+        {hiddenCommentRows.length === 0 ? (
+          <p className="text-sm text-indigo-900">
+            Chưa có bình luận đã ẩn hoặc bạn chưa tải danh sách.
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-[360px] overflow-auto pr-1">
+            {hiddenCommentRows.map((row) => (
+              <article
+                key={row.comment.commentId}
+                className="rounded-xl border border-indigo-200 bg-white px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-xs text-gray-500">
+                      Bài viết của <span className="font-semibold text-gray-700">{row.postAuthorName}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 line-clamp-1">
+                      {truncateText(row.postContent || "(Không có nội dung bài viết)", 120)}
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {row.comment.authorName}
+                    </div>
+                    <p className="text-sm text-gray-700 break-words">
+                      {row.comment.content}
+                    </p>
+                    <div className="text-xs text-gray-500">
+                      Đã ẩn lúc: {formatDateTime(row.comment.updatedAt || row.comment.createdAt)}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void restoreHiddenComment(
+                        {
+                          postId: row.postId,
+                          comment: row.comment,
+                        },
+                        "Đã hiện lại bình luận bị ẩn.",
+                      )
+                    }
+                    disabled={restoringCommentId === row.comment.commentId}
+                    className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                  >
+                    {restoringCommentId === row.comment.commentId
+                      ? "Đang hiện lại..."
+                      : "Hiện lại"}
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </section>

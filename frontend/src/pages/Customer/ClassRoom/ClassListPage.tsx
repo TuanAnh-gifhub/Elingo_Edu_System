@@ -657,20 +657,6 @@ const ClassListPage = () => {
             })}
           </div>
         )}
-      <div className="p-6">
-        <TeacherClassDashboard
-          classes={classes}
-          loading={loading}
-          error={error}
-          teacherId={user?.userId ?? ""}
-          onCreateClass={handleCreateClass}
-          onUpdateClass={handleUpdateClass}
-          onDeleteClass={handleDeleteClass}
-          onCreateCourse={handleCreateCourse}
-          onUpdateCourse={handleUpdateCourse}
-          onDeleteCourse={handleDeleteCourse}
-          onLoadCourses={handleLoadCourses}
-        />
       </div>
     );
   }

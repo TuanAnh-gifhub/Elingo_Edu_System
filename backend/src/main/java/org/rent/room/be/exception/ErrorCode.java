@@ -24,6 +24,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(2002, "User not found", HttpStatus.NOT_FOUND),
     USER_NOT_AUTHENTICATED(2003, "User not authenticated", HttpStatus.UNAUTHORIZED),
     EMAIL_NOT_FOUND(2004, "Email not found", HttpStatus.NOT_FOUND),
+    EMAIL_NOT_VERIFIED(2005, "Email is not verified", HttpStatus.FORBIDDEN),
 
     // ClassRoom
     CLASS_NOT_FOUND(4001, "Class not found", HttpStatus.NOT_FOUND),
@@ -61,6 +62,14 @@ public enum ErrorCode {
 
     // Role
     ROLE_NOT_FOUND(3001, "Role not found", HttpStatus.NOT_FOUND),
+
+    // Teacher verification
+    TEACHER_VERIFICATION_NOT_FOUND(3101, "Teacher verification request not found", HttpStatus.NOT_FOUND),
+    TEACHER_VERIFICATION_ALREADY_PENDING(3102, "You already have a pending teacher verification request", HttpStatus.BAD_REQUEST),
+    TEACHER_VERIFICATION_ALREADY_APPROVED(3103, "Your account is already approved as teacher", HttpStatus.BAD_REQUEST),
+    INVALID_CERTIFICATE_FILE(3104, "Only image and PDF certificate files are allowed", HttpStatus.BAD_REQUEST),
+    CERTIFICATE_FILE_TOO_LARGE(3105, "Certificate file exceeds maximum size", HttpStatus.BAD_REQUEST),
+    CERTIFICATE_REQUIRED(3106, "At least one certificate file is required", HttpStatus.BAD_REQUEST),
 
     //Wallet
     WALLET_NOT_FOUND(7001,"Người dùng chưa tạo ví cá nhân", HttpStatus.NOT_FOUND),

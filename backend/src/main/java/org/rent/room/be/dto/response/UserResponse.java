@@ -28,6 +28,7 @@ public class UserResponse {
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     boolean active;
+    Boolean emailVerified;
 
     public static  UserResponse fromEntityReport(User user) {
        if(user == null){

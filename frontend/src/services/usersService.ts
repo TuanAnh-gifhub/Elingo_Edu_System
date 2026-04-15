@@ -13,6 +13,7 @@ export interface UserResponse {
   createdAt: string;
   updatedAt: string;
   active: boolean;
+  emailVerified?: boolean;
 }
 
 // 2. Định nghĩa Wrapper (ApiResponse)
@@ -55,6 +56,10 @@ export interface UpdateUserStatusRequest {
 export const userService = {
   getMe: () => {
     return api.get<any, ApiResponse<UserResponse>>("/users/me");
+  },
+
+  getActiveTeachersCount: () => {
+    return api.get<any, ApiResponse<number>>("/users/teachers/active/count");
   },
 
   getAllUsers: (

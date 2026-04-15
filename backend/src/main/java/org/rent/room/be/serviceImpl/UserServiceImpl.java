@@ -67,6 +67,10 @@ public class UserServiceImpl implements UserService {
             normalizedRoleName = "STUDENT";
         }
 
+        if (normalizedRoleName.isBlank()) {
+            normalizedRoleName = "STUDENT";
+        }
+
         Role role = roleRepository.findByRoleName(normalizedRoleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
@@ -80,6 +84,7 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .active(true)
                 .provider(AuthProvider.LOCAL)
+                .emailVerified(true)
                 .build();
 
         return userMapper.toUserResponse(userRepository.save(user));
@@ -205,6 +210,12 @@ public class UserServiceImpl implements UserService {
                         .totalReviews(0)
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countActiveTeachers() {
+        return userRepository.countActiveTeachers();
     }
 
     @Override

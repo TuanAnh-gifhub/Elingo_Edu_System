@@ -40,7 +40,6 @@ public class CreateUsersRequest {
     @Past(message = "DOB_MUST_BE_IN_PAST")
     LocalDate dateOfBirth;
 
-    @NotNull(message = "ROLE_REQUIRED")
     String roleName;
 
     String otp;

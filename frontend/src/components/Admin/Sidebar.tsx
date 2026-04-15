@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Layout, Menu, type MenuProps } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import {
   AppstoreOutlined,
   CalendarOutlined,
   TeamOutlined,
-  ShopOutlined, // Dùng cho Phòng/Cơ sở
+  ShopOutlined,
   DollarOutlined,
   SettingOutlined,
   LogoutOutlined,
   StarOutlined,
+  SafetyOutlined,
+  CrownOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
-import type { UserResponse } from "../../services/usersService";
 
 const { Sider } = Layout;
 
@@ -35,23 +37,16 @@ interface SidebarProps {
   collapsed: boolean;
   toggleCollapsed: () => void;
   isDark: boolean;
-  adminUser: UserResponse | null;
   handleLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   isDark,
-  adminUser,
   handleLogout,
 }) => {
   const location = useLocation();
-  const [activeKey, setActiveKey] = useState<string>(location.pathname);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    setActiveKey(location.pathname);
-  }, [location.pathname]);
 
   const onOpenChange: MenuProps["onOpenChange"] = (keys) => {
     setOpenKeys(keys);
@@ -92,6 +87,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <TeamOutlined />,
     ),
 
+    getItem(
+      <Link to="/admin/teacher-verification">Xác minh giáo viên</Link>,
+      "/admin/teacher-verification",
+      <SafetyOutlined />,
+    ),
+
     // 5. Tài chính
     getItem("Tài chính & Hóa đơn", "sub_finance", <DollarOutlined />, [
       getItem(
@@ -116,25 +117,40 @@ const Sidebar: React.FC<SidebarProps> = ({
       ),
     ]),
 
+    getItem(
+      <Link to="/admin/reviews">Đánh giá từ khách</Link>,
+      "/admin/reviews",
+      <StarOutlined />,
+    ),
+
+    // Quản lý gói đăng ký
+    getItem(
+      <Link to="/admin/packages">Gói đăng ký</Link>,
+      "/admin/packages",
+      <CrownOutlined />,
+    ),
+
+    // Quản lý bài viết cộng đồng
+    getItem(
+      <Link to="/admin/community-posts">Bài viết cộng đồng</Link>,
+      "/admin/community-posts",
+      <MessageOutlined />,
+    ),
+
+    getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
       getItem(
-          <Link to="/admin/reviews">Đánh giá từ khách</Link>,
-          "/admin/reviews",
-          <StarOutlined />,
+        <Link to="/admin/room-types">Loại phòng</Link>,
+        "/admin/room-types",
       ),
-      getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
-          getItem(
-              <Link to="/admin/room-types">Loại phòng</Link>,
-              "/admin/room-types",
-          ),
-          getItem(
-              <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
-              "/admin/amenities",
-          ),
-          getItem(
-              <Link to="/admin/settings">Cài đặt chung</Link>,
-              "/admin/settings",
-          ),
-      ]),
+      getItem(
+        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
+        "/admin/amenities",
+      ),
+      getItem(
+        <Link to="/admin/settings">Cài đặt chung</Link>,
+        "/admin/settings",
+      ),
+    ]),
 
     // Logout
     getItem("Đăng xuất", "logout", <LogoutOutlined />),
@@ -160,9 +176,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Logo Section */}
       <div
-        className={`h-16 flex items-center justify-center border-b transition-colors ${
-          isDark ? "border-gray-700 bg-[#001529]" : "border-gray-200 bg-white"
-        }`}
+        className={`h-16 flex items-center justify-center border-b transition-colors ${isDark ? "border-gray-700 bg-[#001529]" : "border-gray-200 bg-white"
+          }`}
       >
         <div className="flex items-center gap-2 overflow-hidden px-4">
           <div className="min-w-[32px] h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -170,11 +185,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {!collapsed && (
             <div
-              className={`font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 ${
-                isDark ? "text-white" : "text-gray-800"
-              }`}
+              className={`font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 ${isDark ? "text-white" : "text-gray-800"
+                }`}
             >
-             Elingo
+              Elingo
             </div>
           )}
         </div>
@@ -183,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar py-2">
         <Menu
           mode="inline"
-          selectedKeys={[activeKey]}
+          selectedKeys={[location.pathname]}
           openKeys={openKeys}
           onOpenChange={onOpenChange}
           items={items}

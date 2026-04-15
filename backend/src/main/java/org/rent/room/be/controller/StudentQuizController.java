@@ -22,7 +22,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequestMapping("/student/quizzes")
 @Tag(name = "9. Student Quiz")
-@PreAuthorize("hasRole('STUDENT')")
+@PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
 public class StudentQuizController {
 
     StudentQuizService studentQuizService;

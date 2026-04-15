@@ -125,6 +125,8 @@ const LoginPage = ({ isOpen, onClose }: LoginPageProps) => {
 
       if (errorResponse?.code === 1000) {
         setErrorMessage("Email hoặc mật khẩu không chính xác.");
+      } else if (errorResponse?.code === 2005) {
+        setErrorMessage("Email chua duoc xac minh. Vui long kiem tra email de kich hoat tai khoan.");
       } else if (errorResponse?.message?.includes("Google")) {
         setErrorMessage(
           "Tài khoản này được liên kết với Google. Vui lòng chọn 'Đăng nhập với Google'.",
@@ -204,7 +206,7 @@ const LoginPage = ({ isOpen, onClose }: LoginPageProps) => {
         phone: registerFormValues.phone ?? "",
         gender: registerFormValues.gender,
         dateOfBirth: registerFormValues.dateOfBirth,
-        roleName: "RENTER",
+        roleName: "STUDENT",
       };
 
       const response = await authService.registerRequest(payload);

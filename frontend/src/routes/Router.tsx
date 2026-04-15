@@ -27,6 +27,11 @@ import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import StudentClassLearningPage from "../pages/Customer/ClassRoom/StudentClassLearningPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
+import TeacherVerificationPage from "../pages/Customer/TeacherVerification/TeacherVerificationPage";
+import TeacherVerificationManagementPage from "../pages/Admin/TeacherVerificationManagementPage";
+import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
+import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
+import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -159,6 +164,14 @@ export const router = createBrowserRouter([
         element: <ProfilePage />,
         handle: { breadcrumb: "Thông tin cá nhân" },
       },
+      {
+        path: "teacher-verification",
+        element: <TeacherVerificationPage />,
+        handle: { breadcrumb: "Xác minh giáo viên" },
+        path: "subscription",
+        element: <SubscriptionPage />,
+        handle: { breadcrumb: "Gói đăng ký" },
+      },
     ],
   },
   // Admin routes
@@ -209,6 +222,16 @@ export const router = createBrowserRouter([
       {
         path: "wallet-freeze",
         element: <WalletFreezeManagementPage />,
+      },
+      {
+        path: "teacher-verification",
+        element: <TeacherVerificationManagementPage />,
+        path: "packages",
+        element: <AdminPackageManagementPage />,
+      },
+      {
+        path: "community-posts",
+        element: <AdminCommunityPostManagementPage />,
       },
     ],
   },

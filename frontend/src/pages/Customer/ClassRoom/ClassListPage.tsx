@@ -90,19 +90,14 @@ const isTeacherRole = (role?: string): boolean => {
 type ClassReviewSummary = {
   averageRating: number;
   totalReviews: number;
+};
+
 const isAdminRole = (role?: string): boolean => {
   if (!role) {
     return false;
   }
 
   return role.toUpperCase().includes("ADMIN");
-};
-
-const getClassRating = (classId: string): number => {
-  const hash = classId
-    .split("")
-    .reduce((total, char) => total + char.charCodeAt(0), 0);
-  return 3.5 + (hash % 16) * 0.1;
 };
 
 const renderRatingStars = (rating: number) => {
@@ -391,11 +386,6 @@ const ClassListPage = () => {
     };
   }, [classes]);
 
-  const parsePriceInput = (value: string): number | undefined => {
-    if (!value.trim()) return undefined;
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? undefined : parsed;
-  };
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -189,14 +189,14 @@ const WalletPromotion = ({ isDarkMode = false }: WalletPromotionProps) => {
                                             <span className="font-semibold text-[#4da6ff]">
                                                 {promotion.discountType === "percent"
                                                     ? `${promotion.discount}%`
-                                                    : `${promotion.discount.toLocaleString("vi-VN")} đ`}
+                                                    : `${promotion.discount.toLocaleString("vi-VN")} VNĐ`}
                                             </span>
                                         </div>
                                         {promotion.minAmount && (
                                             <div className="flex items-center justify-between">
                                                 <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Đơn tối thiểu:</span>
                                                 <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                                    {promotion.minAmount.toLocaleString("vi-VN")} đ
+                                                    {promotion.minAmount.toLocaleString("vi-VN")} VNĐ
                                                 </span>
                                             </div>
                                         )}
@@ -204,7 +204,7 @@ const WalletPromotion = ({ isDarkMode = false }: WalletPromotionProps) => {
                                             <div className="flex items-center justify-between">
                                                 <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Giảm tối đa:</span>
                                                 <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                                    {promotion.maxDiscount.toLocaleString("vi-VN")} đ
+                                                    {promotion.maxDiscount.toLocaleString("vi-VN")} VNĐ
                                                 </span>
                                             </div>
                                         )}

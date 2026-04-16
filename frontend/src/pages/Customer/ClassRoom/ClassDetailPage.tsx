@@ -235,7 +235,7 @@ useEffect(() => {
           <div className="w-full md:w-72 shrink-0 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4 space-y-2">
             <p className="text-sm text-slate-500">Giá vào lớp</p>
             <p className="text-2xl font-bold text-cyan-700">
-              {Number(clazz.price || 0).toLocaleString("vi-VN")} đ
+              {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ
             </p>
             {isStudent ? (
               isEnrolled ? (
@@ -286,16 +286,35 @@ useEffect(() => {
                 </div>
               )
             ) : (
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
-                  className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700"
-                >
-                  Xem đánh giá lớp
-                </button>
-                <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
-              </div>
+<div className="space-y-2">
+  {/* Nút 1: Luôn luôn cho phép xem đánh giá (Lấy từ nhánh Develop) */}
+  <button
+    type="button"
+    onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+    className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 transition-colors"
+  >
+    Xem đánh giá lớp
+  </button>
+
+  {/* Nút 2: Nút hành động chính (Lấy logic từ nhánh fix/layout) */}
+  <button
+    type="button"
+    // QUAN TRỌNG: Nút này phải gọi hàm handleEnroll hoặc navigate tới trang thanh toán, KHÔNG dẫn vào /reviews
+    onClick={() => navigate(`/checkout/${clazz.classId}`)} 
+    disabled={hasClassEnded || enrolling}
+    className={`w-full rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all ${
+      hasClassEnded ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
+    }`}
+  >
+    {hasClassEnded
+      ? "Lớp đã kết thúc"
+      : enrolling
+        ? "Đang xử lý..."
+        : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ`}
+  </button>
+
+  <p className="text-xs text-slate-500 text-center">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+</div>
             )}
             {isStudent && !isEnrolled && hasClassEnded ? (
               <p className="text-xs text-rose-600">Lớp đã kết thúc nên không thể thanh toán để nhập học.</p>
@@ -367,7 +386,7 @@ useEffect(() => {
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl space-y-4">
             <h3 className="text-lg font-semibold text-slate-900">Xác nhận nhập học</h3>
             <p className="text-sm text-slate-600">
-              Bạn có chắc chắn muốn bỏ ra {Number(clazz.price || 0).toLocaleString("vi-VN")} đ để vào lớp này không?
+              Bạn có chắc chắn muốn bỏ ra {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ để vào lớp này không?
             </p>
             <div className="flex justify-end gap-2">
               <button

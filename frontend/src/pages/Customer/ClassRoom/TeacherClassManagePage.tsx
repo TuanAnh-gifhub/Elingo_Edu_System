@@ -1460,7 +1460,7 @@ const TeacherClassManagePage = () => {
             <div className="flex items-center justify-between text-sm text-slate-500">
               <span>Học phí lớp</span>
               <span className="font-semibold text-blue-700">
-                {Number(classInfo.price || 0).toLocaleString("vi-VN")} đ
+                {Number(classInfo.price || 0).toLocaleString("vi-VN")} VNĐ
               </span>
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -1474,7 +1474,7 @@ const TeacherClassManagePage = () => {
             <div className="mt-2 text-xs text-slate-500">
               Ví lớp: {loadingClassWallet
                 ? "Đang tải..."
-                : `${Number(classWallet?.balance || 0).toLocaleString("vi-VN")} đ`}
+                : `${Number(classWallet?.balance || 0).toLocaleString("vi-VN")} VNĐ`}
             </div>
           </div>
         </div>
@@ -1537,7 +1537,7 @@ const TeacherClassManagePage = () => {
               {loadingClassWallet
                 ? "..."
                 : Number(classWallet?.balance || 0).toLocaleString("vi-VN")}
-              <span className="ml-1 text-base font-semibold text-slate-600">đ</span>
+              <span className="ml-1 text-base font-semibold text-slate-600">VNĐ</span>
             </p>
             <p className="mt-2 text-xs text-slate-500">
               {classWallet?.endDate
@@ -1627,7 +1627,7 @@ const TeacherClassManagePage = () => {
                             }`}
                           >
                             {isInflow ? "+" : "-"}
-                            {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
+                            {Number(tx.amount || 0).toLocaleString("vi-VN")} VNĐ
                           </td>
                           <td className="py-3 pr-2 text-slate-700">
                             {tx.studentName || "-"}
@@ -1665,7 +1665,7 @@ const TeacherClassManagePage = () => {
                   </span>
                   <span className="inline-flex items-center rounded-full bg-violet-100 text-violet-700 px-3 py-1">
                     Học phí:{" "}
-                    {Number(classInfo.price || 0).toLocaleString("vi-VN")} đ
+                    {Number(classInfo.price || 0).toLocaleString("vi-VN")} VNĐ
                   </span>
                 </div>
               </div>

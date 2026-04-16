@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   classRoomService,
   type ClassRoomDto,
@@ -25,6 +25,16 @@ const WEEKDAY_OPTIONS = [
   { value: "7", label: "Thứ 7", order: 7 },
   { value: "CN", label: "Chủ nhật", order: 8 },
 ];
+
+const STUDY_DAY_FILTER_OPTIONS = [
+  "thứ 2",
+  "thứ 3",
+  "thứ 4",
+  "thứ 5",
+  "thứ 6",
+  "thứ 7",
+  "chủ nhật",
+] as const;
 
 const formatTimeToSchedule = (time: string): string => {
   const [hourRaw, minuteRaw] = time.split(":");
@@ -80,6 +90,19 @@ const isTeacherRole = (role?: string): boolean => {
 type ClassReviewSummary = {
   averageRating: number;
   totalReviews: number;
+const isAdminRole = (role?: string): boolean => {
+  if (!role) {
+    return false;
+  }
+
+  return role.toUpperCase().includes("ADMIN");
+};
+
+const getClassRating = (classId: string): number => {
+  const hash = classId
+    .split("")
+    .reduce((total, char) => total + char.charCodeAt(0), 0);
+  return 3.5 + (hash % 16) * 0.1;
 };
 
 const renderRatingStars = (rating: number) => {
@@ -173,6 +196,7 @@ const ClassListPage = () => {
   const [classReviewSummaryById, setClassReviewSummaryById] = useState<
     Record<string, ClassReviewSummary>
   >({});
+  const [roleViewMode, setRoleViewMode] = useState<"teacher" | "student">("teacher");
   const [posterFileName, setPosterFileName] = useState("");
   const [createScheduleDays, setCreateScheduleDays] = useState<string[]>([]);
   const [createScheduleStartTime, setCreateScheduleStartTime] = useState("");
@@ -189,10 +213,65 @@ const ClassListPage = () => {
     poster: "",
   });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const posterInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const currentUserId = user?.userId || null;
   const isTeacher = isTeacherRole(user?.role);
+  const isAdmin = isAdminRole(user?.role);
+  const canToggleClassView = isTeacher || isAdmin;
+  const shouldFilterByTeacher = canToggleClassView && roleViewMode === "teacher";
+
+  const parsePriceInput = (value: string): number | undefined => {
+    if (!value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+
+  const parseInitialFiltersFromUrl = useCallback(() => {
+    const keywordFromUrl = (searchParams.get("keyword") || "").trim();
+    const minPriceInputFromUrl = (searchParams.get("minPrice") || "").trim();
+    const maxPriceInputFromUrl = (searchParams.get("maxPrice") || "").trim();
+    const studyDayFromUrl = (searchParams.get("studyDay") || "").trim().toLowerCase();
+    const studyHourFromUrl = (searchParams.get("studyHour") || "").trim();
+
+    return {
+      keywordFromUrl,
+      minPriceInputFromUrl,
+      maxPriceInputFromUrl,
+      minPriceFromUrl: parsePriceInput(minPriceInputFromUrl),
+      maxPriceFromUrl: parsePriceInput(maxPriceInputFromUrl),
+      studyDayFromUrl: STUDY_DAY_FILTER_OPTIONS.includes(
+        studyDayFromUrl as (typeof STUDY_DAY_FILTER_OPTIONS)[number],
+      )
+        ? studyDayFromUrl
+        : "",
+      studyHourFromUrl,
+    };
+  }, [searchParams]);
+
+  useEffect(() => {
+    const {
+      keywordFromUrl,
+      minPriceInputFromUrl,
+      maxPriceInputFromUrl,
+      minPriceFromUrl,
+      maxPriceFromUrl,
+      studyDayFromUrl,
+      studyHourFromUrl,
+    } = parseInitialFiltersFromUrl();
+
+    setKeywordInput(keywordFromUrl);
+    setKeyword(keywordFromUrl);
+    setMinPriceInput(minPriceInputFromUrl);
+    setMaxPriceInput(maxPriceInputFromUrl);
+    setMinPrice(minPriceFromUrl);
+    setMaxPrice(maxPriceFromUrl);
+    setStudyDayInput(studyDayFromUrl);
+    setStudyDay(studyDayFromUrl);
+    setStudyHourInput(studyHourFromUrl);
+    setStudyHour(studyHourFromUrl);
+  }, [parseInitialFiltersFromUrl]);
 
   useEffect(() => {
     if (!user?.userId) {
@@ -246,7 +325,7 @@ const ClassListPage = () => {
         setError(null);
         const page = await classRoomService.getClasses(1, 20, {
           keyword: searchKeyword || undefined,
-          teacherId: isTeacher ? user?.userId : undefined,
+          teacherId: shouldFilterByTeacher ? user?.userId : undefined,
           minPrice: filters.minPrice,
           maxPrice: filters.maxPrice,
           studyDay: filters.studyDay,
@@ -260,7 +339,7 @@ const ClassListPage = () => {
         setLoading(false);
       }
     },
-    [isTeacher, user?.userId],
+    [shouldFilterByTeacher, user?.userId],
   );
 
   useEffect(() => {
@@ -320,11 +399,38 @@ const ClassListPage = () => {
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setKeyword(keywordInput.trim());
-    setMinPrice(parsePriceInput(minPriceInput));
-    setMaxPrice(parsePriceInput(maxPriceInput));
-    setStudyDay(studyDayInput.trim());
-    setStudyHour(studyHourInput.trim());
+
+    const nextKeyword = keywordInput.trim();
+    const nextMinPrice = parsePriceInput(minPriceInput);
+    const nextMaxPrice = parsePriceInput(maxPriceInput);
+    const nextStudyDay = studyDayInput.trim().toLowerCase();
+    const nextStudyHour = studyHourInput.trim();
+
+    setKeyword(nextKeyword);
+    setMinPrice(nextMinPrice);
+    setMaxPrice(nextMaxPrice);
+    setStudyDay(nextStudyDay);
+    setStudyHour(nextStudyHour);
+
+    const nextParams = new URLSearchParams();
+    if (nextKeyword) nextParams.set("keyword", nextKeyword);
+    if (typeof nextMinPrice === "number") {
+      nextParams.set("minPrice", String(nextMinPrice));
+    }
+    if (typeof nextMaxPrice === "number") {
+      nextParams.set("maxPrice", String(nextMaxPrice));
+    }
+    if (
+      nextStudyDay &&
+      STUDY_DAY_FILTER_OPTIONS.includes(
+        nextStudyDay as (typeof STUDY_DAY_FILTER_OPTIONS)[number],
+      )
+    ) {
+      nextParams.set("studyDay", nextStudyDay);
+    }
+    if (nextStudyHour) nextParams.set("studyHour", nextStudyHour);
+
+    setSearchParams(nextParams);
   };
 
   const handleClearSearch = () => {
@@ -338,6 +444,7 @@ const ClassListPage = () => {
     setMaxPrice(undefined);
     setStudyDay("");
     setStudyHour("");
+    setSearchParams(new URLSearchParams());
   };
 
   const classesForTeacher = useMemo(() => {
@@ -592,12 +699,45 @@ const ClassListPage = () => {
     </form>
   );
 
-  if (isTeacher) {
-    if (loading) return <div className="p-6">Đang tải lớp học của bạn...</div>;
+  if (canToggleClassView && roleViewMode === "teacher") {
+    if (loading) {
+      return (
+        <div className="min-h-screen p-6 flex flex-col items-center justify-center gap-4 text-slate-700">
+          <span
+            aria-hidden="true"
+            className="inline-block h-7 w-7 animate-spin rounded-full border-[3px] border-[#4da6ff]/30 border-t-[#4da6ff]"
+          />
+          <span className="text-base font-medium">Đang tải lớp học của bạn...</span>
+        </div>
+      );
+    }
     if (error) return <div className="p-6 text-red-500">{error}</div>;
 
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+        {canToggleClassView ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-2 flex flex-wrap gap-2 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setRoleViewMode("teacher")}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                roleViewMode === "teacher"
+                  ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
+                  : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+              }`}
+            >
+              Teacher Studio
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleViewMode("student")}
+              className="rounded-xl px-4 py-2 text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-cyan-100"
+            >
+              Danh sách lớp học
+            </button>
+          </div>
+        ) : null}
+
         <div className="rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50 p-5 md:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
@@ -860,7 +1000,7 @@ const ClassListPage = () => {
             Bạn chưa có lớp học nào.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {classesForTeacher.map((classItem) => {
               const summary = classReviewSummaryById[classItem.classId];
               const rating = Number((summary?.averageRating ?? 0).toFixed(1));
@@ -874,9 +1014,9 @@ const ClassListPage = () => {
                   onClick={() =>
                     navigate(`/classes/${classItem.classId}/manage`)
                   }
-                  className="group aspect-square text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
+                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 flex min-h-95 flex-col"
                 >
-                  <div className="relative h-1/2 w-full overflow-hidden bg-slate-100">
+                  <div className="relative h-44 w-full overflow-hidden bg-slate-100 shrink-0">
                     {classItem.poster ? (
                       <img
                         src={classItem.poster}
@@ -901,24 +1041,24 @@ const ClassListPage = () => {
                     ) : null}
                   </div>
 
-                  <div className="h-1/2 p-4 md:p-5 flex flex-col justify-between bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50">
-                    <div>
-                      <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 min-h-14 leading-snug">
+                  <div className="flex-1 p-4 md:p-5 flex flex-col gap-2.5 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-47.5">
+                    <div className="space-y-1">
+                      <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
                         {classItem.className}
                       </h2>
-                      <p className="text-sm text-slate-600 mt-1 line-clamp-1">
+                      <p className="text-sm text-slate-600 line-clamp-2">
                         {classItem.schedule || "Lớp học trực tuyến"}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                      <p className="text-xs text-slate-500">
                         Bắt đầu: {formatClassDateTime(classItem.startDate)}
                       </p>
-                      <p className="text-xs text-slate-500 line-clamp-1">
+                      <p className="text-xs text-slate-500">
                         Kết thúc: {formatClassDateTime(classItem.endDate)}
                       </p>
                     </div>
 
-                    <div className="space-y-2 mt-3">
-                      <div className="flex items-center gap-2 text-sm">
+                    <div className="space-y-2 mt-1">
+                      <div className="flex items-center justify-between gap-2 text-sm">
                         <div className="flex items-center gap-1">
                           {renderRatingStars(rating)}
                         </div>
@@ -932,9 +1072,19 @@ const ClassListPage = () => {
                           {classItem.currentStudents ?? 0}/
                           {classItem.maxStudents ?? 0} học sinh
                         </span>
-                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
+                        <span className="font-medium text-slate-700">{rating}/5</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <span
+                          aria-hidden="true"
+                          className="rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold opacity-0 select-none"
+                        >
+                          placeholder
+                        </span>
+                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3.5 py-1.5 text-xs whitespace-nowrap">
                           {Number(classItem.price || 0).toLocaleString("vi-VN")}{" "}
-                          đ
+                          VNĐ
                         </span>
                       </div>
                     </div>
@@ -948,11 +1098,48 @@ const ClassListPage = () => {
     );
   }
 
-  if (loading) return <div className="p-6">Đang tải danh sách lớp học…</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6 flex flex-col items-center justify-center gap-4 text-slate-700">
+        <span
+          aria-hidden="true"
+          className="inline-block h-7 w-7 animate-spin rounded-full border-[3px] border-[#4da6ff]/30 border-t-[#4da6ff]"
+        />
+        <span className="text-base font-medium">Đang tải danh sách lớp học…</span>
+      </div>
+    );
+  }
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
+      {canToggleClassView ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-2 flex flex-wrap gap-2 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setRoleViewMode("teacher")}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+              roleViewMode === "teacher"
+                ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
+                : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+            }`}
+          >
+            Teacher Studio
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleViewMode("student")}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+              roleViewMode === "student"
+                ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
+                : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+            }`}
+          >
+            Danh sách lớp học
+          </button>
+        </div>
+      ) : null}
+
       <h1 className="text-2xl font-bold mb-4">Danh sách lớp học</h1>
       <div className="rounded-2xl border border-cyan-100 bg-white p-2 flex flex-wrap gap-2 shadow-sm">
         <button
@@ -960,7 +1147,7 @@ const ClassListPage = () => {
           onClick={() => setActiveStudentTab("all")}
           className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
             activeStudentTab === "all"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow"
+              ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
               : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
           }`}
         >
@@ -971,7 +1158,7 @@ const ClassListPage = () => {
           onClick={() => setActiveStudentTab("enrolled")}
           className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
             activeStudentTab === "enrolled"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow"
+              ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
               : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
           }`}
         >
@@ -1011,7 +1198,7 @@ const ClassListPage = () => {
                 }}
                 role="button"
                 tabIndex={0}
-                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
+                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 flex min-h-95 flex-col"
               >
                 <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                   {classItem.poster ? (
@@ -1037,58 +1224,57 @@ const ClassListPage = () => {
                   ) : null}
                 </div>
 
-                <div className="p-4 md:p-5 flex flex-col justify-between gap-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-[190px]">
-                  <div>
+                <div className="p-4 md:p-5 flex-1 flex flex-col gap-2.5 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-47.5">
+                  <div className="space-y-1">
                     <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
                       {classItem.className}
                     </h2>
-                    <p className="text-sm text-slate-600 mt-1 line-clamp-2 min-h-10">
+                    <p className="text-sm text-slate-600 line-clamp-2">
                       {classItem.schedule || "Lớp học trực tuyến"}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                    <p className="text-xs text-slate-500">
                       Bắt đầu: {formatClassDateTime(classItem.startDate)}
                     </p>
-                    <p className="text-xs text-slate-500 line-clamp-1">
+                    <p className="text-xs text-slate-500">
                       Kết thúc: {formatClassDateTime(classItem.endDate)}
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
+                  <div className="space-y-2 mt-1">
+                    <div className="flex items-center justify-between gap-2 text-sm">
                       <div className="flex items-center gap-1">
                         {renderRatingStars(rating)}
                       </div>
                       <span className="font-medium text-slate-700">
                         {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
                       </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 text-sm">
                       <span className="text-slate-600">
                         {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleOpenTeacherChat(
-                              classItem.classId,
-                              classItem.teacherId,
-                              classItem.teacherName,
-                            );
-                          }}
-                          disabled={openingChatClassId === classItem.classId}
-                          className="rounded-full border border-cyan-300 px-3 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
-                        >
-                          {openingChatClassId === classItem.classId
-                            ? "Đang mở..."
-                            : "Nhắn tin"}
-                        </button>
-                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
-                          {Number(classItem.price || 0).toLocaleString("vi-VN")} đ
-                        </span>
-                      </div>
+                      <span className="font-medium text-slate-700">{rating}/5</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleOpenTeacherChat(
+                            classItem.classId,
+                            classItem.teacherId,
+                            classItem.teacherName,
+                          );
+                        }}
+                        disabled={openingChatClassId === classItem.classId}
+                        className="rounded-lg border border-cyan-300 px-3.5 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
+                      >
+                        {openingChatClassId === classItem.classId
+                          ? "Đang mở..."
+                          : "Nhắn tin"}
+                      </button>
+                      <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3.5 py-1.5 text-xs whitespace-nowrap">
+                        {Number(classItem.price || 0).toLocaleString("vi-VN")} VNĐ
+                      </span>
                     </div>
                   </div>
                 </div>

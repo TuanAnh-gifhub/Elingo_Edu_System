@@ -12,7 +12,7 @@ export type TeacherVerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface TeacherVerificationRequestPayload {
   fullName: string;
-  phone: string;
+  phone?: string;
   bio: string;
   expertise: string;
   experience: string;
@@ -69,6 +69,18 @@ export const teacherService = {
     return response.data.result;
   },
 
+  async uploadCertificates(files: File[]): Promise<string[]> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+
+    const response = await api.post<ApiResponse<string[]>>(
+      "/teacher-verification/upload-certificates",
+      formData,
+    );
+
+    return response.data.result || [];
+  },
+
   async submitVerificationRequest(
     payload: TeacherVerificationRequestPayload,
   ): Promise<TeacherVerificationResponse> {
@@ -79,11 +91,11 @@ export const teacherService = {
     return response.data.result;
   },
 
-  async getMyVerificationRequest(): Promise<TeacherVerificationResponse> {
-    const response = await api.get<ApiResponse<TeacherVerificationResponse>>(
+  async getMyVerificationRequest(): Promise<TeacherVerificationResponse | null> {
+    const response = await api.get<ApiResponse<TeacherVerificationResponse | null>>(
       "/teacher-verification/my-request",
     );
-    return response.data.result;
+    return response.data.result || null;
   },
 
   async getAllVerificationRequests(): Promise<TeacherVerificationResponse[]> {

@@ -66,6 +66,20 @@ public class TeacherVerificationController {
         );
     }
 
+    @PostMapping("/teacher-verification/upload-certificates")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<String>>> uploadCertificates(
+            @RequestParam("files") List<MultipartFile> files
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.<List<String>>builder()
+                        .code(200)
+                        .message("Upload certificates successfully")
+                        .result(teacherVerificationService.uploadCertificates(files))
+                        .build()
+        );
+    }
+
     @GetMapping("/admin/teacher-verification")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<TeacherVerificationResponse>>> getAllRequests() {

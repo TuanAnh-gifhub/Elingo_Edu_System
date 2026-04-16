@@ -25,6 +25,8 @@ type JitsiCtor = new (
     roomName: string;
     parentNode: HTMLElement;
     jwt?: string;
+    configOverwrite?: Record<string, unknown>;
+    interfaceConfigOverwrite?: Record<string, unknown>;
     userInfo?: {
       displayName?: string;
     };
@@ -82,12 +84,38 @@ export const createJitsiRoom = async ({
     throw new Error("Jitsi chưa sẵn sàng.");
   }
 
+  if (!jwt) {
+    throw new Error("Không có token truy cập lớp học trực tuyến.");
+  }
+
   const fullRoomName = `vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/${roomName}`;
 
   const api = new jitsiWindow.JitsiMeetExternalAPI(DEFAULT_JITSI_DOMAIN, {
     roomName: fullRoomName,
     parentNode,
     jwt,
+    configOverwrite: {
+      disableInviteFunctions: true,
+      hideConferenceSubject: true,
+      prejoinPageEnabled: false,
+    },
+    interfaceConfigOverwrite: {
+      HIDE_INVITE_MORE_HEADER: true,
+      MOBILE_APP_PROMO: false,
+      TOOLBAR_BUTTONS: [
+        "microphone",
+        "camera",
+        "desktop",
+        "fullscreen",
+        "fodeviceselection",
+        "hangup",
+        "chat",
+        "settings",
+        "raisehand",
+        "videoquality",
+        "tileview",
+      ],
+    },
     userInfo: displayName
       ? {
           displayName,

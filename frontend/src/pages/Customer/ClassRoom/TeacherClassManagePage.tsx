@@ -804,6 +804,7 @@ const TeacherClassManagePage = () => {
         jitsiApiRef.current = await createJitsiRoom({
           roomName: onlineClassAccess.roomName,
           roomPassword: onlineClassAccess.roomPassword,
+          jwt: onlineClassAccess.jwt,
           parentNode: jitsiContainerRef.current as HTMLElement,
           displayName: user?.userName,
           isModerator: true,

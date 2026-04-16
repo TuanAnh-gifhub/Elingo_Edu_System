@@ -28,6 +28,8 @@ export interface OnlineClassAccessDto {
   classId: string;
   roomName: string;
   roomPassword: string;
+  jwt?: string;
+  tokenTtlSeconds?: number;
   onlineOpen: boolean;
   teacher: boolean;
 }

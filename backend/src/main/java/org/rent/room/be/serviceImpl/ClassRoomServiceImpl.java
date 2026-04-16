@@ -25,6 +25,7 @@ import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.repository.WalletRepository;
 import org.rent.room.be.repository.WalletTransactionRepository;
+import org.rent.room.be.security.JitsiTokenService;
 import org.rent.room.be.service.ClassRoomService;
 import org.rent.room.be.service.WalletService;
 import org.rent.room.be.specification.ClassRoomSpecification;
@@ -57,6 +58,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final JitsiTokenService jitsiTokenService;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ROOM_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -182,6 +184,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         }
 
         if (Boolean.TRUE.equals(onlineOpen)) {
+            // Rotate room identity each time teacher opens class to invalidate old links.
             classRoom.setOnlineOpen(true);
             classRoom.setOnlineRoomCode(generateRandomCode(24));
             classRoom.setOnlineRoomPassword(generateRandomCode(12));
@@ -323,6 +326,9 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
         if (!Boolean.TRUE.equals(classRoom.getOnlineOpen())) {
             throw new AppException(ErrorCode.CLASS_ONLINE_NOT_OPEN);
         }
@@ -348,11 +354,14 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         }
 
         String roomName = "class-" + classRoom.getClassId() + "-" + roomCode;
+        String jitsiJwt = jitsiTokenService.generateJoinToken(currentUser, roomName, isTeacherOfClass);
 
         return OnlineClassAccessResponse.builder()
                 .classId(classRoom.getClassId())
                 .roomName(roomName)
                 .roomPassword(roomPassword)
+                .jwt(jitsiJwt)
+                .tokenTtlSeconds(jitsiTokenService.getTokenTtlSeconds())
                 .onlineOpen(true)
                 .teacher(isTeacherOfClass)
                 .build();

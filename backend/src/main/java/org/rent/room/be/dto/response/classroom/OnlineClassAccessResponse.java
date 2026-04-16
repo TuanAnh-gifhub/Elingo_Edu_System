@@ -16,6 +16,8 @@ public class OnlineClassAccessResponse {
     UUID classId;
     String roomName;
     String roomPassword;
+    String jwt;
+    Long tokenTtlSeconds;
     Boolean onlineOpen;
     Boolean teacher;
 }

@@ -30,10 +30,11 @@ interface DashboardMetrics {
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
-  totalTransactions: number;
-  successfulTransactions: number;
-  failedTransactions: number;
-  pendingWithdrawRequests: number;
+  totalDeposits: number;
+  completedDeposits: number;
+  failedDeposits: number;
+  pendingDeposits: number;
+  cancelledDeposits: number;
 }
 
 interface PageEnvelope<T> {
@@ -59,14 +60,17 @@ interface UrgentTask {
   actionPath: string;
 }
 
+const HIDDEN_TASKS_STORAGE_KEY = "admin_dashboard_hidden_urgent_tasks";
+
 const initialMetrics: DashboardMetrics = {
   totalStudents: 0,
   totalTeachers: 0,
   totalClasses: 0,
-  totalTransactions: 0,
-  successfulTransactions: 0,
-  failedTransactions: 0,
-  pendingWithdrawRequests: 0,
+  totalDeposits: 0,
+  completedDeposits: 0,
+  failedDeposits: 0,
+  pendingDeposits: 0,
+  cancelledDeposits: 0,
 };
 
 const normalizeApiResult = <T,>(raw: unknown): T | null => {
@@ -95,6 +99,16 @@ const AdminDashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [metrics, setMetrics] = useState<DashboardMetrics>(initialMetrics);
+  const [hiddenTaskKeys, setHiddenTaskKeys] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_TASKS_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
+    } catch {
+      return [];
+    }
+  });
 
   const fetchAllUsersForRoleCount = useCallback(async (): Promise<UserResponse[]> => {
     const pageSize = 200;
@@ -133,34 +147,49 @@ const AdminDashboardPage: React.FC = () => {
       const [
         users,
         classResult,
-        totalTxResult,
-        successTxResult,
-        failedTxResult,
-        pendingWithdrawResult,
+        totalDepositResult,
+        completedDepositResult,
+        failedDepositResult,
+        pendingDepositResult,
+        cancelledDepositResult,
       ] = await Promise.all([
         fetchAllUsersForRoleCount(),
         classRoomService.getClasses(1, 1),
-        walletService.getAdminWalletTransactions(1, 1),
-        walletService.getAdminWalletTransactions(1, 1, { status: "COMPLETED" }),
-        walletService.getAdminWalletTransactions(1, 1, { status: "FAILED" }),
-        walletService.getAdminWithdrawRequests(1, 1, "PENDING"),
+        walletService.getAdminWalletTransactions(1, 1, { type: "DEPOSIT" }),
+        walletService.getAdminWalletTransactions(1, 1, {
+          type: "DEPOSIT",
+          status: "COMPLETED",
+        }),
+        walletService.getAdminWalletTransactions(1, 1, {
+          type: "DEPOSIT",
+          status: "FAILED",
+        }),
+        walletService.getAdminWalletTransactions(1, 1, {
+          type: "DEPOSIT",
+          status: "PENDING",
+        }),
+        walletService.getAdminWalletTransactions(1, 1, {
+          type: "DEPOSIT",
+          status: "CANCELLED",
+        }),
       ]);
 
       const roleStats = countUserRoles(users);
-      const totalTransactions = Number(totalTxResult.data.result.totalElements ?? 0);
-      const successfulTransactions = Number(successTxResult.data.result.totalElements ?? 0);
-      const failedTransactions = Number(failedTxResult.data.result.totalElements ?? 0);
+      const totalDeposits = Number(totalDepositResult.data.result.totalElements ?? 0);
+      const completedDeposits = Number(completedDepositResult.data.result.totalElements ?? 0);
+      const failedDeposits = Number(failedDepositResult.data.result.totalElements ?? 0);
+      const pendingDeposits = Number(pendingDepositResult.data.result.totalElements ?? 0);
+      const cancelledDeposits = Number(cancelledDepositResult.data.result.totalElements ?? 0);
 
       setMetrics({
         totalStudents: roleStats.totalStudents,
         totalTeachers: roleStats.totalTeachers,
         totalClasses: Number(classResult.totalElements ?? 0),
-        totalTransactions,
-        successfulTransactions,
-        failedTransactions,
-        pendingWithdrawRequests: Number(
-          pendingWithdrawResult.data.result.totalElements ?? 0,
-        ),
+        totalDeposits,
+        completedDeposits,
+        failedDeposits,
+        pendingDeposits,
+        cancelledDeposits,
       });
 
       setLastUpdated(new Date().toLocaleString("vi-VN"));
@@ -177,46 +206,46 @@ const AdminDashboardPage: React.FC = () => {
   }, [loadDashboardMetrics]);
 
   const successRate = useMemo(() => {
-    if (!metrics.totalTransactions) return 0;
-    return Math.round((metrics.successfulTransactions / metrics.totalTransactions) * 100);
-  }, [metrics.successfulTransactions, metrics.totalTransactions]);
+    if (!metrics.totalDeposits) return 0;
+    return Math.round((metrics.completedDeposits / metrics.totalDeposits) * 100);
+  }, [metrics.completedDeposits, metrics.totalDeposits]);
 
   const failedRate = useMemo(() => {
-    if (!metrics.totalTransactions) return 0;
-    return Math.round((metrics.failedTransactions / metrics.totalTransactions) * 100);
-  }, [metrics.failedTransactions, metrics.totalTransactions]);
+    if (!metrics.totalDeposits) return 0;
+    return Math.round((metrics.failedDeposits / metrics.totalDeposits) * 100);
+  }, [metrics.failedDeposits, metrics.totalDeposits]);
 
   const healthStatus = useMemo(() => {
-    if (failedRate >= 15 || metrics.pendingWithdrawRequests >= 5) {
+    if (failedRate >= 15 || metrics.pendingDeposits >= 5) {
       return { label: "Rủi ro cao", color: "red" as const };
     }
-    if (failedRate >= 8 || metrics.pendingWithdrawRequests > 0) {
+    if (failedRate >= 8 || metrics.pendingDeposits > 0) {
       return { label: "Cần theo dõi", color: "gold" as const };
     }
     return { label: "Ổn định", color: "green" as const };
-  }, [failedRate, metrics.pendingWithdrawRequests]);
+  }, [failedRate, metrics.pendingDeposits]);
 
   const urgentTasks: UrgentTask[] = useMemo(() => {
     const tasks: UrgentTask[] = [];
 
-    if (metrics.pendingWithdrawRequests > 0) {
+    if (metrics.pendingDeposits > 0) {
       tasks.push({
-        key: "withdraw-requests",
-        title: `Có ${metrics.pendingWithdrawRequests} yêu cầu rút tiền chờ duyệt`,
-        description: "Cần duyệt sớm để tránh tồn đọng thanh toán cho giáo viên.",
-        priority: metrics.pendingWithdrawRequests >= 5 ? "Cao" : "Trung bình",
-        actionLabel: "Xử lý rút tiền",
-        actionPath: "/admin/transactions",
+        key: "pending-deposit-requests",
+        title: `Có ${metrics.pendingDeposits} yêu cầu nạp tiền đang xử lý`,
+        description: "Theo dõi để đảm bảo callback thanh toán được cập nhật kịp thời.",
+        priority: metrics.pendingDeposits >= 5 ? "Cao" : "Trung bình",
+        actionLabel: "Kiểm tra nạp tiền",
+        actionPath: "/admin/transaction-history",
       });
     }
 
     if (failedRate >= 15) {
       tasks.push({
         key: "high-failed-rate",
-        title: `Tỷ lệ giao dịch thất bại đang ở mức ${failedRate}%`,
-        description: "Kiểm tra log thanh toán và các giao dịch lỗi để giảm thất thoát.",
+        title: `Tỷ lệ nạp tiền thất bại đang ở mức ${failedRate}%`,
+        description: "Kiểm tra log thanh toán và các yêu cầu nạp tiền lỗi để giảm thất thoát.",
         priority: "Cao",
-        actionLabel: "Kiểm tra giao dịch",
+        actionLabel: "Kiểm tra nạp tiền",
         actionPath: "/admin/transaction-history",
       });
     }
@@ -234,7 +263,24 @@ const AdminDashboardPage: React.FC = () => {
     }
 
     return tasks;
-  }, [failedRate, metrics.pendingWithdrawRequests, metrics.totalStudents, metrics.totalTeachers]);
+  }, [failedRate, metrics.pendingDeposits, metrics.totalStudents, metrics.totalTeachers]);
+
+  useEffect(() => {
+    window.localStorage.setItem(HIDDEN_TASKS_STORAGE_KEY, JSON.stringify(hiddenTaskKeys));
+  }, [hiddenTaskKeys]);
+
+  const visibleUrgentTasks = useMemo(
+    () => urgentTasks.filter((task) => !hiddenTaskKeys.includes(task.key)),
+    [urgentTasks, hiddenTaskKeys],
+  );
+
+  const hideTask = (taskKey: string) => {
+    setHiddenTaskKeys((prev) => (prev.includes(taskKey) ? prev : [...prev, taskKey]));
+  };
+
+  const restoreHiddenTasks = () => {
+    setHiddenTaskKeys([]);
+  };
 
   const priorityColor = (priority: UrgentTask["priority"]) =>
     priority === "Cao" ? "red" : "gold";
@@ -298,8 +344,8 @@ const AdminDashboardPage: React.FC = () => {
         <Col xs={24} sm={12} xl={6}>
           <Card loading={loading}>
             <Statistic
-              title="Tổng số giao dịch"
-              value={metrics.totalTransactions}
+              title="Tổng yêu cầu nạp tiền"
+              value={metrics.totalDeposits}
               prefix={<WalletOutlined />}
             />
           </Card>
@@ -308,22 +354,22 @@ const AdminDashboardPage: React.FC = () => {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={14}>
-          <Card title="Biểu đồ giao dịch tài chính" loading={loading}>
+          <Card title="Biểu đồ yêu cầu nạp tiền" loading={loading}>
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12}>
                 <Flex vertical align="center" gap={8}>
-                  <Typography.Text>Giao dịch thành công</Typography.Text>
+                  <Typography.Text>Nạp tiền thành công</Typography.Text>
                   <Progress type="dashboard" percent={successRate} strokeColor="#16a34a" />
                   <Typography.Text strong>
-                    {metrics.successfulTransactions} giao dịch
+                    {metrics.completedDeposits} yêu cầu
                   </Typography.Text>
                 </Flex>
               </Col>
               <Col xs={24} sm={12}>
                 <Flex vertical align="center" gap={8}>
-                  <Typography.Text>Giao dịch thất bại</Typography.Text>
+                  <Typography.Text>Nạp tiền thất bại</Typography.Text>
                   <Progress type="dashboard" percent={failedRate} strokeColor="#dc2626" />
-                  <Typography.Text strong>{metrics.failedTransactions} giao dịch</Typography.Text>
+                  <Typography.Text strong>{metrics.failedDeposits} yêu cầu</Typography.Text>
                 </Flex>
               </Col>
             </Row>
@@ -331,7 +377,7 @@ const AdminDashboardPage: React.FC = () => {
         </Col>
 
         <Col xs={24} xl={10}>
-          <Card title="Tỉ lệ xử lý giao dịch" loading={loading}>
+          <Card title="Tỉ lệ xử lý yêu cầu nạp tiền" loading={loading}>
             <Flex vertical gap={10}>
               <Typography.Text>Thành công: {successRate}%</Typography.Text>
               <Progress percent={successRate} strokeColor="#16a34a" />
@@ -339,9 +385,10 @@ const AdminDashboardPage: React.FC = () => {
               <Typography.Text>Thất bại: {failedRate}%</Typography.Text>
               <Progress percent={failedRate} strokeColor="#dc2626" />
 
-              <Typography.Text type="secondary">
-                Chỉ số thất bại cao thường liên quan đến lỗi cổng thanh toán hoặc giao dịch bị hủy.
-              </Typography.Text>
+              <Typography.Text>Đang xử lý: {metrics.pendingDeposits} yêu cầu</Typography.Text>
+              <Typography.Text>Đã hủy: {metrics.cancelledDeposits} yêu cầu</Typography.Text>
+
+
             </Flex>
           </Card>
         </Col>
@@ -352,13 +399,22 @@ const AdminDashboardPage: React.FC = () => {
           <Card
             title="Task quan trọng cần xử lý ngay"
             loading={loading}
-            extra={<Typography.Text type="secondary">{urgentTasks.length} task</Typography.Text>}
+            extra={
+              <Flex align="center" gap={8}>
+                <Typography.Text type="secondary">{visibleUrgentTasks.length} task</Typography.Text>
+                {hiddenTaskKeys.length > 0 && (
+                  <Button size="small" onClick={restoreHiddenTasks}>
+                    Hiện lại task đã ẩn
+                  </Button>
+                )}
+              </Flex>
+            }
           >
-            {urgentTasks.length === 0 ? (
+            {visibleUrgentTasks.length === 0 ? (
               <Empty description="Hiện chưa có task khẩn cấp." />
             ) : (
               <Flex vertical gap={12}>
-                {urgentTasks.map((task) => (
+                {visibleUrgentTasks.map((task) => (
                   <Flex
                     key={task.key}
                     justify="space-between"
@@ -375,9 +431,12 @@ const AdminDashboardPage: React.FC = () => {
                       </Flex>
                       <Typography.Text type="secondary">{task.description}</Typography.Text>
                     </Flex>
-                    <Button type="primary">
-                      <Link to={task.actionPath}>{task.actionLabel}</Link>
-                    </Button>
+                    <Flex gap={8}>
+                      <Button type="primary">
+                        <Link to={task.actionPath}>{task.actionLabel}</Link>
+                      </Button>
+                      <Button onClick={() => hideTask(task.key)}>Ẩn task</Button>
+                    </Flex>
                   </Flex>
                 ))}
               </Flex>

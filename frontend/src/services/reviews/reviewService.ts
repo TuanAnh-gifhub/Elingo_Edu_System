@@ -2,6 +2,8 @@ import api from "../../config/axios";
 
 export interface ReviewDto {
   id: string;
+  classId?: string;
+  className?: string;
   rating: number;
   comment: string;
   userName: string;
@@ -22,36 +24,64 @@ export interface ReviewPageDto {
   data: ReviewDto[];
 }
 
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  result: T;
+}
+
 export interface CreateReviewPayload {
   rating: number;
   comment: string;
 }
 
 export const reviewService = {
-  async createTeacherReview(
-	teacherId: string,
-	payload: CreateReviewPayload,
+  async createClassReview(
+    classId: string,
+    payload: CreateReviewPayload,
   ): Promise<ReviewDto> {
-	const response = await api.post("/reviews", payload, {
-	  params: { teacherId },
-	});
-	return response.data.result as ReviewDto;
+    const response = await api.post<ApiResponse<ReviewDto>>("/reviews", payload, {
+      params: { classId },
+    });
+    return response.data.result;
   },
 
-  async getTeacherReviews(
-	teacherId: string,
-	page = 0,
-	size = 10,
+  async getClassReviews(
+    classId: string,
+    page = 0,
+    size = 10,
   ): Promise<ReviewPageDto> {
-	const response = await api.get(`/reviews/teacher/${teacherId}`, {
-	  params: { page, size },
-	});
-	return response.data.result as ReviewPageDto;
+    const response = await api.get<ApiResponse<ReviewPageDto>>(
+      `/reviews/class/${classId}`,
+      {
+        params: { page, size },
+      },
+    );
+    return response.data.result;
   },
 
-  async getTeacherReviewSummary(teacherId: string): Promise<ReviewSummaryDto> {
-	const response = await api.get(`/reviews/teacher/${teacherId}/summary`);
-	return response.data.result as ReviewSummaryDto;
+  async getClassReviewSummary(classId: string): Promise<ReviewSummaryDto> {
+    const response = await api.get<ApiResponse<ReviewSummaryDto>>(
+      `/reviews/class/${classId}/summary`,
+    );
+    return response.data.result;
+  },
+
+  async getGlobalReviews(page = 0, size = 20): Promise<ReviewPageDto> {
+    const response = await api.get<ApiResponse<ReviewPageDto>>("/reviews/global", {
+      params: { page, size },
+    });
+    return response.data.result;
+  },
+
+  async getAdminReviews(page = 0, size = 20): Promise<ReviewPageDto> {
+    const response = await api.get<ApiResponse<ReviewPageDto>>(
+      "/reviews/admin/all",
+      {
+        params: { page, size },
+      },
+    );
+    return response.data.result;
   },
 };
 

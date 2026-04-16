@@ -14,6 +14,8 @@ import java.util.UUID;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
+    Page<Review> findByActiveTrueOrderByCreatedAtDesc(Pageable pageable);
+
     Page<Review> findByClassRoomAndActiveTrueOrderByCreatedAtDesc(ClassRoom classRoom, Pageable pageable);
 
     @Query("SELECT r FROM Review r WHERE r.classRoom IS NULL AND r.active = true ORDER BY r.createdAt DESC")

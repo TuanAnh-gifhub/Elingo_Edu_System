@@ -90,6 +90,20 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public PageResponse<ReviewResponse> getAdminReviews(int page, int size) {
+        PageRequest pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        Page<Review> reviews = reviewRepository.findByActiveTrueOrderByCreatedAtDesc(pageable);
+
+        return PageResponse.<ReviewResponse>builder()
+                .currentPage(reviews.getNumber())
+                .totalPages(reviews.getTotalPages())
+                .pageSize(reviews.getSize())
+                .totalElements(reviews.getTotalElements())
+                .data(reviews.stream().map(reviewMapper::toResponse).collect(Collectors.toList()))
+                .build();
+    }
+
+    @Override
     public ReviewSummaryResponse getSummaryByClass(UUID classId) {
         ClassRoom classRoom = classRoomRepository.findById(classId).orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
         if (!classRoom.isActive()) throw new AppException(ErrorCode.CLASS_NOT_FOUND);

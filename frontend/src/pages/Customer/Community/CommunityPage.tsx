@@ -141,6 +141,15 @@ function normalizePostType(role?: string | null): PostType {
     : "Tìm khóa học";
 }
 
+function shouldHidePostBadge(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "học sinh" || normalized === "tìm khóa học";
+}
+
 function formatRelativeTime(isoDate?: string | null) {
   if (!isoDate) {
     return "Vừa xong";
@@ -1380,16 +1389,20 @@ function CommunityPage() {
                             <h2 className="font-semibold text-slate-900">
                               {post.author}
                             </h2>
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
-                            >
-                              {post.role}
-                            </span>
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
-                            >
-                              {post.postType}
-                            </span>
+                            {!shouldHidePostBadge(post.role) ? (
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
+                              >
+                                {post.role}
+                              </span>
+                            ) : null}
+                            {!shouldHidePostBadge(post.postType) ? (
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
+                              >
+                                {post.postType}
+                              </span>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                             <span>{post.subject}</span>
@@ -1786,16 +1799,20 @@ function CommunityPage() {
                       <div className="font-semibold text-slate-900">
                         {activeCommentsPost.author}
                       </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[activeCommentsPost.role]}`}
-                      >
-                        {activeCommentsPost.role}
-                      </span>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[activeCommentsPost.postType]}`}
-                      >
-                        {activeCommentsPost.postType}
-                      </span>
+                      {!shouldHidePostBadge(activeCommentsPost.role) ? (
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[activeCommentsPost.role]}`}
+                        >
+                          {activeCommentsPost.role}
+                        </span>
+                      ) : null}
+                      {!shouldHidePostBadge(activeCommentsPost.postType) ? (
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[activeCommentsPost.postType]}`}
+                        >
+                          {activeCommentsPost.postType}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                       <span>{activeCommentsPost.subject}</span>

@@ -25,6 +25,7 @@ import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassManagePage";
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import StudentClassLearningPage from "../pages/Customer/ClassRoom/StudentClassLearningPage";
+import ClassReviewPage from "../pages/Customer/ClassRoom/ClassReviewPage";
 import StudentQuizAttemptPage from "../pages/Customer/ClassRoom/StudentQuizAttemptPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
@@ -33,6 +34,7 @@ import TeacherVerificationManagementPage from "../pages/Admin/TeacherVerificatio
 import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
 import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
+import AdminReviewManagementPage from "../pages/Admin/ReviewManagement/AdminReviewManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -151,6 +153,9 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Lớp học của tôi" },
       },
       {
+        path: "classes/:classId/reviews",
+        element: <ClassReviewPage />,
+        handle: { breadcrumb: "Đánh giá lớp học" },
         path: "classes/:classId/quizzes/:quizId/attempt",
         element: <StudentQuizAttemptPage />,
         handle: { breadcrumb: "Làm bài quiz" },
@@ -238,6 +243,10 @@ export const router = createBrowserRouter([
       {
         path: "packages",
         element: <AdminPackageManagementPage />,
+      },
+      {
+        path: "reviews",
+        element: <AdminReviewManagementPage />,
       },
       {
         path: "community-posts",

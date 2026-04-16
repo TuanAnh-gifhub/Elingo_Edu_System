@@ -33,6 +33,7 @@ type WalletFeature =
   | "revenue";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
+const MIN_RECHARGE_AMOUNT = 10000;
 
 const WalletPage = () => {
   const navigate = useNavigate();
@@ -160,6 +161,21 @@ const WalletPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOwner]);
+
+  useEffect(() => {
+    const amountParam = new URLSearchParams(location.search).get("amount");
+    if (!amountParam) {
+      return;
+    }
+
+    const parsedAmount = Number(amountParam);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return;
+    }
+
+    const roundedAmount = Math.ceil(parsedAmount / 1000) * 1000;
+    setRechargeAmount(String(Math.max(MIN_RECHARGE_AMOUNT, roundedAmount)));
+  }, [location.search]);
 
     // Xác định tính năng hiện tại dựa trên URL
     const getCurrentFeature = (): WalletFeature => {

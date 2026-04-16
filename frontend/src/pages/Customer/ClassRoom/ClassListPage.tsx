@@ -6,9 +6,11 @@ import {
   type CreateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
+import chatService from "../../../services/chats/chatService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
@@ -136,6 +138,7 @@ const ClassListPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingClass, setCreatingClass] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [openingChatClassId, setOpeningChatClassId] = useState<string | null>(null);
   const [posterFileName, setPosterFileName] = useState("");
   const [createScheduleDays, setCreateScheduleDays] = useState<string[]>([]);
   const [createScheduleStartTime, setCreateScheduleStartTime] = useState("");
@@ -154,6 +157,7 @@ const ClassListPage = () => {
   const navigate = useNavigate();
   const posterInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const currentUserId = user?.userId || null;
   const isTeacher = isTeacherRole(user?.role);
 
   useEffect(() => {
@@ -385,6 +389,50 @@ const ClassListPage = () => {
       setError(message);
     } finally {
       setUploadingPoster(false);
+    }
+  };
+
+  const handleOpenTeacherChat = async (
+    classId: string,
+    teacherId?: string,
+    teacherName?: string,
+  ) => {
+    if (!teacherId) {
+      toast.error("Không tìm thấy thông tin giáo viên để nhắn tin.");
+      return;
+    }
+
+    if (!currentUserId) {
+      toast.info("Vui lòng đăng nhập để nhắn tin giáo viên.");
+      navigate("/");
+      return;
+    }
+
+    if (teacherId === currentUserId) {
+      toast.info("Đây là lớp của bạn.");
+      return;
+    }
+
+    try {
+      setOpeningChatClassId(classId);
+      const response = await chatService.openDirectConversation(teacherId);
+      window.dispatchEvent(
+        new CustomEvent("OPEN_CHAT_WITH_USER", {
+          detail: {
+            userId: teacherId,
+            userName: teacherName || "Giáo viên",
+            conversationId: response.result?.conversationId || null,
+          },
+        }),
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể mở cuộc trò chuyện với giáo viên.";
+      toast.error(message);
+    } finally {
+      setOpeningChatClassId(null);
     }
   };
 
@@ -848,9 +896,8 @@ const ClassListPage = () => {
             const rating = Number(getClassRating(classItem.classId).toFixed(1));
 
             return (
-              <button
+              <div
                 key={classItem.classId}
-                type="button"
                 onClick={() =>
                   navigate(
                     enrolledClassIdSet.has(classItem.classId)
@@ -858,6 +905,18 @@ const ClassListPage = () => {
                       : `/classes/${classItem.classId}`,
                   )
                 }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(
+                      enrolledClassIdSet.has(classItem.classId)
+                        ? `/classes/${classItem.classId}/learning`
+                        : `/classes/${classItem.classId}`,
+                    );
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
               >
                 <div className="relative h-44 w-full overflow-hidden bg-slate-100">
@@ -897,17 +956,36 @@ const ClassListPage = () => {
                       <span className="font-medium text-slate-700">{rating}/5</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between gap-2 text-sm">
                       <span className="text-slate-600">
                         {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
                       </span>
-                      <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
-                        {Number(classItem.price || 0).toLocaleString("vi-VN")} đ
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenTeacherChat(
+                              classItem.classId,
+                              classItem.teacherId,
+                              classItem.teacherName,
+                            );
+                          }}
+                          disabled={openingChatClassId === classItem.classId}
+                          className="rounded-full border border-cyan-300 px-3 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
+                        >
+                          {openingChatClassId === classItem.classId
+                            ? "Đang mở..."
+                            : "Nhắn tin"}
+                        </button>
+                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
+                          {Number(classItem.price || 0).toLocaleString("vi-VN")} đ
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

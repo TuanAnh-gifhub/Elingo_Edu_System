@@ -62,6 +62,15 @@ const chatService = {
     return response.data;
   },
 
+  openDirectConversation: async (
+    recipientId: string,
+  ): Promise<ApiResponse<ConversationResponse>> => {
+    const response = await api.post<ApiResponse<ConversationResponse>>(
+      `/chat/conversations/direct/${recipientId}`,
+    );
+    return response.data;
+  },
+
   markMessageAsRead: async (
     conversationId: string,
     userId: string,
@@ -87,6 +96,15 @@ const chatService = {
           "Content-Type": "multipart/form-data",
         },
       },
+    );
+    return response.data;
+  },
+
+  deleteConversation: async (
+    conversationId: string,
+  ): Promise<ApiResponse<void>> => {
+    const response = await api.delete<ApiResponse<void>>(
+      `/chat/conversations/${conversationId}`,
     );
     return response.data;
   },

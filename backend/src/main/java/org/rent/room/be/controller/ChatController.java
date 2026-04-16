@@ -6,6 +6,9 @@ import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.chat.MessageRequest;
 import org.rent.room.be.dto.response.chat.ConversationResponse;
 import org.rent.room.be.dto.response.chat.MessageResponse;
+import org.rent.room.be.exception.AppException;
+import org.rent.room.be.exception.ErrorCode;
+import org.rent.room.be.security.SecurityUtils;
 import org.rent.room.be.service.ChatService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +47,10 @@ public class ChatController {
     @GetMapping("/conversations/{userId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ConversationResponse>>> getConversations(@PathVariable UUID userId) {
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        if (!currentUserId.equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
         List<ConversationResponse> result = chatService.getUserConversations(userId);
         return ResponseEntity.ok(ApiResponse.<List<ConversationResponse>>builder()
                 .result(result)
@@ -63,6 +70,16 @@ public class ChatController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<ConversationResponse>> getConversation(@PathVariable UUID conversationId) {
         ConversationResponse result = chatService.getConversationById(conversationId);
+        return ResponseEntity.ok(ApiResponse.<ConversationResponse>builder()
+                .result(result)
+                .build());
+    }
+
+    @PostMapping("/conversations/direct/{recipientId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ConversationResponse>> openDirectConversation(@PathVariable UUID recipientId) {
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        ConversationResponse result = chatService.getOrCreateDirectConversation(currentUserId, recipientId);
         return ResponseEntity.ok(ApiResponse.<ConversationResponse>builder()
                 .result(result)
                 .build());
@@ -96,6 +113,18 @@ public class ChatController {
             return ResponseEntity.ok(ApiResponse.<MessageResponse>builder().result(response).build());
         }
         throw new RuntimeException("Invalid authentication principal");
+    }
+
+    @DeleteMapping("/conversations/{conversationId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> deleteConversation(@PathVariable UUID conversationId) {
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        chatService.deleteConversationForCurrentUser(conversationId, currentUserId);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Conversation deleted")
+                        .build()
+        );
     }
 }
 

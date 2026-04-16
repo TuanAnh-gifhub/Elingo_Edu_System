@@ -1415,6 +1415,9 @@ const TeacherClassManagePage = () => {
     : false;
   const canClaimClassWallet =
     isClassWalletDue && Number(classWallet?.balance || 0) > 0;
+  const classWalletFeePercent = Number(classWallet?.feePercent || 0);
+  const classWalletFeeAmount = Number(classWallet?.feeAmount || 0);
+  const classWalletReceivableAmount = Number(classWallet?.receivableAmount || 0);
 
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
@@ -1539,6 +1542,17 @@ const TeacherClassManagePage = () => {
                 : Number(classWallet?.balance || 0).toLocaleString("vi-VN")}
               <span className="ml-1 text-base font-semibold text-slate-600">VNĐ</span>
             </p>
+            <div className="mt-3 space-y-1 text-xs text-slate-600">
+              <p>
+                Tỉ lệ phí nền tảng: <span className="font-semibold text-slate-800">{classWalletFeePercent.toLocaleString("vi-VN")}%</span>
+              </p>
+              <p>
+                Số tiền phí: <span className="font-semibold text-rose-600">{classWalletFeeAmount.toLocaleString("vi-VN")} VNĐ</span>
+              </p>
+              <p>
+                Giáo viên nhận được: <span className="font-semibold text-emerald-700">{classWalletReceivableAmount.toLocaleString("vi-VN")} VNĐ</span>
+              </p>
+            </div>
             <p className="mt-2 text-xs text-slate-500">
               {classWallet?.endDate
                 ? `Mở nhận tiền sau: ${new Date(classWallet.endDate).toLocaleString("vi-VN")}`

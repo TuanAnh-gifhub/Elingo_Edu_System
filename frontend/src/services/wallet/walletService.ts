@@ -184,6 +184,18 @@ export type UpsertCommissionConfigPayload = {
   note?: string;
 };
 
+export type ClassWalletFeeConfigResponse = {
+  feePercent: number;
+  note?: string;
+  effectiveFrom?: string;
+  updatedAt?: string;
+};
+
+export type UpdateClassWalletFeePayload = {
+  feePercent: number;
+  note?: string;
+};
+
 export type AdminCommissionConfigResponse = {
   commissionConfigId: string;
   default?: boolean;
@@ -378,6 +390,17 @@ export const walletService = {
   triggerEscrowReleaseNow: () =>
     api.post<ApiResponse<{ releasedCount: number }>>(
       "/wallet/admin/escrow/release-now",
+    ),
+
+  getAdminClassWalletFee: () =>
+    api.get<ApiResponse<ClassWalletFeeConfigResponse>>(
+      "/wallet/admin/class-wallet-fee",
+    ),
+
+  updateAdminClassWalletFee: (payload: UpdateClassWalletFeePayload) =>
+    api.put<ApiResponse<ClassWalletFeeConfigResponse>>(
+      "/wallet/admin/class-wallet-fee",
+      payload,
     ),
 };
 

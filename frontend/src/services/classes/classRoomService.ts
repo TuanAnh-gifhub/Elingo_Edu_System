@@ -37,6 +37,9 @@ export interface OnlineClassAccessDto {
 export interface ClassWalletDto {
   classId: string;
   balance: number;
+  feePercent?: number;
+  feeAmount?: number;
+  receivableAmount?: number;
   claimable: boolean;
   endDate?: string;
   claimedAt?: string;

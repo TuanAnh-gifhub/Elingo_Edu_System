@@ -17,6 +17,9 @@ public class ClassWalletResponse {
 
     UUID classId;
     BigDecimal balance;
+    BigDecimal feePercent;
+    BigDecimal feeAmount;
+    BigDecimal receivableAmount;
     boolean claimable;
     LocalDateTime endDate;
     LocalDateTime claimedAt;

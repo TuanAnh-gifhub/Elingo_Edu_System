@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { userService, type UserResponse } from "../../../services/usersService";
+import { useEffect, useMemo, useState } from "react";
 import {
   walletService,
-  type AdminCommissionConfigListResponse,
+  type ClassWalletFeeConfigResponse,
 } from "../../../services/wallet/walletService";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
@@ -12,116 +11,64 @@ const CommissionConfigManagementPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [configs, setConfigs] = useState<AdminCommissionConfigListResponse>({
-    ownerConfigs: [],
-  });
-  const [owners, setOwners] = useState<UserResponse[]>([]);
+  const [config, setConfig] = useState<ClassWalletFeeConfigResponse | null>(null);
+  const [feePercentInput, setFeePercentInput] = useState("0");
+  const [noteInput, setNoteInput] = useState("");
 
-  const [defaultRate, setDefaultRate] = useState("0.1");
-  const [defaultNote, setDefaultNote] = useState("");
-
-  const [selectedOwnerId, setSelectedOwnerId] = useState("");
-  const [ownerRate, setOwnerRate] = useState("0.1");
-  const [ownerNote, setOwnerNote] = useState("");
+  const teacherReceivePercent = useMemo(() => {
+    const feePercent = Number(feePercentInput);
+    if (!Number.isFinite(feePercent)) {
+      return 100;
+    }
+    return Math.max(0, 100 - feePercent);
+  }, [feePercentInput]);
 
   const fetchConfigs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await walletService.getAdminCommissionConfigs();
+      const response = await walletService.getAdminClassWalletFee();
       const result = response.data.result;
-      setConfigs(result);
-      if (result.defaultConfig?.rate != null) {
-        setDefaultRate(String(result.defaultConfig.rate));
-      }
-      if (result.defaultConfig?.note) {
-        setDefaultNote(result.defaultConfig.note);
-      }
+      setConfig(result);
+      setFeePercentInput(String(result.feePercent ?? 0));
+      setNoteInput(result.note || "");
     } catch (e: unknown) {
       const err = e as ErrorWithResponse;
       setError(
-        err?.response?.data?.message ?? "Không thể tải cấu hình commission.",
+        err?.response?.data?.message ?? "Không thể tải cấu hình phí nền tảng.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchOwners = async () => {
-    try {
-      const response = await userService.getAllUsers(
-        1,
-        200,
-        "OWNER",
-        true,
-      );
-      const raw = response as {
-        data?: { result?: { data?: UserResponse[] } };
-        result?: { data?: UserResponse[] };
-      };
-      const list = raw.data?.result?.data ?? raw.result?.data ?? [];
-      setOwners(list);
-    } catch {
-      setOwners([]);
-    }
-  };
-
   useEffect(() => {
     fetchConfigs();
-    fetchOwners();
   }, []);
 
-  const handleSaveDefault = async () => {
-    const rate = Number(defaultRate);
-    if (!Number.isFinite(rate) || rate <= 0 || rate > 1) {
-      setError("Rate mặc định phải trong khoảng (0, 1].");
+  const handleSave = async () => {
+    const feePercent = Number(feePercentInput);
+    if (!Number.isFinite(feePercent) || feePercent < 0 || feePercent > 100) {
+      setError("Phí nền tảng phải nằm trong khoảng từ 0% đến 100%.");
       return;
     }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
+
     try {
-      await walletService.upsertDefaultCommission({
-        rate,
-        note: defaultNote.trim() || undefined,
+      const response = await walletService.updateAdminClassWalletFee({
+        feePercent,
+        note: noteInput.trim() || undefined,
       });
-      setSuccess("Đã cập nhật commission mặc định.");
-      await fetchConfigs();
+      setConfig(response.data.result);
+      setSuccess("Đã cập nhật phí sử dụng nền tảng.");
     } catch (e: unknown) {
       const err = e as ErrorWithResponse;
       setError(
         err?.response?.data?.message ??
-          "Không thể cập nhật commission mặc định.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveOwner = async () => {
-    if (!selectedOwnerId) {
-      setError("Vui lòng chọn OWNER.");
-      return;
-    }
-    const rate = Number(ownerRate);
-    if (!Number.isFinite(rate) || rate <= 0 || rate > 1) {
-      setError("Rate theo OWNER phải trong khoảng (0, 1].");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await walletService.upsertOwnerCommission(selectedOwnerId, {
-        rate,
-        note: ownerNote.trim() || undefined,
-      });
-      setSuccess("Đã cập nhật commission theo OWNER.");
-      await fetchConfigs();
-    } catch (e: unknown) {
-      const err = e as ErrorWithResponse;
-      setError(
-        err?.response?.data?.message ?? "Không thể cập nhật commission OWNER.",
+          "Không thể cập nhật phí sử dụng nền tảng.",
       );
     } finally {
       setSaving(false);
@@ -131,111 +78,64 @@ const CommissionConfigManagementPage = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Cấu hình commission</h1>
+        <h1 className="text-2xl font-bold mb-1">Phí sử dụng nền tảng</h1>
         <p className="text-sm text-gray-600">
-          Thiết lập commission mặc định và commission riêng cho OWNER.
+          Thiết lập phần trăm phí áp dụng khi giáo viên nhận tiền từ ví lớp.
         </p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-green-600">{success}</p>}
 
-      <section className="bg-white border rounded-lg p-4 shadow-sm space-y-3">
-        <h2 className="text-lg font-semibold">Commission mặc định</h2>
+      <section className="bg-white border rounded-lg p-4 shadow-sm space-y-4">
+        <h2 className="text-lg font-semibold">Cấu hình phí ví lớp</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input
-            type="number"
-            min="0.0001"
-            max="1"
-            step="0.0001"
-            value={defaultRate}
-            onChange={(e) => setDefaultRate(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-            placeholder="Rate (vd: 0.1 = 10%)"
-          />
-          <input
-            value={defaultNote}
-            onChange={(e) => setDefaultNote(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-            placeholder="Ghi chú"
-          />
+          <label className="text-sm text-gray-700">
+            <span className="mb-1 block">Phí nền tảng (%)</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={feePercentInput}
+              onChange={(e) => setFeePercentInput(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="Ví dụ: 10"
+            />
+          </label>
+          <label className="text-sm text-gray-700">
+            <span className="mb-1 block">Ghi chú</span>
+            <input
+              value={noteInput}
+              onChange={(e) => setNoteInput(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="Mô tả ngắn về cấu hình phí"
+            />
+          </label>
         </div>
+
+        <div className="rounded border bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
+          <p>
+            Giáo viên nhận: <strong>{teacherReceivePercent.toLocaleString("vi-VN")}%</strong>
+          </p>
+          <p>
+            Hệ thống giữ lại: <strong>{Number(feePercentInput || 0).toLocaleString("vi-VN")}%</strong>
+          </p>
+          <p>
+            Cập nhật gần nhất: {config?.updatedAt ? new Date(config.updatedAt).toLocaleString("vi-VN") : "-"}
+          </p>
+        </div>
+
         <button
-          onClick={handleSaveDefault}
+          onClick={handleSave}
           disabled={saving}
           className="px-3 py-2 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
         >
-          Cập nhật mặc định
+          {saving ? "Đang lưu..." : "Lưu cấu hình phí"}
         </button>
       </section>
 
-      <section className="bg-white border rounded-lg p-4 shadow-sm space-y-3">
-        <h2 className="text-lg font-semibold">Commission theo OWNER</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <select
-            value={selectedOwnerId}
-            onChange={(e) => setSelectedOwnerId(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-          >
-            <option value="">Chọn OWNER</option>
-            {owners.map((owner) => (
-              <option key={owner.userId} value={owner.userId}>
-                {owner.userName} - {owner.email}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min="0.0001"
-            max="1"
-            step="0.0001"
-            value={ownerRate}
-            onChange={(e) => setOwnerRate(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-            placeholder="Rate (vd: 0.07 = 7%)"
-          />
-          <input
-            value={ownerNote}
-            onChange={(e) => setOwnerNote(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-            placeholder="Ghi chú"
-          />
-        </div>
-        <button
-          onClick={handleSaveOwner}
-          disabled={saving}
-          className="px-3 py-2 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
-        >
-          Cập nhật theo OWNER
-        </button>
-      </section>
-
-      <section className="bg-white border rounded-lg p-4 shadow-sm">
-        <h2 className="text-lg font-semibold mb-3">Danh sách cấu hình hiện tại</h2>
-        {loading ? (
-          <p className="text-sm text-gray-600">Đang tải dữ liệu...</p>
-        ) : (
-          <div className="space-y-2 text-sm">
-            <div className="border rounded p-3 bg-gray-50">
-              <p className="font-medium">Default Commission</p>
-              <p>Rate: {configs.defaultConfig?.rate ?? "-"} </p>
-              <p>Note: {configs.defaultConfig?.note || "-"}</p>
-            </div>
-            {configs.ownerConfigs.map((item) => (
-              <div key={item.commissionConfigId} className="border rounded p-3">
-                <p className="font-medium">
-                  {item.ownerName} ({item.ownerEmail})
-                </p>
-                <p>Rate: {item.rate}</p>
-                <p>Note: {item.note || "-"}</p>
-              </div>
-            ))}
-            {configs.ownerConfigs.length === 0 && (
-              <p className="text-gray-600">Chưa có cấu hình riêng cho OWNER.</p>
-            )}
-          </div>
-        )}
-      </section>
+      {loading ? <p className="text-sm text-gray-600">Đang tải dữ liệu...</p> : null}
     </div>
   );
 };

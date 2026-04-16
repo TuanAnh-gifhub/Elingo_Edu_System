@@ -15,6 +15,7 @@ import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
 import org.rent.room.be.entity.ClassFavorite;
 import org.rent.room.be.entity.ClassRoom;
 import org.rent.room.be.entity.Enrollment;
+import org.rent.room.be.entity.PlatformCommissionConfig;
 import org.rent.room.be.entity.User;
 import org.rent.room.be.entity.Wallet;
 import org.rent.room.be.entity.WalletTransaction;
@@ -24,6 +25,7 @@ import org.rent.room.be.mapper.ClassRoomMapper;
 import org.rent.room.be.repository.ClassRoomRepository;
 import org.rent.room.be.repository.ClassFavoriteRepository;
 import org.rent.room.be.repository.EnrollmentRepository;
+import org.rent.room.be.repository.PlatformCommissionConfigRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.repository.WalletRepository;
 import org.rent.room.be.repository.WalletTransactionRepository;
@@ -41,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -60,10 +63,12 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     private final WalletService walletService;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
+    private final PlatformCommissionConfigRepository platformCommissionConfigRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final JitsiTokenService jitsiTokenService;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ROOM_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     @Override
     @Transactional
@@ -239,6 +244,10 @@ public class ClassRoomServiceImpl implements ClassRoomService {
             throw new AppException(ErrorCode.CLASS_WALLET_EMPTY);
         }
 
+        BigDecimal feePercent = getCurrentClassWalletFeePercent();
+        BigDecimal feeAmount = calculateFeeAmount(classWalletBalance, feePercent);
+        BigDecimal receivableAmount = classWalletBalance.subtract(feeAmount).max(BigDecimal.ZERO);
+
         Wallet teacherWallet = walletService.getOrCreateWallet(classRoom.getTeacher());
         if (teacherWallet.getWalletStatus() == WalletStatus.LOCKED) {
             throw new AppException(ErrorCode.WALLET_LOCKED);
@@ -247,7 +256,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         BigDecimal teacherBalanceBefore = teacherWallet.getBalance() == null
                 ? BigDecimal.ZERO
                 : teacherWallet.getBalance();
-        BigDecimal teacherBalanceAfter = teacherBalanceBefore.add(classWalletBalance);
+        BigDecimal teacherBalanceAfter = teacherBalanceBefore.add(receivableAmount);
         teacherWallet.setBalance(teacherBalanceAfter);
         walletRepository.save(teacherWallet);
 
@@ -259,11 +268,13 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                 .wallet(teacherWallet)
                 .type(WalletTxType.BOOKING_INCOME)
                 .status(WalletTxStatus.COMPLETED)
-                .amount(classWalletBalance)
+                .amount(receivableAmount)
                 .balanceBefore(teacherBalanceBefore)
                 .balanceAfter(teacherBalanceAfter)
                 .description("Nhận tiền từ ví lớp " + classRoom.getClassName())
-                .metadata("{\"classId\":\"" + classRoom.getClassId() + "\"}")
+                .metadata("{\"classId\":\"" + classRoom.getClassId() + "\",\"grossAmount\":"
+                        + classWalletBalance + ",\"feePercent\":" + feePercent
+                        + ",\"feeAmount\":" + feeAmount + ",\"receivableAmount\":" + receivableAmount + "}")
                 .build());
 
         return toClassWalletResponse(classRoom);
@@ -444,6 +455,9 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         BigDecimal balance = classRoom.getClassWalletBalance() == null
                 ? BigDecimal.ZERO
                 : classRoom.getClassWalletBalance();
+        BigDecimal feePercent = getCurrentClassWalletFeePercent();
+        BigDecimal feeAmount = calculateFeeAmount(balance, feePercent);
+        BigDecimal receivableAmount = balance.subtract(feeAmount).max(BigDecimal.ZERO);
         boolean claimable = classRoom.getEndDate() != null
                 && !LocalDateTime.now().isBefore(classRoom.getEndDate())
                 && balance.compareTo(BigDecimal.ZERO) > 0;
@@ -451,10 +465,32 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         return ClassWalletResponse.builder()
                 .classId(classRoom.getClassId())
                 .balance(balance)
+                .feePercent(feePercent)
+                .feeAmount(feeAmount)
+                .receivableAmount(receivableAmount)
                 .claimable(claimable)
                 .endDate(classRoom.getEndDate())
                 .claimedAt(classRoom.getClassWalletClaimedAt())
                 .build();
+    }
+
+    private BigDecimal getCurrentClassWalletFeePercent() {
+        return platformCommissionConfigRepository
+                .findFirstByActiveTrueAndEffectiveToIsNullOrderByEffectiveFromDesc()
+                .map(PlatformCommissionConfig::getCommissionRate)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    private BigDecimal calculateFeeAmount(BigDecimal grossAmount, BigDecimal feePercent) {
+        if (grossAmount == null || grossAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        if (feePercent == null || feePercent.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return grossAmount
+                .multiply(feePercent)
+                .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP);
     }
 
     private void validateTeacherOwnership(ClassRoom classRoom, UUID currentTeacherId) {

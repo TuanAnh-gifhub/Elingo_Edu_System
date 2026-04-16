@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { reviewService, type ReviewDto } from "../../../services/reviews/reviewService";
+import { classRoomService } from "../../../services/classes/classRoomService";
+import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { useAuth } from "../../../context/AuthContext";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
@@ -25,6 +27,9 @@ const ClassReviewPage = () => {
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
   const [actionLoadingReviewId, setActionLoadingReviewId] = useState<string | null>(null);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [canSubmitReview, setCanSubmitReview] = useState(false);
+  const [reviewEligibilityMessage, setReviewEligibilityMessage] = useState<string | null>(null);
 
   const isAdmin = (user?.role || "").toUpperCase().includes("ADMIN");
 
@@ -57,9 +62,59 @@ const ClassReviewPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
+  useEffect(() => {
+    if (!classId) {
+      setCanSubmitReview(false);
+      setReviewEligibilityMessage("Thiếu classId trên URL.");
+      return;
+    }
+
+    if (!isAuthenticated || !user?.userId) {
+      setCanSubmitReview(false);
+      setReviewEligibilityMessage("Bạn cần đăng nhập để gửi đánh giá.");
+      return;
+    }
+
+    const loadEligibility = async () => {
+      try {
+        setEligibilityLoading(true);
+        setReviewEligibilityMessage(null);
+
+        const classInfo = await classRoomService.getClassById(classId);
+        if (classInfo.teacherId && classInfo.teacherId === user.userId) {
+          setCanSubmitReview(false);
+          setReviewEligibilityMessage("Giáo viên không thể tự đánh giá lớp học của mình.");
+          return;
+        }
+
+        const enrolled = await enrollmentService.checkEnrollment(classId);
+        if (!enrolled) {
+          setCanSubmitReview(false);
+          setReviewEligibilityMessage("Chỉ học sinh đã tham gia lớp học mới được đánh giá.");
+          return;
+        }
+
+        setCanSubmitReview(true);
+        setReviewEligibilityMessage(null);
+      } catch {
+        setCanSubmitReview(false);
+        setReviewEligibilityMessage("Không thể xác minh quyền đánh giá lớp học.");
+      } finally {
+        setEligibilityLoading(false);
+      }
+    };
+
+    void loadEligibility();
+  }, [classId, isAuthenticated, user?.userId]);
+
   const handleSubmitReview = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!classId) return;
+
+    if (!canSubmitReview) {
+      setError(reviewEligibilityMessage || "Bạn không có quyền đánh giá lớp học này.");
+      return;
+    }
 
     if (comment.trim().length < 10) {
       setError("Nội dung đánh giá cần ít nhất 10 ký tự.");
@@ -180,6 +235,10 @@ const ClassReviewPage = () => {
         <h2 className="text-lg font-semibold text-slate-900">Gửi đánh giá của bạn</h2>
         {!isAuthenticated ? (
           <p className="text-sm text-slate-500">Bạn cần đăng nhập để gửi đánh giá.</p>
+        ) : eligibilityLoading ? (
+          <p className="text-sm text-slate-500">Đang kiểm tra quyền đánh giá...</p>
+        ) : !canSubmitReview ? (
+          <p className="text-sm text-slate-500">{reviewEligibilityMessage || "Bạn không có quyền đánh giá lớp học này."}</p>
         ) : (
           <form onSubmit={handleSubmitReview} className="space-y-3">
             <div>

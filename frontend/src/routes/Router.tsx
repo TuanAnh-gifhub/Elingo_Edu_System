@@ -16,6 +16,7 @@ import AdminWalletOverviewPage from "../pages/Admin/WalletManagement/AdminWallet
 import CommissionConfigManagementPage from "../pages/Admin/WalletManagement/CommissionConfigManagementPage";
 import WalletFreezeManagementPage from "../pages/Admin/WalletManagement/WalletFreezeManagementPage";
 import WalletWithdrawManagementPage from "../pages/Admin/WalletManagement/WalletWithdrawManagementPage";
+import AdminWalletTransactionHistoryPage from "../pages/Admin/WalletManagement/AdminWalletTransactionHistoryPage";
 import AboutUs from "../pages/Customer/AboutUs/AboutUs";
 import ResetPassword from "../pages/Customer/LoginPage/ResetPassword";
 import UserManagement from "../pages/Admin/UserManagement";
@@ -225,6 +226,10 @@ export const router = createBrowserRouter([
       {
         path: "transactions",
         element: <WalletWithdrawManagementPage />,
+      },
+      {
+        path: "transaction-history",
+        element: <AdminWalletTransactionHistoryPage />,
       },
       {
         path: "wallet-overview",

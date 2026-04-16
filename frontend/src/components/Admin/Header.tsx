@@ -1,8 +1,6 @@
 import React from "react";
 import { Layout, Button, Avatar, Dropdown, type MenuProps } from "antd";
 import {
-  BulbOutlined,
-  BulbFilled,
   UserOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -17,16 +15,12 @@ interface AdminHeaderProps {
   toggleCollapsed: () => void;
   // 2. Sửa dòng này: Thay AdminUser bằng UserResponse
   adminUser: UserResponse | null;
-  isDark: boolean;
-  onThemeToggle: () => void;
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   collapsed,
   toggleCollapsed,
   adminUser,
-  isDark,
-  onThemeToggle,
 }) => {
   // 3. Kiểm tra xem UserResponse của bạn dùng trường nào (fullName hay name?)
   // Ví dụ ở đây tôi đang giả định là fullName, nếu API trả về name thì sửa thành adminUser.name
@@ -39,12 +33,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   return (
     <Header
-      className={`px-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md transition-colors duration-200 border-b ${
-        isDark
-          ? "bg-[#001529]/90 border-gray-700"
-          : "bg-white/90 border-gray-200"
-      }`}
-      style={{ paddingInline: 16, height: 64, lineHeight: "64px" }}
+      className="px-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md transition-colors duration-200 border-b bg-white/90 border-white/30"
+      style={{
+        paddingInline: 16,
+        height: 64,
+        lineHeight: "64px",
+        background: "rgba(255, 255, 255, 0.95)",
+        borderBottom: "1px solid #e5e7eb",
+      }}
     >
       <div className="flex items-center gap-4">
         <Button
@@ -55,33 +51,15 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             fontSize: "16px",
             width: 64,
             height: 64,
-            color: isDark ? "#fff" : "inherit",
+            color: "inherit",
           }}
         />
       </div>
 
       <div className="flex items-center gap-4">
-        <Button
-          shape="circle"
-          onClick={onThemeToggle}
-          icon={
-            isDark ? (
-              <BulbFilled className="text-yellow-400" />
-            ) : (
-              <BulbOutlined />
-            )
-          }
-          className={isDark ? "bg-gray-700 border-gray-600 text-white" : ""}
-          title={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
-        />
-
         <Dropdown menu={{ items: userMenu }} placement="bottomRight">
           <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-            <div
-              className={`text-right hidden sm:block leading-tight ${
-                isDark ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
+            <div className="text-right hidden sm:block leading-tight text-gray-700">
               <div className="font-semibold text-sm">{displayName}</div>
               <div className="text-xs opacity-70">
                 {adminUser?.role || "User"}

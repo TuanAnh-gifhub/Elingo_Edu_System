@@ -33,13 +33,11 @@ function getItem(
 interface SidebarProps {
   collapsed: boolean;
   toggleCollapsed: () => void;
-  isDark: boolean;
   handleLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
-  isDark,
   handleLogout,
 }) => {
   const location = useLocation();
@@ -77,12 +75,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     // 5. Tài chính
     getItem("Tài chính & Hóa đơn", "sub_finance", <DollarOutlined />, [
       getItem(
-        <Link to="/admin/invoices">Hóa đơn dịch vụ</Link>,
-        "/admin/invoices",
+        <Link to="/admin/transactions">Quản lý rút tiền</Link>,
+        "/admin/transactions",
       ),
       getItem(
-        <Link to="/admin/transactions">Lịch sử giao dịch</Link>,
-        "/admin/transactions",
+        <Link to="/admin/transaction-history">Lịch sử giao dịch</Link>,
+        "/admin/transaction-history",
       ),
       getItem(
         <Link to="/admin/wallet-overview">Tổng quan ví hệ thống</Link>,
@@ -134,26 +132,22 @@ const Sidebar: React.FC<SidebarProps> = ({
       collapsible
       collapsed={collapsed}
       width={260}
-      theme={isDark ? "dark" : "light"}
+      theme="light"
       className="shadow-md z-20"
       style={{
-        borderRight: isDark ? "1px solid #303030" : "1px solid #f0f0f0",
+        borderRight: "1px solid #f0f0f0",
       }}
     >
       {/* Logo Section */}
       <div
-        className={`h-16 flex items-center justify-center border-b transition-colors ${isDark ? "border-gray-700 bg-[#001529]" : "border-gray-200 bg-white"
-          }`}
+        className="h-16 flex items-center justify-center border-b transition-colors border-gray-200 bg-white"
       >
         <div className="flex items-center gap-2 overflow-hidden px-4">
           <div className="min-w-[32px] h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
             E
           </div>
           {!collapsed && (
-            <div
-              className={`font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 ${isDark ? "text-white" : "text-gray-800"
-                }`}
-            >
+            <div className="font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 text-gray-800">
               Elingo
             </div>
           )}
@@ -168,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onOpenChange={onOpenChange}
           items={items}
           onClick={handleMenuClick}
-          theme={isDark ? "dark" : "light"}
+          theme="light"
           style={{ border: "none", background: "transparent" }}
         />
       </div>

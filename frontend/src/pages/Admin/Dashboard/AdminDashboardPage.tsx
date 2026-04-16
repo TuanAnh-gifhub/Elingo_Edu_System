@@ -217,7 +217,7 @@ const AdminDashboardPage: React.FC = () => {
         description: "Kiểm tra log thanh toán và các giao dịch lỗi để giảm thất thoát.",
         priority: "Cao",
         actionLabel: "Kiểm tra giao dịch",
-        actionPath: "/admin/transactions",
+        actionPath: "/admin/transaction-history",
       });
     }
 
@@ -389,7 +389,10 @@ const AdminDashboardPage: React.FC = () => {
           <Card title="Trung tâm điều khiển" loading={loading}>
             <Flex vertical gap={10}>
               <Button block icon={<WalletOutlined />}>
-                <Link to="/admin/transactions">Giám sát giao dịch</Link>
+                <Link to="/admin/transactions">Xử lý rút tiền</Link>
+              </Button>
+              <Button block icon={<WalletOutlined />}>
+                <Link to="/admin/transaction-history">Giám sát giao dịch</Link>
               </Button>
               <Button block icon={<ExclamationCircleOutlined />}>
                 <Link to="/admin/teacher-verification">Duyệt xác minh giáo viên</Link>

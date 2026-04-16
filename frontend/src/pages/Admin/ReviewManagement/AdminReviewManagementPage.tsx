@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { reviewService, type ReviewDto } from "../../../services/reviews/reviewService";
+import { classRoomService } from "../../../services/classes/classRoomService";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
 
@@ -14,19 +15,51 @@ const AdminReviewManagementPage = () => {
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
   const [actionLoadingReviewId, setActionLoadingReviewId] = useState<string | null>(null);
+  const [teacherNameByClassId, setTeacherNameByClassId] = useState<Record<string, string>>({});
+
+  const loadTeacherNames = async (sourceReviews: ReviewDto[]) => {
+    const classIds = Array.from(
+      new Set(
+        sourceReviews
+          .map((review) => review.classId)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (classIds.length === 0) {
+      setTeacherNameByClassId({});
+      return;
+    }
+
+    const settled = await Promise.allSettled(
+      classIds.map((classId) => classRoomService.getClassById(classId)),
+    );
+
+    const nextMap: Record<string, string> = {};
+    settled.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        nextMap[classIds[index]] = result.value.teacherName || "Chưa cập nhật";
+      }
+    });
+
+    setTeacherNameByClassId(nextMap);
+  };
 
   const loadReviews = async (targetPage = page) => {
     setLoading(true);
     setError(null);
     try {
       const response = await reviewService.getAdminReviews(targetPage, 20);
-      setReviews(response.data || []);
+      const nextReviews = response.data || [];
+      setReviews(nextReviews);
       setPage(response.currentPage || 0);
       setTotalPages(Math.max(1, response.totalPages || 1));
+      await loadTeacherNames(nextReviews);
     } catch (e: unknown) {
       const err = e as ErrorWithResponse;
       setError(err?.response?.data?.message || "Không thể tải danh sách đánh giá.");
       setReviews([]);
+      setTeacherNameByClassId({});
     } finally {
       setLoading(false);
     }
@@ -116,11 +149,9 @@ const AdminReviewManagementPage = () => {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
+        <div className="rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50 via-cyan-50 to-sky-50 px-5 py-4 flex-1 min-w-[260px]">
           <h1 className="text-2xl font-bold text-slate-900">Đánh giá từ khách hàng</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Theo dõi toàn bộ đánh giá lớp học trên hệ thống.
-          </p>
+          <p className="text-sm text-slate-600 mt-1">Theo dõi, chỉnh sửa và kiểm duyệt đánh giá lớp học toàn hệ thống.</p>
         </div>
         <button
           type="button"
@@ -156,12 +187,19 @@ const AdminReviewManagementPage = () => {
 
         <div className="space-y-3">
           {filteredReviews.map((review) => (
-            <article key={review.id} className="rounded-lg border border-slate-200 p-4">
+            <article key={review.id} className="rounded-xl border border-slate-200 p-4 shadow-xs hover:shadow-sm transition-shadow">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-semibold text-slate-900">{review.userName}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">
-                    {review.className ? `Lớp: ${review.className}` : "Đánh giá toàn hệ thống"}
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700 border border-blue-100">
+                      {review.className ? `Lớp: ${review.className}` : "Đánh giá toàn hệ thống"}
+                    </span>
+                    {review.classId ? (
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 border border-emerald-100">
+                        GV: {teacherNameByClassId[review.classId] || "Chưa cập nhật"}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <div className="text-xs text-slate-500">

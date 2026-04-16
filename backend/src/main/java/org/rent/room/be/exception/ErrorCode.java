@@ -47,6 +47,8 @@ public enum ErrorCode {
 
     // Review
     REVIEW_NOT_FOUND(6001, "Review not found", HttpStatus.NOT_FOUND),
+    REVIEW_ENROLLMENT_REQUIRED(6012, "Bạn cần tham gia lớp học để đánh giá", HttpStatus.FORBIDDEN),
+    REVIEW_TEACHER_SELF_NOT_ALLOWED(6013, "Giáo viên không thể tự đánh giá lớp học của mình", HttpStatus.BAD_REQUEST),
     // Quiz
     QUIZ_NOT_FOUND(6001, "Quiz not found", HttpStatus.NOT_FOUND),
     INVALID_EXCEL_FORMAT(6003, "Invalid Excel format", HttpStatus.BAD_REQUEST),

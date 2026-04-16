@@ -728,7 +728,7 @@ const ClassListPage = () => {
           </div>
         ) : null}
 
-        <div className="rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50 p-5 md:p-6 shadow-sm">
+        <div className="rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50 p-6 md:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
               <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 mb-3">
@@ -1004,9 +1004,9 @@ const ClassListPage = () => {
                   onClick={() =>
                     navigate(`/classes/${classItem.classId}/manage`)
                   }
-                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 flex min-h-95 flex-col"
+                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.45fr_0.75fr_1fr_0.8fr] h-[30rem]"
                 >
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-100 shrink-0">
+                  <div className="relative h-full w-full overflow-hidden bg-slate-100">
                     {classItem.poster ? (
                       <img
                         src={classItem.poster}
@@ -1031,52 +1031,40 @@ const ClassListPage = () => {
                     ) : null}
                   </div>
 
-                  <div className="flex-1 p-4 md:p-5 flex flex-col gap-2.5 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-47.5">
-                    <div className="space-y-1">
-                      <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
-                        {classItem.className}
-                      </h2>
-                      <p className="text-sm text-slate-600 line-clamp-2">
-                        {classItem.schedule || "Lớp học trực tuyến"}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Bắt đầu: {formatClassDateTime(classItem.startDate)}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Kết thúc: {formatClassDateTime(classItem.endDate)}
-                      </p>
+                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                    <h2 className="text-base md:text-lg font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-14">
+                      {classItem.className}
+                    </h2>
+                  </div>
+
+                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-sm text-slate-600 overflow-hidden">
+                    <p className="line-clamp-2">
+                      {classItem.schedule || "Lớp học trực tuyến"}
+                    </p>
+                    <p className="text-xs text-slate-500 line-clamp-1">
+                      Bắt đầu: {formatClassDateTime(classItem.startDate)}
+                    </p>
+                    <p className="text-xs text-slate-500 line-clamp-1">
+                      Kết thúc: {formatClassDateTime(classItem.endDate)}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        {renderRatingStars(rating)}
+                      </div>
+                      <span className="font-medium text-slate-700">
+                        {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
+                      </span>
                     </div>
+                  </div>
 
-                    <div className="space-y-2 mt-1">
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <div className="flex items-center gap-1">
-                          {renderRatingStars(rating)}
-                        </div>
-                        <span className="font-medium text-slate-700">
-                          {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">
-                          {classItem.currentStudents ?? 0}/
-                          {classItem.maxStudents ?? 0} học sinh
-                        </span>
-                        <span className="font-medium text-slate-700">{rating}/5</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <span
-                          aria-hidden="true"
-                          className="rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold opacity-0 select-none"
-                        >
-                          placeholder
-                        </span>
-                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3.5 py-1.5 text-xs whitespace-nowrap">
-                          {Number(classItem.price || 0).toLocaleString("vi-VN")}{" "}
-                          VNĐ
-                        </span>
-                      </div>
+                  <div className="px-3 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                    <div className="flex items-center gap-2 flex-nowrap h-full">
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-600 text-left">
+                        {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
+                      </span>
+                      <span className="ml-auto inline-flex h-8 items-center text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3 text-xs whitespace-nowrap shrink-0">
+                        {Number(classItem.price || 0).toLocaleString("vi-VN")} VNĐ
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -1188,9 +1176,9 @@ const ClassListPage = () => {
                 }}
                 role="button"
                 tabIndex={0}
-                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 flex min-h-95 flex-col"
+                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.45fr_0.75fr_1fr_0.8fr] h-[30rem]"
               >
-                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                <div className="relative h-full w-full overflow-hidden bg-slate-100">
                   {classItem.poster ? (
                     <img
                       src={classItem.poster}
@@ -1214,37 +1202,38 @@ const ClassListPage = () => {
                   ) : null}
                 </div>
 
-                <div className="p-4 md:p-5 flex-1 flex flex-col gap-2.5 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-47.5">
-                  <div className="space-y-1">
-                    <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
-                      {classItem.className}
-                    </h2>
-                    <p className="text-sm text-slate-600 line-clamp-2">
-                      {classItem.schedule || "Lớp học trực tuyến"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Bắt đầu: {formatClassDateTime(classItem.startDate)}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Kết thúc: {formatClassDateTime(classItem.endDate)}
-                    </p>
-                  </div>
+                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                  <h2 className="text-base md:text-lg font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-14">
+                    {classItem.className}
+                  </h2>
+                </div>
 
-                  <div className="space-y-2 mt-1">
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        {renderRatingStars(rating)}
-                      </div>
-                      <span className="font-medium text-slate-700">
-                        {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
-                      </span>
-                      <span className="text-slate-600">
-                        {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
-                      </span>
-                      <span className="font-medium text-slate-700">{rating}/5</span>
+                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-sm text-slate-600 overflow-hidden">
+                  <p className="line-clamp-2">
+                    {classItem.schedule || "Lớp học trực tuyến"}
+                  </p>
+                  <p className="text-xs text-slate-500 line-clamp-1">
+                    Bắt đầu: {formatClassDateTime(classItem.startDate)}
+                  </p>
+                  <p className="text-xs text-slate-500 line-clamp-1">
+                    Kết thúc: {formatClassDateTime(classItem.endDate)}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      {renderRatingStars(rating)}
                     </div>
+                    <span className="font-medium text-slate-700">
+                      {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="flex items-center justify-between gap-3 pt-1">
+                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                  <div className="flex items-center gap-2 flex-nowrap h-full">
+                    <span className="min-w-0 flex-1 truncate text-sm text-slate-600 text-left">
+                      {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
+                    </span>
+                    <div className="ml-auto flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={(event) => {
@@ -1256,13 +1245,13 @@ const ClassListPage = () => {
                           );
                         }}
                         disabled={openingChatClassId === classItem.classId}
-                        className="rounded-lg border border-cyan-300 px-3.5 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
+                        className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border border-cyan-300 px-3 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
                       >
                         {openingChatClassId === classItem.classId
                           ? "Đang mở..."
                           : "Nhắn tin"}
                       </button>
-                      <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3.5 py-1.5 text-xs whitespace-nowrap">
+                      <span className="inline-flex h-8 items-center text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3 text-xs whitespace-nowrap">
                         {Number(classItem.price || 0).toLocaleString("vi-VN")} VNĐ
                       </span>
                     </div>

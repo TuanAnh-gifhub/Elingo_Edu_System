@@ -13,6 +13,7 @@ import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.ReviewMapper;
 import org.rent.room.be.repository.ClassRoomRepository;
+import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.ReviewRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.service.ReviewService;
@@ -31,6 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final ReviewMapper reviewMapper;
 
     @Override
@@ -41,6 +43,17 @@ public class ReviewServiceImpl implements ReviewService {
         if (classId != null) {
             classRoom = classRoomRepository.findById(classId).orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
             if (!classRoom.isActive()) throw new AppException(ErrorCode.CLASS_NOT_FOUND);
+
+            if (classRoom.getTeacher() != null
+                    && classRoom.getTeacher().getUserId() != null
+                    && classRoom.getTeacher().getUserId().equals(userId)) {
+                throw new AppException(ErrorCode.REVIEW_TEACHER_SELF_NOT_ALLOWED);
+            }
+
+            boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(userId, classId);
+            if (!enrolled) {
+                throw new AppException(ErrorCode.REVIEW_ENROLLMENT_REQUIRED);
+            }
         }
 
         Review review = Review.builder()

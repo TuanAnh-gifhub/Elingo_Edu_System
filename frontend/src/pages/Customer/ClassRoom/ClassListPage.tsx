@@ -6,6 +6,7 @@ import {
   type CreateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
+import { reviewService } from "../../../services/reviews/reviewService";
 import chatService from "../../../services/chats/chatService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
@@ -86,6 +87,9 @@ const isTeacherRole = (role?: string): boolean => {
   );
 };
 
+type ClassReviewSummary = {
+  averageRating: number;
+  totalReviews: number;
 const isAdminRole = (role?: string): boolean => {
   if (!role) {
     return false;
@@ -189,6 +193,9 @@ const ClassListPage = () => {
   const [creatingClass, setCreatingClass] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [openingChatClassId, setOpeningChatClassId] = useState<string | null>(null);
+  const [classReviewSummaryById, setClassReviewSummaryById] = useState<
+    Record<string, ClassReviewSummary>
+  >({});
   const [roleViewMode, setRoleViewMode] = useState<"teacher" | "student">("teacher");
   const [posterFileName, setPosterFileName] = useState("");
   const [createScheduleDays, setCreateScheduleDays] = useState<string[]>([]);
@@ -338,6 +345,57 @@ const ClassListPage = () => {
   useEffect(() => {
     loadClasses(keyword, { minPrice, maxPrice, studyDay, studyHour });
   }, [loadClasses, keyword, minPrice, maxPrice, studyDay, studyHour]);
+
+  useEffect(() => {
+    if (!classes.length) {
+      setClassReviewSummaryById({});
+      return;
+    }
+
+    let isCancelled = false;
+    const classIds = Array.from(new Set(classes.map((item) => item.classId)));
+
+    const loadReviewSummaries = async () => {
+      const settledResults = await Promise.allSettled(
+        classIds.map((classId) => reviewService.getClassReviewSummary(classId)),
+      );
+
+      if (isCancelled) {
+        return;
+      }
+
+      const nextSummaries: Record<string, ClassReviewSummary> = {};
+      settledResults.forEach((result, index) => {
+        const classId = classIds[index];
+        if (result.status === "fulfilled") {
+          nextSummaries[classId] = {
+            averageRating: Number(result.value.averageRating || 0),
+            totalReviews: Number(result.value.totalReviews || 0),
+          };
+          return;
+        }
+
+        nextSummaries[classId] = {
+          averageRating: 0,
+          totalReviews: 0,
+        };
+      });
+
+      setClassReviewSummaryById(nextSummaries);
+    };
+
+    void loadReviewSummaries();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [classes]);
+
+  const parsePriceInput = (value: string): number | undefined => {
+    if (!value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -944,9 +1002,9 @@ const ClassListPage = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {classesForTeacher.map((classItem) => {
-              const rating = Number(
-                getClassRating(classItem.classId).toFixed(1),
-              );
+              const summary = classReviewSummaryById[classItem.classId];
+              const rating = Number((summary?.averageRating ?? 0).toFixed(1));
+              const totalReviews = summary?.totalReviews ?? 0;
               const ended = isClassEnded(classItem.endDate);
 
               return (
@@ -1004,6 +1062,12 @@ const ClassListPage = () => {
                         <div className="flex items-center gap-1">
                           {renderRatingStars(rating)}
                         </div>
+                        <span className="font-medium text-slate-700">
+                          {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-600">
                           {classItem.currentStudents ?? 0}/
                           {classItem.maxStudents ?? 0} học sinh
@@ -1107,7 +1171,9 @@ const ClassListPage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {classesForStudentView.map((classItem) => {
-            const rating = Number(getClassRating(classItem.classId).toFixed(1));
+            const summary = classReviewSummaryById[classItem.classId];
+            const rating = Number((summary?.averageRating ?? 0).toFixed(1));
+            const totalReviews = summary?.totalReviews ?? 0;
             const ended = isClassEnded(classItem.endDate);
 
             return (
@@ -1179,6 +1245,9 @@ const ClassListPage = () => {
                       <div className="flex items-center gap-1">
                         {renderRatingStars(rating)}
                       </div>
+                      <span className="font-medium text-slate-700">
+                        {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
+                      </span>
                       <span className="text-slate-600">
                         {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
                       </span>

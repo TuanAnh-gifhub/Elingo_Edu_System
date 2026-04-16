@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, type ChangeEvent } from "react";
-import { FaTimes, FaMinus, FaCommentDots, FaArrowLeft, FaTrashAlt } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaTimes, FaMinus, FaCommentDots, FaArrowLeft } from "react-icons/fa";
 import ChatList from "./ChatList";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
@@ -16,8 +16,6 @@ const ChatBubble = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [showChatList, setShowChatList] = useState(true);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   // Ref để Hook biết Bubble có đang mở để đánh dấu đã đọc
   const isChatActiveRef = useRef(isOpen && !showChatList);
@@ -30,30 +28,21 @@ const ChatBubble = () => {
 
   /* ---------- XỬ LÝ SỰ KIỆN MỞ CHAT TỪ NGOÀI ---------- */
   useEffect(() => {
-    const handleOpenChatFromExternal = async (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        userId: string;
-        userName: string;
-        conversationId?: string | null;
-      }>;
-      const { userId, userName, conversationId } = customEvent.detail;
+    const handleOpenChatFromExternal = async (event: any) => {
+      const { userId, userName } = event.detail;
       setIsOpen(true);
       setIsMinimized(false);
       setShowChatList(false);
 
-      const existingChat = conversationId
-        ? chatLogic.conversations.find(
-            (c) => String(c.conversationId) === String(conversationId),
-          )
-        : chatLogic.conversations.find(
-            (c) => String(c.otherPerson?.userId) === String(userId),
-          );
+      const existingChat = chatLogic.conversations.find(
+        (c) => String(c.otherPerson?.userId) === String(userId),
+      );
 
       if (existingChat) {
         chatLogic.handleChatSelect(existingChat);
       } else {
         chatLogic.setSelectedChat({
-          conversationId: conversationId || null,
+          conversationId: null,
           user1: { userId: currentUserId!, userName: user?.userName || "" },
           user2: { userId, userName },
           otherPerson: { userId, userName },
@@ -114,25 +103,6 @@ const ChatBubble = () => {
               </span>
             </div>
             <div className="flex gap-2">
-              {!showChatList && (
-                <button
-                  type="button"
-                  disabled={chatLogic.deletingConversation}
-                  onClick={() => {
-                    const confirmed = window.confirm(
-                      "Bạn có chắc muốn xóa cuộc trò chuyện này không?",
-                    );
-                    if (!confirmed) {
-                      return;
-                    }
-
-                    chatLogic.handleDeleteConversation();
-                    setShowChatList(true);
-                  }}
-                >
-                  <FaTrashAlt size={12} />
-                </button>
-              )}
               <button onClick={() => setIsMinimized(!isMinimized)}>
                 <FaMinus size={12} />
               </button>
@@ -151,12 +121,6 @@ const ChatBubble = () => {
                     chatLogic.handleChatSelect(chat);
                     setShowChatList(false);
                   }}
-                  showSettingsMenu={showSettingsMenu}
-                  setShowSettingsMenu={setShowSettingsMenu}
-                  settingsMenuRef={settingsMenuRef}
-                  onDeleteConversation={chatLogic.handleDeleteConversationById}
-                  deletingConversationId={chatLogic.deletingConversationId}
-                  error={null}
                 />
               ) : (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -167,11 +131,7 @@ const ChatBubble = () => {
                   />
                   <MessageInput
                     {...chatLogic}
-                    imagePreview={null}
-                    setImagePreview={() => {}}
-                    isRecording={false}
-                    onVoiceRecord={() => {}}
-                    onFileSelect={(e: ChangeEvent<HTMLInputElement>) => {
+                    onFileSelect={(e: any) => {
                       const file = e.target.files?.[0];
                       if (file)
                         chatLogic.setSelectedFiles([
@@ -179,7 +139,6 @@ const ChatBubble = () => {
                         ]);
                     }}
                     onRemoveFile={() => chatLogic.setSelectedFiles([])}
-                    onRemoveImagePreview={() => {}}
                     onClearAllFiles={() => chatLogic.setSelectedFiles([])}
                   />
                 </div>

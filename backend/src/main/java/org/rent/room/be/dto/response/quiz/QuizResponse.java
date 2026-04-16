@@ -20,8 +20,6 @@ public class QuizResponse {
     String title;
     String description;
     Integer maxAttempts;
-    Integer durationMinutes;
-    Boolean isOpen;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

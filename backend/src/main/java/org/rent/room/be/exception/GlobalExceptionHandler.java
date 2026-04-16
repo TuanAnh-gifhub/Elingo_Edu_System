@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.status(HttpStatusCode.valueOf(payloadTooLarge)).body(
                                 ApiResponse.builder()
                                 .code(payloadTooLarge)
-                                                .message("File qua lon. Vui long upload tep nho hon 100MB cho moi file (toi da 300MB moi lan gui).")
+                                                .message("File qua lon. Vui long upload tep nho hon 50MB.")
                                                 .build()
                 );
         }

@@ -7,7 +7,6 @@ import org.rent.room.be.constant.QuestionType;
 import org.rent.room.be.dto.request.quiz.CreateQuizRequest;
 import org.rent.room.be.dto.request.quiz.UpdateQuizRequest;
 import org.rent.room.be.dto.response.quiz.QuizImportResponse;
-import org.rent.room.be.dto.response.quiz.QuizOpenStatusEventResponse;
 import org.rent.room.be.dto.response.quiz.QuizResponse;
 import org.rent.room.be.entity.Course;
 import org.rent.room.be.entity.Question;
@@ -24,7 +23,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,7 +44,6 @@ public class QuizServiceImpl implements QuizService {
     private final CourseRepository courseRepository;
     private final QuestionRepository questionRepository;
     private final QuizMapper quizMapper;
-    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -55,15 +52,12 @@ public class QuizServiceImpl implements QuizService {
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         int maxAttempts = resolveMaxAttemptsForCreate(request.getMaxAttempts());
-        int durationMinutes = resolveDurationForCreate(request.getDurationMinutes());
 
         Quiz quiz = Quiz.builder()
                 .course(course)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .maxAttempts(maxAttempts)
-                .durationMinutes(durationMinutes)
-                .isOpen(false)
                 .build();
 
         return quizMapper.toResponse(quizRepository.save(quiz));
@@ -104,7 +98,6 @@ public class QuizServiceImpl implements QuizService {
     public QuizResponse updateQuiz(UUID quizId, UpdateQuizRequest request) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-        Boolean oldIsOpen = quiz.getIsOpen();
 
         if (request.getTitle() != null) {
             quiz.setTitle(request.getTitle());
@@ -118,38 +111,8 @@ public class QuizServiceImpl implements QuizService {
             }
             quiz.setMaxAttempts(request.getMaxAttempts());
         }
-        if (request.getDurationMinutes() != null) {
-            if (request.getDurationMinutes() < 1 || request.getDurationMinutes() > 300) {
-                throw new AppException(ErrorCode.QUIZ_INVALID_DURATION);
-            }
-            quiz.setDurationMinutes(request.getDurationMinutes());
-        }
-        if (request.getIsOpen() != null) {
-            quiz.setIsOpen(request.getIsOpen());
-        }
 
-        Quiz saved = quizRepository.save(quiz);
-
-        if (!Objects.equals(oldIsOpen, saved.getIsOpen())) {
-            UUID classId = saved.getCourse() != null && saved.getCourse().getClassRoom() != null
-                    ? saved.getCourse().getClassRoom().getClassId()
-                    : null;
-
-            if (classId != null) {
-                QuizOpenStatusEventResponse event = QuizOpenStatusEventResponse.builder()
-                        .classId(classId)
-                        .courseId(saved.getCourse().getCourseId())
-                        .quizId(saved.getQuizId())
-                        .title(saved.getTitle())
-                        .isOpen(saved.getIsOpen())
-                        .maxAttempts(saved.getMaxAttempts())
-                        .durationMinutes(saved.getDurationMinutes())
-                        .build();
-                messagingTemplate.convertAndSend("/topic/classes/" + classId + "/quiz-status", event);
-            }
-        }
-
-        return quizMapper.toResponse(saved);
+        return quizMapper.toResponse(quizRepository.save(quiz));
     }
 
     /** Tạo quiz: không gửi maxAttempts → mặc định 1; gửi nhỏ hơn 1 → lỗi. */
@@ -159,17 +122,6 @@ public class QuizServiceImpl implements QuizService {
         }
         if (value < 1) {
             throw new AppException(ErrorCode.QUIZ_INVALID_MAX_ATTEMPTS);
-        }
-        return value;
-    }
-
-    /** Tạo quiz: không gửi durationMinutes -> mặc định 30 phút; ngoài [1,300] -> lỗi. */
-    private static int resolveDurationForCreate(Integer value) {
-        if (value == null) {
-            return 30;
-        }
-        if (value < 1 || value > 300) {
-            throw new AppException(ErrorCode.QUIZ_INVALID_DURATION);
         }
         return value;
     }

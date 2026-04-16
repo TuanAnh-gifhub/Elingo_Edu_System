@@ -3,20 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { userService, type UserResponse } from "../services/usersService";
 import websocketService from "../services/chats/websocketService";
 
-const resolveWsUrl = (): string => {
-  const explicit = import.meta.env.VITE_WS_URL;
-  if (explicit && String(explicit).trim()) {
-    return String(explicit).trim();
-  }
-
-  const apiBase = import.meta.env.VITE_API_URL;
-  if (apiBase && String(apiBase).trim()) {
-    return `${String(apiBase).replace(/\/+$/, "")}/ws`;
-  }
-
-  return "http://localhost:8080/ws";
-};
-
 interface AuthContextType {
   user: UserResponse | null;
   isAuthenticated: boolean;
@@ -51,7 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (actualData?.result) {
         setUser(actualData.result);
 
-        const wsUrl = resolveWsUrl();
+        const wsUrl =
+          import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
         if (!websocketService.isConnected()) {
           websocketService.connect(wsUrl, token);
         }
@@ -75,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const token = localStorage.getItem("accessToken");
     if (token) {
-      const wsUrl = resolveWsUrl();
+      const wsUrl = import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
       if (!websocketService.isConnected()) {
         websocketService.connect(wsUrl, token);
       }

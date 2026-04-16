@@ -6,8 +6,6 @@ export interface QuizDto {
   title: string;
   description: string;
   maxAttempts: number;
-  durationMinutes: number;
-  isOpen: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -17,15 +15,12 @@ export interface CreateQuizRequest {
   title: string;
   description: string;
   maxAttempts: number;
-  durationMinutes: number;
 }
 
 export interface UpdateQuizRequest {
   title: string;
   description: string;
   maxAttempts: number;
-  durationMinutes?: number;
-  isOpen?: boolean;
 }
 
 export interface QuizPageResponse {

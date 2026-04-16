@@ -6,11 +6,10 @@ import {
   type CreateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
-import chatService from "../../../services/chats/chatService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
-import { toast } from "react-toastify";
+import RoomCard, { type RoomCardProps } from "../LandingPage/RoomCard";
 
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
@@ -107,38 +106,6 @@ const renderRatingStars = (rating: number) => {
   return stars;
 };
 
-const formatClassDateTime = (dateValue?: string): string => {
-  if (!dateValue) {
-    return "Chưa cập nhật";
-  }
-
-  const parsedDate = new Date(dateValue);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Chưa cập nhật";
-  }
-
-  return parsedDate.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const isClassEnded = (endDate?: string): boolean => {
-  if (!endDate) {
-    return false;
-  }
-
-  const parsedDate = new Date(endDate);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return false;
-  }
-
-  return Date.now() > parsedDate.getTime();
-};
-
 const validatePosterFile = (file: File): string | null => {
   if (!file.type.startsWith("image/")) {
     return "Vui lòng chọn file ảnh hợp lệ (jpg, png, webp...).";
@@ -170,7 +137,6 @@ const ClassListPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingClass, setCreatingClass] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
-  const [openingChatClassId, setOpeningChatClassId] = useState<string | null>(null);
   const [posterFileName, setPosterFileName] = useState("");
   const [createScheduleDays, setCreateScheduleDays] = useState<string[]>([]);
   const [createScheduleStartTime, setCreateScheduleStartTime] = useState("");
@@ -189,7 +155,6 @@ const ClassListPage = () => {
   const navigate = useNavigate();
   const posterInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-  const currentUserId = user?.userId || null;
   const isTeacher = isTeacherRole(user?.role);
 
   useEffect(() => {
@@ -316,6 +281,16 @@ const ClassListPage = () => {
     return classes;
   }, [activeStudentTab, classes, enrolledClassIdSet]);
 
+  const toRoomProps = (c: ClassRoomDto): RoomCardProps => ({
+    id: c.classId,
+    title: c.className,
+    location: c.schedule || "Lớp học trực tuyến",
+    capacity: `${c.currentStudents || 0}-${c.maxStudents || 0} students`,
+    price: Number(c.price || 0),
+    image: c.poster || null,
+    feature: { icon: () => null, label: c.description || "Lớp học" },
+  });
+
   const handleCreateClass = async () => {
     if (!createForm.className.trim()) {
       setError("Vui lòng nhập tên lớp học.");
@@ -421,50 +396,6 @@ const ClassListPage = () => {
       setError(message);
     } finally {
       setUploadingPoster(false);
-    }
-  };
-
-  const handleOpenTeacherChat = async (
-    classId: string,
-    teacherId?: string,
-    teacherName?: string,
-  ) => {
-    if (!teacherId) {
-      toast.error("Không tìm thấy thông tin giáo viên để nhắn tin.");
-      return;
-    }
-
-    if (!currentUserId) {
-      toast.info("Vui lòng đăng nhập để nhắn tin giáo viên.");
-      navigate("/");
-      return;
-    }
-
-    if (teacherId === currentUserId) {
-      toast.info("Đây là lớp của bạn.");
-      return;
-    }
-
-    try {
-      setOpeningChatClassId(classId);
-      const response = await chatService.openDirectConversation(teacherId);
-      window.dispatchEvent(
-        new CustomEvent("OPEN_CHAT_WITH_USER", {
-          detail: {
-            userId: teacherId,
-            userName: teacherName || "Giáo viên",
-            conversationId: response.result?.conversationId || null,
-          },
-        }),
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Không thể mở cuộc trò chuyện với giáo viên.";
-      toast.error(message);
-    } finally {
-      setOpeningChatClassId(null);
     }
   };
 
@@ -818,7 +749,6 @@ const ClassListPage = () => {
               const rating = Number(
                 getClassRating(classItem.classId).toFixed(1),
               );
-              const ended = isClassEnded(classItem.endDate);
 
               return (
                 <button
@@ -847,11 +777,6 @@ const ClassListPage = () => {
                     <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
                       Lớp học
                     </span>
-                    {ended ? (
-                      <span className="absolute top-3 right-3 inline-flex rounded-full bg-slate-900/85 text-white px-2.5 py-1 text-[11px] font-semibold">
-                        Đã kết thúc
-                      </span>
-                    ) : null}
                   </div>
 
                   <div className="h-1/2 p-4 md:p-5 flex flex-col justify-between bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50">
@@ -861,12 +786,6 @@ const ClassListPage = () => {
                       </h2>
                       <p className="text-sm text-slate-600 mt-1 line-clamp-1">
                         {classItem.schedule || "Lớp học trực tuyến"}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-                        Bắt đầu: {formatClassDateTime(classItem.startDate)}
-                      </p>
-                      <p className="text-xs text-slate-500 line-clamp-1">
-                        Kết thúc: {formatClassDateTime(classItem.endDate)}
                       </p>
                     </div>
 
@@ -928,7 +847,7 @@ const ClassListPage = () => {
               : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
           }`}
         >
-          Lớp đã gia nhập
+          Lớp đã enroll
         </button>
       </div>
       {renderSearchBar()}
@@ -936,114 +855,19 @@ const ClassListPage = () => {
         <div>Chưa có lớp học nào.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classesForStudentView.map((classItem) => {
-            const rating = Number(getClassRating(classItem.classId).toFixed(1));
-            const ended = isClassEnded(classItem.endDate);
-
-            return (
-              <div
-                key={classItem.classId}
-                onClick={() =>
-                  navigate(
-                    enrolledClassIdSet.has(classItem.classId)
-                      ? `/classes/${classItem.classId}/learning`
-                      : `/classes/${classItem.classId}`,
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    navigate(
-                      enrolledClassIdSet.has(classItem.classId)
-                        ? `/classes/${classItem.classId}/learning`
-                        : `/classes/${classItem.classId}`,
-                    );
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
-              >
-                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
-                  {classItem.poster ? (
-                    <img
-                      src={classItem.poster}
-                      alt={classItem.className}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(event) => {
-                        (event.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-linear-to-br from-blue-100 via-cyan-100 to-teal-100" />
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-slate-900/25 via-transparent to-transparent" />
-                  <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
-                    Lớp học
-                  </span>
-                  {ended ? (
-                    <span className="absolute top-3 right-3 inline-flex rounded-full bg-slate-900/85 text-white px-2.5 py-1 text-[11px] font-semibold">
-                      Đã kết thúc
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="p-4 md:p-5 flex flex-col justify-between gap-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-[190px]">
-                  <div>
-                    <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
-                      {classItem.className}
-                    </h2>
-                    <p className="text-sm text-slate-600 mt-1 line-clamp-2 min-h-10">
-                      {classItem.schedule || "Lớp học trực tuyến"}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-                      Bắt đầu: {formatClassDateTime(classItem.startDate)}
-                    </p>
-                    <p className="text-xs text-slate-500 line-clamp-1">
-                      Kết thúc: {formatClassDateTime(classItem.endDate)}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        {renderRatingStars(rating)}
-                      </div>
-                      <span className="font-medium text-slate-700">{rating}/5</span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-slate-600">
-                        {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleOpenTeacherChat(
-                              classItem.classId,
-                              classItem.teacherId,
-                              classItem.teacherName,
-                            );
-                          }}
-                          disabled={openingChatClassId === classItem.classId}
-                          className="rounded-full border border-cyan-300 px-3 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-50 disabled:opacity-60"
-                        >
-                          {openingChatClassId === classItem.classId
-                            ? "Đang mở..."
-                            : "Nhắn tin"}
-                        </button>
-                        <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
-                          {Number(classItem.price || 0).toLocaleString("vi-VN")} đ
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {classesForStudentView.map((c) => (
+            <RoomCard
+              key={c.classId}
+              {...toRoomProps(c)}
+              onClick={() =>
+                navigate(
+                  enrolledClassIdSet.has(c.classId)
+                    ? `/classes/${c.classId}/learning`
+                    : `/classes/${c.classId}`,
+                )
+              }
+            />
+          ))}
         </div>
       )}
     </div>

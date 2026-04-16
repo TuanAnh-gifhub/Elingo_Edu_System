@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FiMessageCircle, FiMoon, FiSun } from "react-icons/fi";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -50,6 +50,13 @@ const NAV_LINKS = [
   { to: "/subscription", label: "Gói Premium" },
 ];
 
+const NAV_PILL_TRANSITION = {
+  type: "spring",
+  stiffness: 380,
+  damping: 34,
+  mass: 0.9,
+} as const;
+
 const Header = () => {
   // --- 1. LẤY DATA TỪ CONTEXT ---
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -63,13 +70,6 @@ const Header = () => {
     useState<boolean>(false);
   const [isNavPointerDown, setIsNavPointerDown] = useState(false);
   const [hoveredNavPath, setHoveredNavPath] = useState<string | null>(null);
-  const navPillContainerRef = useRef<HTMLDivElement>(null);
-  const navLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
-  const [navPillStyle, setNavPillStyle] = useState({
-    x: 0,
-    width: 0,
-    ready: false,
-  });
 
   // --- 2. CÁC STATE UI (Giao diện) ---
   const [headerHeight, setHeaderHeight] = useState<number>(
@@ -171,40 +171,6 @@ const Header = () => {
   const highlightedNavPath =
     hoveredNavPath ?? NAV_LINKS.find((item) => isNavItemActive(item.to))?.to;
 
-  useLayoutEffect(() => {
-    const container = navPillContainerRef.current;
-    if (!container || !highlightedNavPath) {
-      return;
-    }
-
-    const activeLink = navLinkRefs.current[highlightedNavPath];
-    if (!activeLink) {
-      return;
-    }
-
-    const updatePillPosition = () => {
-      setNavPillStyle({
-        x: activeLink.offsetLeft,
-        width: activeLink.offsetWidth,
-        ready: true,
-      });
-    };
-
-    updatePillPosition();
-    const rafId = window.requestAnimationFrame(updatePillPosition);
-
-    const resizeObserver = new ResizeObserver(updatePillPosition);
-    resizeObserver.observe(container);
-    resizeObserver.observe(activeLink);
-    window.addEventListener("resize", updatePillPosition);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", updatePillPosition);
-    };
-  }, [highlightedNavPath, location.pathname]);
-
   // Chuẩn bị dữ liệu hiển thị cho UserMenu
   // UserResponse currently exposes userName (no fullName)
   const displayUser = user
@@ -303,31 +269,17 @@ const Header = () => {
               }}
             >
               <div
-                ref={navPillContainerRef}
-                className={`relative inline-flex items-center rounded-full border px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md ${
+                className={`inline-flex items-center rounded-full border px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md ${
                   isHeaderTransparent
                     ? "border-white/25 bg-white/10"
                     : "border-slate-200/80 bg-white/80"
                 }`}
               >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute left-0 top-1 bottom-1 z-0 rounded-full border border-[#0c69db]/40 bg-[#60a5fa] shadow-[0_10px_20px_rgba(16,94,205,0.28)]"
-                  style={{
-                    width: `${navPillStyle.width}px`,
-                    transform: `translateX(${navPillStyle.x}px)`,
-                    opacity: navPillStyle.ready ? 1 : 0,
-                    transition: navPillStyle.ready
-                      ? "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), width 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms ease-out"
-                      : "none",
-                  }}
-                />
                 {NAV_LINKS.map((item) => {
+                  const isHighlighted = highlightedNavPath === item.to;
+
                   return (
                     <Link
-                      ref={(el) => {
-                        navLinkRefs.current[item.to] = el;
-                      }}
                       key={item.to}
                       to={item.to}
                       viewTransition
@@ -335,8 +287,15 @@ const Header = () => {
                         setHoveredNavPath(item.to);
                         handleNavPointerEnter(item.to);
                       }}
-                      className="relative isolate inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold leading-none !text-[#2563eb] hover:!text-[#2563eb] visited:!text-[#2563eb] focus:!text-[#2563eb] transition-colors duration-200 select-none"
+                      className="relative isolate rounded-full px-5 py-2.5 text-sm font-semibold !text-[#2563eb] hover:!text-[#2563eb] visited:!text-[#2563eb] focus:!text-[#2563eb] transition-colors duration-200 select-none"
                     >
+                      {isHighlighted ? (
+                        <motion.span
+                          layoutId="header-nav-pill"
+                          transition={NAV_PILL_TRANSITION}
+                          className="absolute inset-0 z-0 rounded-full border border-[#0c69db]/40 bg-[#60a5fa] shadow-[0_12px_26px_rgba(16,94,205,0.34)]"
+                        />
+                      ) : null}
                       <motion.span
                         transition={{ duration: 0.18 }}
                         className="relative z-20 !text-[#2563eb]"

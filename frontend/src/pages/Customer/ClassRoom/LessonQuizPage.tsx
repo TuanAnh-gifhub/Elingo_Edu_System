@@ -44,8 +44,6 @@ const LessonQuizPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [maxAttempts, setMaxAttempts] = useState(1);
-  const [durationMinutes, setDurationMinutes] = useState(30);
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdQuiz, setCreatedQuiz] = useState<QuizDto | null>(null);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizDto | null>(null);
@@ -160,9 +158,7 @@ const LessonQuizPage = () => {
 
     setTitle(selectedQuiz.title || "");
     setDescription(selectedQuiz.description || "");
-    setMaxAttempts(Number(selectedQuiz.maxAttempts) || 1);
-    setDurationMinutes(Number(selectedQuiz.durationMinutes) || 30);
-    setIsQuizOpen(Boolean(selectedQuiz.isOpen));
+    setMaxAttempts(Number(selectedQuiz.maxAttempts) || 0);
   }, [selectedQuiz]);
 
   useEffect(() => {
@@ -199,13 +195,8 @@ const LessonQuizPage = () => {
       return;
     }
 
-    if (maxAttempts < 1) {
+    if (maxAttempts < 0) {
       toast.error("Số lần làm tối đa không hợp lệ.");
-      return;
-    }
-
-    if (durationMinutes < 1 || durationMinutes > 300) {
-      toast.error("Thời gian làm bài phải trong khoảng 1-300 phút.");
       return;
     }
 
@@ -215,9 +206,7 @@ const LessonQuizPage = () => {
         const updated = await quizService.updateQuiz(selectedQuiz.quizId, {
           title: title.trim(),
           description: description.trim(),
-          maxAttempts: Number(maxAttempts) || 1,
-          durationMinutes: Number(durationMinutes) || 30,
-          isOpen: isQuizOpen,
+          maxAttempts: Number(maxAttempts) || 0,
         });
 
         setSelectedQuiz(updated);
@@ -228,8 +217,7 @@ const LessonQuizPage = () => {
           courseId: lessonId,
           title: title.trim(),
           description: description.trim(),
-          maxAttempts: Number(maxAttempts) || 1,
-          durationMinutes: Number(durationMinutes) || 30,
+          maxAttempts: Number(maxAttempts) || 0,
         });
 
         setCreatedQuiz(quiz);
@@ -698,39 +686,13 @@ const LessonQuizPage = () => {
             <span className="font-medium">Số lần làm tối đa</span>
             <input
               type="number"
-              min={1}
+              min={0}
               value={maxAttempts}
               onChange={(event) =>
-                setMaxAttempts(Math.max(1, Number(event.target.value) || 1))
+                setMaxAttempts(Math.max(0, Number(event.target.value) || 0))
               }
               className="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 max-w-xs">
-            <span className="font-medium">Thời gian làm bài (phút)</span>
-            <input
-              type="number"
-              min={1}
-              max={300}
-              value={durationMinutes}
-              onChange={(event) =>
-                setDurationMinutes(Math.max(1, Number(event.target.value) || 1))
-              }
-              className="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            />
-          </label>
-
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={isQuizOpen}
-              onChange={(event) => setIsQuizOpen(event.target.checked)}
-            />
-            <span>
-              Mở quiz cho học sinh làm bài
-              <span className="text-xs text-slate-500 ml-1">(Bỏ chọn = khóa quiz)</span>
-            </span>
           </label>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -754,8 +716,6 @@ const LessonQuizPage = () => {
                   setTitle("");
                   setDescription("");
                   setMaxAttempts(1);
-                  setDurationMinutes(30);
-                  setIsQuizOpen(false);
                   setCreatedQuiz(null);
                   setSelectedQuiz(null);
                   setSearchParams({});
@@ -783,12 +743,6 @@ const LessonQuizPage = () => {
             </p>
             <p className="text-sm text-emerald-700 mt-1">
               Số lần làm tối đa: {(selectedQuiz || createdQuiz)?.maxAttempts}
-            </p>
-            <p className="text-sm text-emerald-700 mt-1">
-              Thời gian làm bài: {(selectedQuiz || createdQuiz)?.durationMinutes} phút
-            </p>
-            <p className="text-sm text-emerald-700 mt-1">
-              Trạng thái: {Boolean((selectedQuiz || createdQuiz)?.isOpen) ? "Đang mở" : "Đang khóa"}
             </p>
 
             <div className="mt-4 rounded-lg border border-emerald-300 bg-white p-3">

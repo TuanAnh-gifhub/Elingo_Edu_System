@@ -19,19 +19,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             """)
     Optional<Conversation> findBetweenUsers(UUID u1, UUID u2);
 
-    @Query("""
-            SELECT c FROM Conversation c
-            WHERE (c.user1.userId = :userId OR c.user2.userId = :userId)
-              AND (:userId NOT MEMBER OF c.hiddenByUserIds)
-            ORDER BY c.updatedAt DESC
-            """)
-    List<Conversation> findVisibleConversationsByUserId(UUID userId);
-
-    @Query("""
-            SELECT c FROM Conversation c
-            WHERE c.conversationId = :conversationId
-              AND (c.user1.userId = :userId OR c.user2.userId = :userId)
-            """)
-    Optional<Conversation> findByConversationIdAndParticipant(UUID conversationId, UUID userId);
+    List<Conversation> findAllByUser1UserIdOrUser2UserIdOrderByUpdatedAtDesc(UUID u1, UUID u2);
 }
 

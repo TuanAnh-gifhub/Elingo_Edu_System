@@ -17,6 +17,4 @@ public class CreateQuizRequest {
     String description;
     /** Số lần được làm bài; mặc định 1 nếu không gửi. Tối thiểu 1. */
     Integer maxAttempts;
-    /** Thời gian làm bài (phút); mặc định 30 nếu không gửi. */
-    Integer durationMinutes;
 }

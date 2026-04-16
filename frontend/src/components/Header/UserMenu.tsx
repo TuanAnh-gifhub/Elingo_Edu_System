@@ -137,6 +137,18 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick, isHeaderTrans
             >
               <FiStar className="w-4 h-4" />
               <span>Gói Premium</span>
+              <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-[#4da6ff] to-[#7c3aed] text-white">
+                Mới
+              </span>
+            </Link>
+
+            <Link
+              to="/manage-posts"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
+            >
+              <FiFileText className="w-4 h-4" />
+              Quản lý cá nhân
             </Link>
 
             <div className="h-px bg-gray-100 my-1 mx-4" />

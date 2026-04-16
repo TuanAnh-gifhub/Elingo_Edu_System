@@ -21,8 +21,6 @@ public class StudentQuizTakeResponse {
     String description;
     /** Số lần tối đa được phép làm. */
     Integer maxAttempts;
-    /** Thời gian làm bài (phút). */
-    Integer durationMinutes;
     /** Số lần đã nộp bài. */
     Integer attemptsUsed;
     /** Số lần còn lại (0 = không được làm thêm). */

@@ -17,25 +17,6 @@ import { useAuth } from "../../../context/AuthContext";
 
 const isStudentRole = (role?: string) => role?.toUpperCase().includes("STUDENT");
 
-const formatClassDateTime = (dateValue?: string): string => {
-  if (!dateValue) {
-    return "Chưa cập nhật";
-  }
-
-  const parsedDate = new Date(dateValue);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Chưa cập nhật";
-  }
-
-  return parsedDate.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 const ClassDetailPage = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
@@ -56,18 +37,6 @@ const ClassDetailPage = () => {
   const [recentReviews, setRecentReviews] = useState<ReviewDto[]>([]);
 
   const isStudent = useMemo(() => isStudentRole(user?.role), [user?.role]);
-  const hasClassEnded = useMemo(() => {
-    if (!clazz?.endDate) {
-      return false;
-    }
-
-    const endDate = new Date(clazz.endDate);
-    if (Number.isNaN(endDate.getTime())) {
-      return false;
-    }
-
-    return Date.now() > endDate.getTime();
-  }, [clazz?.endDate]);
 
   useEffect(() => {
     if (!classId) return;
@@ -137,19 +106,9 @@ const ClassDetailPage = () => {
 
     void loadReviews();
   }, [classId]);
-    if (hasClassEnded) {
-      setShowConfirmEnroll(false);
-    }
-  }, [hasClassEnded]);
 
   const handleConfirmEnroll = async () => {
     if (!classId || !clazz) {
-      return;
-    }
-
-    if (hasClassEnded) {
-      setShowConfirmEnroll(false);
-      toast.error("Lớp học đã kết thúc, không thể nhập học.");
       return;
     }
 
@@ -212,20 +171,9 @@ const ClassDetailPage = () => {
               <span className="inline-flex rounded-full bg-blue-100 text-blue-700 px-3 py-1">
                 Lịch học: {clazz.schedule || "Chưa cập nhật"}
               </span>
-              <span className="inline-flex rounded-full bg-violet-100 text-violet-700 px-3 py-1">
-                Bắt đầu: {formatClassDateTime(clazz.startDate)}
-              </span>
-              <span className="inline-flex rounded-full bg-rose-100 text-rose-700 px-3 py-1">
-                Kết thúc: {formatClassDateTime(clazz.endDate)}
-              </span>
               <span className="inline-flex rounded-full bg-emerald-100 text-emerald-700 px-3 py-1">
                 Sĩ số: {clazz.currentStudents ?? 0}/{clazz.maxStudents ?? "-"}
               </span>
-              {hasClassEnded ? (
-                <span className="inline-flex rounded-full bg-slate-200 text-slate-700 px-3 py-1">
-                  Lớp đã kết thúc
-                </span>
-              ) : null}
             </div>
           </div>
 
@@ -255,30 +203,16 @@ const ClassDetailPage = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (hasClassEnded) {
-                      toast.error("Lớp học đã kết thúc, không thể nhập học.");
-                      return;
-                    }
-
-                    setShowConfirmEnroll(true);
-                  }}
-                  disabled={checkingEnrollment || enrolling || hasClassEnded}
+                  onClick={() => setShowConfirmEnroll(true)}
+                  disabled={checkingEnrollment || enrolling}
                   className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
                 >
-                  {hasClassEnded
-                    ? "Lớp đã kết thúc"
-                    : enrolling
-                      ? "Đang xử lý..."
-                      : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
+                  {enrolling ? "Đang xử lý..." : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
                 </button>
               )
             ) : (
               <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
             )}
-            {isStudent && !isEnrolled && hasClassEnded ? (
-              <p className="text-xs text-rose-600">Lớp đã kết thúc nên không thể thanh toán để nhập học.</p>
-            ) : null}
           </div>
         </div>
       </section>

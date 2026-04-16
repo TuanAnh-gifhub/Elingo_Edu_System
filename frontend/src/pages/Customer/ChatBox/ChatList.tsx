@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { FaEllipsisV, FaSearch, FaSpinner, FaTrashAlt } from "react-icons/fa";
+import { FaSearch, FaSpinner } from "react-icons/fa";
 import { parseMessageContent } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import type {
@@ -30,9 +29,6 @@ interface ChatListProps {
   showSettingsMenu: boolean;
   setShowSettingsMenu: (show: boolean) => void;
   settingsMenuRef: React.RefObject<HTMLDivElement | null>;
-  onDeleteConversation?: (conversationId: string) => void | Promise<void>;
-  onDeleteConversationForAll?: (conversationId: string) => void | Promise<void>;
-  deletingConversationId?: string | null;
   conversations: ConversationResponse[];
   loading: boolean;
   error: string | null;
@@ -57,12 +53,7 @@ const generateAvatarSVG = (
 
 const getMessagePreview = (content: string): string => {
   if (!content) return "Chưa có tin nhắn";
-  const parsed = parseMessageContent(content) as {
-    isMedia?: boolean;
-    text?: string;
-    type?: string;
-    media?: unknown[];
-  };
+  const parsed = parseMessageContent(content) as any;
 
   if (parsed.isMedia) {
     const text = parsed.text || "";
@@ -83,12 +74,6 @@ const ChatList = ({
   setActiveTab,
   selectedChat,
   onChatSelect,
-  showSettingsMenu,
-  setShowSettingsMenu,
-  settingsMenuRef,
-  onDeleteConversation,
-  onDeleteConversationForAll,
-  deletingConversationId = null,
   conversations,
   loading,
   error,
@@ -98,24 +83,6 @@ const ChatList = ({
 }: ChatListProps) => {
   const { user } = useAuth();
   const currentUserId = user?.userId;
-  const [menuConversationId, setMenuConversationId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        settingsMenuRef.current &&
-        !settingsMenuRef.current.contains(event.target as Node)
-      ) {
-        setMenuConversationId(null);
-        setShowSettingsMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, [setShowSettingsMenu, settingsMenuRef]);
 
   const transformedConversations: Chat[] = conversations
     .map((conv) => {
@@ -209,17 +176,10 @@ const ChatList = ({
             {filteredChats.map((chat) => {
               const isSelected =
                 selectedChat?.conversationId === chat.conversationId;
-              const canDeleteForAll = Boolean(
-                (chat as Chat & { canDeleteForAll?: boolean }).canDeleteForAll,
-              );
               return (
                 <div
                   key={chat.conversationId}
-                  onClick={() => {
-                    setMenuConversationId(null);
-                    setShowSettingsMenu(false);
-                    onChatSelect(chat);
-                  }}
+                  onClick={() => onChatSelect(chat)}
                   className={`flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ${isSelected ? "bg-[#4da6ff]/10 border border-[#4da6ff]/20" : isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}`}
                 >
                   <div className="relative">
@@ -244,73 +204,9 @@ const ChatList = ({
                       {getMessagePreview(chat.lastMessage)}
                     </p>
                   </div>
-                  <div className="ml-2 flex items-center gap-2">
-                    {chat.isRead === false && (
-                      <div className="w-2.5 h-2.5 bg-[#4da6ff] rounded-full" />
-                    )}
-
-                    <div
-                      className="relative"
-                      ref={
-                        showSettingsMenu && menuConversationId === chat.conversationId
-                          ? settingsMenuRef
-                          : null
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          const nextOpen =
-                            !(showSettingsMenu && menuConversationId === chat.conversationId);
-                          setMenuConversationId(nextOpen ? chat.conversationId : null);
-                          setShowSettingsMenu(nextOpen);
-                        }}
-                        className={`rounded-full p-1.5 transition-colors ${isDarkMode ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"}`}
-                        title="Tùy chọn"
-                      >
-                        <FaEllipsisV className="h-3 w-3" />
-                      </button>
-
-                      {showSettingsMenu && menuConversationId === chat.conversationId ? (
-                        <div
-                          className={`absolute right-0 z-20 mt-1 min-w-44 rounded-lg border shadow-lg ${isDarkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}
-                        >
-                          <button
-                            type="button"
-                            disabled={deletingConversationId === chat.conversationId}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onDeleteConversation?.(chat.conversationId);
-                              setMenuConversationId(null);
-                              setShowSettingsMenu(false);
-                            }}
-                            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm disabled:opacity-50 ${isDarkMode ? "text-rose-300 hover:bg-gray-700" : "text-rose-600 hover:bg-rose-50"}`}
-                          >
-                            <FaTrashAlt className="h-3 w-3" />
-                            {deletingConversationId === chat.conversationId
-                              ? "Đang xóa..."
-                              : "Xóa cuộc trò chuyện"}
-                          </button>
-
-                          {canDeleteForAll ? (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onDeleteConversationForAll?.(chat.conversationId);
-                                setMenuConversationId(null);
-                                setShowSettingsMenu(false);
-                              }}
-                              className={`w-full px-3 py-2 text-left text-sm ${isDarkMode ? "text-orange-300 hover:bg-gray-700" : "text-orange-600 hover:bg-orange-50"}`}
-                            >
-                              Xóa trò chuyện nhóm
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                  {chat.isRead === false && (
+                    <div className="w-2.5 h-2.5 bg-[#4da6ff] rounded-full ml-2" />
+                  )}
                 </div>
               );
             })}

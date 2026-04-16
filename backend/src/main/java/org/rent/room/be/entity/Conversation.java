@@ -6,9 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -39,14 +37,5 @@ public class Conversation extends BaseEntity {
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<Message> messages;
-
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "conversation_hidden_users",
-            joinColumns = @JoinColumn(name = "conversation_id")
-    )
-    @Column(name = "user_id", nullable = false)
-    @Builder.Default
-    Set<UUID> hiddenByUserIds = new HashSet<>();
 }
 

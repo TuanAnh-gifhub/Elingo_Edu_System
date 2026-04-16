@@ -51,13 +51,7 @@ interface ApiResponse<T> {
 }
 
 interface ApiErrorPayload {
-  code?: number;
   message?: string;
-  result?: {
-    requestId?: string;
-    detail?: string;
-    hint?: string;
-  };
 }
 
 const getFileExtension = (fileName: string): string | undefined => {
@@ -214,27 +208,17 @@ export const uploadToCloudinary = async (
       },
     };
   } catch (error) {
-    const errorResponse =
-      typeof error === "object" && error !== null && "response" in error
-        ? (error as { response?: { status?: number; data?: ApiErrorPayload } })
-            .response
-        : undefined;
-
-    const backendMessage = errorResponse?.data?.message;
-    const backendDetail = errorResponse?.data?.result?.detail;
-    const backendRequestId = errorResponse?.data?.result?.requestId;
-    const backendHint = errorResponse?.data?.result?.hint;
-
     const message =
-      errorResponse?.status === 413
-        ? "File quá lớn so với giới hạn upload hiện tại. Vui lòng giảm dung lượng hoặc chia nhỏ file."
-        : typeof backendMessage === "string"
-          ? [backendMessage, backendDetail, backendHint, backendRequestId ? `RequestId: ${backendRequestId}` : ""]
-              .filter(Boolean)
-              .join(" | ")
-          : error instanceof Error
-            ? error.message
-            : "Upload file thất bại.";
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof (error as { response?: { data?: ApiErrorPayload } }).response?.data
+        ?.message === "string"
+        ? (error as { response?: { data?: ApiErrorPayload } }).response!.data!
+            .message!
+        : error instanceof Error
+          ? error.message
+          : "Upload file thất bại.";
     return createFailedUploadResult(file, message);
   }
 };

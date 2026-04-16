@@ -5,8 +5,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 100MB
-      max-request-size: 300MB
+      max-file-size: 10MB
+      max-request-size: 50MB
 
   mail:
     host: smtp.gmail.com
@@ -91,11 +91,3 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY:}
   api-secret: ${CLOUDINARY_API_SECRET:}
   folder: ${CLOUDINARY_FOLDER:}
-
-jitsi:
-  jaas:
-    app-id: ${JITSI_JAAS_APP_ID:vpaas-magic-cookie-65ee15fba0084777ade13da38e810287}
-    kid: ${JITSI_JAAS_KID:}
-    private-key-pem: ${JITSI_JAAS_PRIVATE_KEY_PEM:}
-    token-ttl-seconds: ${JITSI_JAAS_TOKEN_TTL_SECONDS:180}
-

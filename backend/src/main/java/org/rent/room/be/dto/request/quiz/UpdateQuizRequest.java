@@ -13,6 +13,4 @@ public class UpdateQuizRequest {
     String title;
     String description;
     Integer maxAttempts;
-    Integer durationMinutes;
-    Boolean isOpen;
 }

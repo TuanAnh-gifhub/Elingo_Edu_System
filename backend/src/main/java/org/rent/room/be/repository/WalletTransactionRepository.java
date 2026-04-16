@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,12 +32,6 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
             LocalDateTime from,
             LocalDateTime to,
             Pageable pageable
-    );
-
-    List<WalletTransaction> findByWalletAndTypeAndMetadataContainingOrderByCreatedAtDesc(
-            Wallet wallet,
-            WalletTxType type,
-            String metadata
     );
 
     boolean existsByBookingIdAndType(UUID bookingId, WalletTxType type);

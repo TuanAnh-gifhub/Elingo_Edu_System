@@ -73,12 +73,6 @@ public class EnrollmentController {
             @PathVariable UUID classId
     ) {
         List<EnrollmentResponse> enrollments = enrollmentService.getEnrollmentsByClassId(classId);
-    @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
-    @GetMapping("/classes/{classId}")
-    public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getEnrollmentsByClass(
-            @PathVariable UUID classId
-    ) {
-        List<EnrollmentResponse> enrollments = enrollmentService.getEnrollmentsByClass(classId);
         return ResponseEntity.ok(
                 ApiResponse.<List<EnrollmentResponse>>builder()
                         .code(200)

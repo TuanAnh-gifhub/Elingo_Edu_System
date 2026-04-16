@@ -78,10 +78,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         Wallet studentWallet = walletRepository.findByUser_UserId(student.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND));
-        Wallet teacherWallet = walletRepository.findByUser_UserId(classRoom.getTeacher().getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND));
-
-        if (studentWallet.getWalletStatus() == WalletStatus.LOCKED || teacherWallet.getWalletStatus() == WalletStatus.LOCKED) {
+        if (studentWallet.getWalletStatus() == WalletStatus.LOCKED) {
             throw new AppException(ErrorCode.WALLET_LOCKED);
         }
 
@@ -95,10 +92,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         studentWallet.setBalance(studentBalanceAfter);
         walletRepository.save(studentWallet);
 
-        BigDecimal teacherBalanceBefore = teacherWallet.getBalance() == null ? BigDecimal.ZERO : teacherWallet.getBalance();
-        BigDecimal teacherBalanceAfter = teacherBalanceBefore.add(classPrice);
-        teacherWallet.setBalance(teacherBalanceAfter);
-        walletRepository.save(teacherWallet);
+        BigDecimal classWalletBalanceBefore = classRoom.getClassWalletBalance() == null
+                ? BigDecimal.ZERO
+                : classRoom.getClassWalletBalance();
+        BigDecimal classWalletBalanceAfter = classWalletBalanceBefore.add(classPrice);
+        classRoom.setClassWalletBalance(classWalletBalanceAfter);
 
         String transactionId = request.getTransactionId();
         if (transactionId == null || transactionId.isBlank()) {
@@ -113,17 +111,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .balanceBefore(studentBalanceBefore)
                 .balanceAfter(studentBalanceAfter)
                 .description("Thanh toán nhập học lớp " + classRoom.getClassName())
-                .metadata("{\"classId\":\"" + classRoom.getClassId() + "\",\"transactionId\":\"" + transactionId + "\"}")
-                .build());
-
-        walletTransactionRepository.save(WalletTransaction.builder()
-                .wallet(teacherWallet)
-                .type(WalletTxType.BOOKING_INCOME)
-                .status(WalletTxStatus.COMPLETED)
-                .amount(classPrice)
-                .balanceBefore(teacherBalanceBefore)
-                .balanceAfter(teacherBalanceAfter)
-                .description("Thu nhập từ học sinh nhập học lớp " + classRoom.getClassName())
                 .metadata("{\"classId\":\"" + classRoom.getClassId() + "\",\"transactionId\":\"" + transactionId + "\"}")
                 .build());
 

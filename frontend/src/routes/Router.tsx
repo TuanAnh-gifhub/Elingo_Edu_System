@@ -156,6 +156,8 @@ export const router = createBrowserRouter([
         path: "classes/:classId/reviews",
         element: <ClassReviewPage />,
         handle: { breadcrumb: "Đánh giá lớp học" },
+      },
+      {
         path: "classes/:classId/quizzes/:quizId/attempt",
         element: <StudentQuizAttemptPage />,
         handle: { breadcrumb: "Làm bài quiz" },

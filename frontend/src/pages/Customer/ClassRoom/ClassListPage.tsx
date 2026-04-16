@@ -105,6 +105,38 @@ const renderRatingStars = (rating: number) => {
   return stars;
 };
 
+const formatClassDateTime = (dateValue?: string): string => {
+  if (!dateValue) {
+    return "Chưa cập nhật";
+  }
+
+  const parsedDate = new Date(dateValue);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Chưa cập nhật";
+  }
+
+  return parsedDate.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const isClassEnded = (endDate?: string): boolean => {
+  if (!endDate) {
+    return false;
+  }
+
+  const parsedDate = new Date(endDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return false;
+  }
+
+  return Date.now() > parsedDate.getTime();
+};
+
 const validatePosterFile = (file: File): string | null => {
   if (!file.type.startsWith("image/")) {
     return "Vui lòng chọn file ảnh hợp lệ (jpg, png, webp...).";
@@ -738,6 +770,7 @@ const ClassListPage = () => {
               const rating = Number(
                 getClassRating(classItem.classId).toFixed(1),
               );
+              const ended = isClassEnded(classItem.endDate);
 
               return (
                 <button
@@ -766,6 +799,11 @@ const ClassListPage = () => {
                     <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
                       Lớp học
                     </span>
+                    {ended ? (
+                      <span className="absolute top-3 right-3 inline-flex rounded-full bg-slate-900/85 text-white px-2.5 py-1 text-[11px] font-semibold">
+                        Đã kết thúc
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="h-1/2 p-4 md:p-5 flex flex-col justify-between bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50">
@@ -775,6 +813,12 @@ const ClassListPage = () => {
                       </h2>
                       <p className="text-sm text-slate-600 mt-1 line-clamp-1">
                         {classItem.schedule || "Lớp học trực tuyến"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                        Bắt đầu: {formatClassDateTime(classItem.startDate)}
+                      </p>
+                      <p className="text-xs text-slate-500 line-clamp-1">
+                        Kết thúc: {formatClassDateTime(classItem.endDate)}
                       </p>
                     </div>
 
@@ -846,6 +890,7 @@ const ClassListPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {classesForStudentView.map((classItem) => {
             const rating = Number(getClassRating(classItem.classId).toFixed(1));
+            const ended = isClassEnded(classItem.endDate);
 
             return (
               <button
@@ -877,6 +922,11 @@ const ClassListPage = () => {
                   <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
                     Lớp học
                   </span>
+                  {ended ? (
+                    <span className="absolute top-3 right-3 inline-flex rounded-full bg-slate-900/85 text-white px-2.5 py-1 text-[11px] font-semibold">
+                      Đã kết thúc
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="p-4 md:p-5 flex flex-col justify-between gap-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-[190px]">
@@ -886,6 +936,12 @@ const ClassListPage = () => {
                     </h2>
                     <p className="text-sm text-slate-600 mt-1 line-clamp-2 min-h-10">
                       {classItem.schedule || "Lớp học trực tuyến"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                      Bắt đầu: {formatClassDateTime(classItem.startDate)}
+                    </p>
+                    <p className="text-xs text-slate-500 line-clamp-1">
+                      Kết thúc: {formatClassDateTime(classItem.endDate)}
                     </p>
                   </div>
 

@@ -3,6 +3,7 @@ package org.rent.room.be.service;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
+import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
 
@@ -30,6 +31,10 @@ public interface ClassRoomService {
     ClassRoomResponse updateClass(UUID classId, UpdateClassRoomRequest request, UUID currentTeacherId);
 
     ClassRoomResponse updateOnlineStatus(UUID classId, Boolean onlineOpen, UUID currentTeacherId);
+
+    ClassWalletResponse getClassWallet(UUID classId, UUID currentTeacherId);
+
+    ClassWalletResponse claimClassWallet(UUID classId, UUID currentTeacherId);
 
     OnlineClassAccessResponse getOnlineClassAccess(UUID classId, UUID currentUserId);
 

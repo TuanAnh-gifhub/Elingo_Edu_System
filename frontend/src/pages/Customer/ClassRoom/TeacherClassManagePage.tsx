@@ -15,6 +15,7 @@ import { FaFilePowerpoint } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   classRoomService,
+  type ClassWalletDto,
   type ClassRoomDto,
   type OnlineClassAccessDto,
   type UpdateClassRoomRequest,
@@ -450,7 +451,9 @@ const TeacherClassManagePage = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingClassWallet, setLoadingClassWallet] = useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
+  const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [students, setStudents] = useState<UserResponse[]>([]);
@@ -498,6 +501,7 @@ const TeacherClassManagePage = () => {
   const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [claimingClassWallet, setClaimingClassWallet] = useState(false);
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
@@ -550,6 +554,30 @@ const TeacherClassManagePage = () => {
     };
 
     loadClass();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWallet = async () => {
+      try {
+        setLoadingClassWallet(true);
+        const wallet = await classRoomService.getClassWallet(classId);
+        setClassWallet(wallet);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể tải ví lớp học.";
+        toast.error(message);
+      } finally {
+        setLoadingClassWallet(false);
+      }
+    };
+
+    loadClassWallet();
   }, [classId]);
 
   useEffect(() => {
@@ -1319,6 +1347,36 @@ const TeacherClassManagePage = () => {
     }
   };
 
+  const handleClaimClassWallet = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setClaimingClassWallet(true);
+      const claimedWallet = await classRoomService.claimClassWallet(classId);
+      setClassWallet(claimedWallet);
+      toast.success("Nhận tiền từ ví lớp thành công.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể nhận tiền từ ví lớp.";
+      toast.error(message);
+    } finally {
+      setClaimingClassWallet(false);
+    }
+  };
+
+  const classWalletEndDate = classWallet?.endDate
+    ? new Date(classWallet.endDate)
+    : null;
+  const isClassWalletDue = classWalletEndDate
+    ? Date.now() >= classWalletEndDate.getTime()
+    : false;
+  const canClaimClassWallet =
+    isClassWalletDue && Number(classWallet?.balance || 0) > 0;
+
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
   }
@@ -1374,6 +1432,11 @@ const TeacherClassManagePage = () => {
                 {rating}/5
               </span>
             </div>
+            <div className="mt-2 text-xs text-slate-500">
+              Ví lớp: {loadingClassWallet
+                ? "Đang tải..."
+                : `${Number(classWallet?.balance || 0).toLocaleString("vi-VN")} đ`}
+            </div>
           </div>
         </div>
       </div>
@@ -1427,6 +1490,38 @@ const TeacherClassManagePage = () => {
           <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50 to-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Đánh giá trung bình</p>
             <p className="text-3xl font-bold text-slate-900 mt-2">{rating}</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Số dư ví lớp</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">
+              {loadingClassWallet
+                ? "..."
+                : Number(classWallet?.balance || 0).toLocaleString("vi-VN")}
+              <span className="ml-1 text-base font-semibold text-slate-600">đ</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              {classWallet?.endDate
+                ? `Mở nhận tiền sau: ${new Date(classWallet.endDate).toLocaleString("vi-VN")}`
+                : "Chưa có ngày kết thúc để mở nhận tiền."}
+            </p>
+            {classWallet?.claimedAt ? (
+              <p className="mt-1 text-xs text-emerald-700">
+                Đã nhận tiền lúc: {new Date(classWallet.claimedAt).toLocaleString("vi-VN")}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleClaimClassWallet}
+              disabled={
+                loadingClassWallet ||
+                claimingClassWallet ||
+                !canClaimClassWallet
+              }
+              className="mt-3 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {claimingClassWallet ? "Đang nhận tiền..." : "Nhận tiền ví lớp"}
+            </button>
           </div>
 
           <div className="md:col-span-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-white to-cyan-50/60 p-5 shadow-sm space-y-4">

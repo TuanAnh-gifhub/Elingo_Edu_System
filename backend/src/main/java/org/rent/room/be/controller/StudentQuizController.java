@@ -8,6 +8,7 @@ import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.studentQuiz.SubmitQuizRequest;
 import org.rent.room.be.dto.response.studentQuiz.QuizAttemptSummaryResponse;
 import org.rent.room.be.dto.response.studentQuiz.QuizSubmitResultResponse;
+import org.rent.room.be.dto.response.studentQuiz.StudentQuizAttemptReviewResponse;
 import org.rent.room.be.dto.response.studentQuiz.StudentQuizTakeResponse;
 import org.rent.room.be.service.StudentQuizService;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,21 @@ public class StudentQuizController {
                 ApiResponse.<List<QuizAttemptSummaryResponse>>builder()
                         .code(200)
                         .message("Get your quiz attempts successfully")
+                        .result(result)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{quizId}/my-attempts/{attemptId}")
+    public ResponseEntity<ApiResponse<StudentQuizAttemptReviewResponse>> getMyAttemptDetail(
+            @PathVariable UUID quizId,
+            @PathVariable UUID attemptId
+    ) {
+        StudentQuizAttemptReviewResponse result = studentQuizService.getMyAttemptDetail(quizId, attemptId);
+        return ResponseEntity.ok(
+                ApiResponse.<StudentQuizAttemptReviewResponse>builder()
+                        .code(200)
+                        .message("Get attempt detail successfully")
                         .result(result)
                         .build()
         );

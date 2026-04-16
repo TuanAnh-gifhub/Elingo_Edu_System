@@ -62,6 +62,15 @@ public class ClassRoom extends BaseEntity {
     @Column(name = "poster", length = 1000)
     String poster;
 
+    @Column(name = "online_open")
+    Boolean onlineOpen;
+
+    @Column(name = "online_room_code", length = 64)
+    String onlineRoomCode;
+
+    @Column(name = "online_room_password", length = 64)
+    String onlineRoomPassword;
+
     @OneToMany(mappedBy = "classRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Course> courses;
 }

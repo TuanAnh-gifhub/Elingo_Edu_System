@@ -15,8 +15,21 @@ export interface ClassRoomDto {
   schedule?: string;
   active: boolean;
   poster?: string;
+  onlineOpen?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UpdateClassOnlineStatusRequest {
+  onlineOpen: boolean;
+}
+
+export interface OnlineClassAccessDto {
+  classId: string;
+  roomName: string;
+  roomPassword: string;
+  onlineOpen: boolean;
+  teacher: boolean;
 }
 
 export interface CreateClassRoomRequest {
@@ -112,6 +125,19 @@ export const classRoomService = {
   ): Promise<ClassRoomDto> {
     const res = await api.put(`/classes/${classId}`, payload);
     return res.data.result as ClassRoomDto;
+  },
+
+  async updateOnlineStatus(
+    classId: string,
+    payload: UpdateClassOnlineStatusRequest,
+  ): Promise<ClassRoomDto> {
+    const res = await api.patch(`/classes/${classId}/online-status`, payload);
+    return res.data.result as ClassRoomDto;
+  },
+
+  async getOnlineAccess(classId: string): Promise<OnlineClassAccessDto> {
+    const res = await api.get(`/classes/${classId}/online-access`);
+    return res.data.result as OnlineClassAccessDto;
   },
 
   async deleteClass(classId: string): Promise<string> {

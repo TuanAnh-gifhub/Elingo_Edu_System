@@ -26,6 +26,7 @@ import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassMana
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import StudentClassLearningPage from "../pages/Customer/ClassRoom/StudentClassLearningPage";
 import ClassReviewPage from "../pages/Customer/ClassRoom/ClassReviewPage";
+import StudentQuizAttemptPage from "../pages/Customer/ClassRoom/StudentQuizAttemptPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 import TeacherVerificationPage from "../pages/Customer/TeacherVerification/TeacherVerificationPage";
@@ -155,6 +156,9 @@ export const router = createBrowserRouter([
         path: "classes/:classId/reviews",
         element: <ClassReviewPage />,
         handle: { breadcrumb: "Đánh giá lớp học" },
+        path: "classes/:classId/quizzes/:quizId/attempt",
+        element: <StudentQuizAttemptPage />,
+        handle: { breadcrumb: "Làm bài quiz" },
       },
       {
         path: "classes/:classId/lessons/:lessonId/quiz",

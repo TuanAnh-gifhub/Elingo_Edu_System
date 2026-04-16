@@ -5,13 +5,18 @@ const DEFAULT_JITSI_SCRIPT_SRC =
 let scriptLoadingPromise: Promise<void> | null = null;
 
 export interface JitsiRoomOptions {
-  classId: string;
+  roomName: string;
   parentNode: HTMLElement;
   displayName?: string;
+  roomPassword?: string;
+  jwt?: string;
+  isModerator?: boolean;
 }
 
 export interface JitsiApi {
   dispose?: () => void;
+  addListener?: (event: string, listener: () => void) => void;
+  executeCommand?: (command: string, ...args: unknown[]) => void;
 }
 
 type JitsiCtor = new (
@@ -19,6 +24,7 @@ type JitsiCtor = new (
   options: {
     roomName: string;
     parentNode: HTMLElement;
+    jwt?: string;
     userInfo?: {
       displayName?: string;
     };
@@ -63,9 +69,12 @@ export const loadJitsiScript = async (): Promise<void> => {
 };
 
 export const createJitsiRoom = async ({
-  classId,
+  roomName,
   parentNode,
   displayName,
+  roomPassword,
+  jwt,
+  isModerator,
 }: JitsiRoomOptions): Promise<JitsiApi> => {
   await loadJitsiScript();
 
@@ -73,17 +82,34 @@ export const createJitsiRoom = async ({
     throw new Error("Jitsi chưa sẵn sàng.");
   }
 
-  const roomName = `vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/${classId}`;
+  const fullRoomName = `vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/${roomName}`;
 
-  return new jitsiWindow.JitsiMeetExternalAPI(DEFAULT_JITSI_DOMAIN, {
-    roomName,
+  const api = new jitsiWindow.JitsiMeetExternalAPI(DEFAULT_JITSI_DOMAIN, {
+    roomName: fullRoomName,
     parentNode,
+    jwt,
     userInfo: displayName
       ? {
           displayName,
         }
       : undefined,
   });
+
+  // On 8x8/JaaS, locking room requires valid moderator privileges (typically JWT).
+  // Skip password lock when JWT/moderator context is missing to avoid "Lock failed" popup.
+  const canLockRoom = Boolean(roomPassword && isModerator && jwt);
+
+  if (canLockRoom) {
+    const applyRoomPassword = () => {
+      api.executeCommand?.("password", roomPassword);
+    };
+
+    api.addListener?.("passwordRequired", applyRoomPassword);
+
+    api.addListener?.("videoConferenceJoined", applyRoomPassword);
+  }
+
+  return api;
 };
 
 

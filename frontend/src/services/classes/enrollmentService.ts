@@ -12,6 +12,8 @@ export interface EnrollmentResponse {
   classId: string;
   className?: string;
   enrollmentDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
   price?: number;
   paymentAmount?: number;
   paymentStatus?: string;
@@ -35,8 +37,8 @@ export const enrollmentService = {
     return (res.data.result || []) as EnrollmentResponse[];
   },
 
-  async getEnrollmentsByClassForAdmin(classId: string): Promise<EnrollmentResponse[]> {
-    const res = await api.get(`/enrollments/admin/class/${classId}`);
+  async getClassEnrollments(classId: string): Promise<EnrollmentResponse[]> {
+    const res = await api.get(`/enrollments/classes/${classId}`);
     return (res.data.result || []) as EnrollmentResponse[];
   },
 };

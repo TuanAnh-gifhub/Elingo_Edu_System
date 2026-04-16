@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { FaCommentDots } from "react-icons/fa";
 import ChatList from "./ChatList";
 import MessageList from "./MessageList";
@@ -13,6 +13,8 @@ const ChatBoxHome = () => {
 
   // Với màn hình full, chat box luôn luôn active
   const isChatActiveRef = useRef(true);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const chatLogic = useChat(currentUserId, isChatActiveRef);
 
   return (
@@ -23,13 +25,23 @@ const ChatBoxHome = () => {
       <ChatList 
         {...chatLogic}
         onChatSelect={chatLogic.handleChatSelect}
+        showSettingsMenu={showSettingsMenu}
+        setShowSettingsMenu={setShowSettingsMenu}
+        settingsMenuRef={settingsMenuRef}
+        onDeleteConversation={chatLogic.handleDeleteConversationById}
+        deletingConversationId={chatLogic.deletingConversationId}
+        error={null}
         showBorder
       />
 
       <div className="flex-1 flex flex-col h-full bg-white overflow-hidden">
         {chatLogic.selectedChat ? (
           <>
-            <ChatHeader selectedChat={chatLogic.selectedChat} />
+            <ChatHeader
+              selectedChat={chatLogic.selectedChat}
+              onDeleteConversation={chatLogic.handleDeleteConversation}
+              deletingConversation={chatLogic.deletingConversation}
+            />
             <div className="flex-1 flex flex-col min-h-0 relative bg-gray-50 overflow-hidden">
             <MessageList 
                 messages={chatLogic.messages}
@@ -39,7 +51,11 @@ const ChatBoxHome = () => {
             </div>
             <MessageInput 
               {...chatLogic}
-              onFileSelect={(e: any) => {
+              imagePreview={null}
+              setImagePreview={() => {}}
+              isRecording={false}
+              onVoiceRecord={() => {}}
+              onFileSelect={(e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (file)
                   chatLogic.setSelectedFiles([
@@ -47,6 +63,7 @@ const ChatBoxHome = () => {
                   ]);
               }}
               onRemoveFile={() => chatLogic.setSelectedFiles([])}
+              onRemoveImagePreview={() => {}}
               onClearAllFiles={() => chatLogic.setSelectedFiles([])}
             />
           </>

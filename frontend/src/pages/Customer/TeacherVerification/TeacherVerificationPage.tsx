@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
   teacherService,
@@ -24,6 +24,44 @@ const INITIAL_FORM: FormState = {
   portfolioLink: "",
 };
 
+const MAX_CERTIFICATE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_CERTIFICATE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+const ALLOWED_CERTIFICATE_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
+
+const getFileExtension = (fileName: string) => {
+  const dotIndex = fileName.lastIndexOf(".");
+  return dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : "";
+};
+
+const isAllowedCertificateFile = (file: File) => {
+  const extension = getFileExtension(file.name);
+  return (
+    ALLOWED_CERTIFICATE_MIME_TYPES.includes(file.type.toLowerCase()) ||
+    ALLOWED_CERTIFICATE_EXTENSIONS.includes(extension)
+  );
+};
+
+const isPdfUrl = (url: string) => /\.pdf(?:$|[?#])/i.test(url);
+
+const normalizeVietnamPhone = (value: string): string | undefined => {
+  const compact = value.replace(/[\s.-]/g, "").trim();
+  if (!compact) {
+    return undefined;
+  }
+
+  if (compact.startsWith("+84")) {
+    return `0${compact.slice(3)}`;
+  }
+
+  return compact;
+};
+
 const TeacherVerificationPage = () => {
   const { user, isAuthenticated, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -33,6 +71,10 @@ const TeacherVerificationPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [certificateFiles, setCertificateFiles] = useState<string[]>([]);
+  const [commitSkillAuthenticity, setCommitSkillAuthenticity] = useState(false);
+  const [commitCertificateAuthenticity, setCommitCertificateAuthenticity] =
+    useState(false);
+  const certificateInputRef = useRef<HTMLInputElement>(null);
   const [myRequest, setMyRequest] = useState<TeacherVerificationResponse | null>(
     null,
   );
@@ -129,14 +171,41 @@ const TeacherVerificationPage = () => {
     setErrorMessage("");
     setSuccessMessage("");
 
+    const selectedFiles = Array.from(fileList);
+    const oversizedFiles = selectedFiles.filter(
+      (file) => file.size > MAX_CERTIFICATE_SIZE,
+    );
+    const invalidTypeFiles = selectedFiles.filter(
+      (file) => !isAllowedCertificateFile(file),
+    );
+    const validFiles = selectedFiles.filter(
+      (file) => file.size <= MAX_CERTIFICATE_SIZE && isAllowedCertificateFile(file),
+    );
+
+    if (oversizedFiles.length > 0 || invalidTypeFiles.length > 0) {
+      const invalidNames = [
+        ...oversizedFiles.map((file) => `${file.name} (vượt quá 10MB)`),
+        ...invalidTypeFiles
+          .filter(
+            (file) => !oversizedFiles.some((oversized) => oversized.name === file.name),
+          )
+          .map((file) => `${file.name} (không đúng định dạng)`),
+      ];
+
+      setErrorMessage(
+        `Một số file không hợp lệ: ${invalidNames.join(", ")}. Chỉ nhận JPG/PNG/WebP/PDF, tối đa 10MB mỗi file.`,
+      );
+    }
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
     try {
       setUploading(true);
-      const uploadTasks = Array.from(fileList).map((file) =>
-        teacherService.uploadCertificate(file),
-      );
-      const uploadedUrls = await Promise.all(uploadTasks);
+      const uploadedUrls = await teacherService.uploadCertificates(validFiles);
 
-      setCertificateFiles((prev) => [...prev, ...uploadedUrls]);
+      setCertificateFiles((prev) => Array.from(new Set([...prev, ...uploadedUrls])));
       setSuccessMessage(`Đã upload ${uploadedUrls.length} file chứng chỉ.`);
     } catch (error: unknown) {
       const message =
@@ -162,7 +231,12 @@ const TeacherVerificationPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.fullName.trim() || !form.bio.trim() || !form.expertise.trim() || !form.experience.trim()) {
+    if (
+      !form.fullName.trim() ||
+      !form.bio.trim() ||
+      !form.expertise.trim() ||
+      !form.experience.trim()
+    ) {
       setErrorMessage("Vui lòng điền đầy đủ thông tin bắt buộc.");
       return;
     }
@@ -172,14 +246,21 @@ const TeacherVerificationPage = () => {
       return;
     }
 
+    if (!commitSkillAuthenticity || !commitCertificateAuthenticity) {
+      setErrorMessage("Vui lòng tích chọn đầy đủ các cam kết trước khi gửi yêu cầu.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
+      const normalizedPhone = normalizeVietnamPhone(form.phone);
+
       const request = await teacherService.submitVerificationRequest({
         fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
+        phone: normalizedPhone,
         bio: form.bio.trim(),
         expertise: form.expertise.trim(),
         experience: form.experience.trim(),
@@ -192,6 +273,8 @@ const TeacherVerificationPage = () => {
       setSuccessMessage("Gửi yêu cầu xác minh giáo viên thành công.");
       setForm(INITIAL_FORM);
       setCertificateFiles([]);
+      setCommitSkillAuthenticity(false);
+      setCommitCertificateAuthenticity(false);
     } catch (error: unknown) {
       const message =
         typeof error === "object" &&
@@ -301,28 +384,62 @@ const TeacherVerificationPage = () => {
           />
 
           <div className="rounded-xl border border-slate-200 p-3 space-y-2">
-            <input
-              type="file"
-              multiple
-              accept="image/*,.pdf"
-              onChange={(event) => {
-                handleUploadCertificate(event.target.files);
-                event.target.value = "";
-              }}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={certificateInputRef}
+                type="file"
+                multiple
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
+                className="hidden"
+                onChange={(event) => {
+                  handleUploadCertificate(event.target.files);
+                  event.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => certificateInputRef.current?.click()}
+                disabled={uploading}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Chọn nhiều file chứng chỉ
+              </button>
+              <span className="text-xs text-slate-500">
+                Đã upload: {certificateFiles.length} file
+              </span>
+            </div>
             <p className="text-xs text-slate-500">Hỗ trợ JPG/PNG/WebP/PDF. Tối đa 10MB mỗi file.</p>
             {uploading ? <p className="text-xs text-sky-700">Đang upload...</p> : null}
             {certificateFiles.length > 0 ? (
-              <ul className="space-y-1">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {certificateFiles.map((url, index) => (
-                  <li key={`${url}-${index}`} className="flex items-center justify-between gap-2 text-sm">
-                    <a href={url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline break-all">
+                  <li
+                    key={`${url}-${index}`}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-2"
+                  >
+                    {isPdfUrl(url) ? (
+                      <div className="mb-2 rounded-md border border-slate-200 bg-white px-3 py-4 text-center text-xs text-slate-500">
+                        PDF Preview
+                      </div>
+                    ) : (
+                      <img
+                        src={url}
+                        alt={`Chứng chỉ ${index + 1}`}
+                        className="mb-2 h-28 w-full rounded-md object-cover bg-white"
+                      />
+                    )}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-xs text-blue-700 hover:underline break-all"
+                    >
                       Chứng chỉ {index + 1}
                     </a>
                     <button
                       type="button"
                       onClick={() => removeCertificate(url)}
-                      className="text-rose-600 hover:underline"
+                      className="mt-1 text-xs text-rose-600 hover:underline"
                     >
                       Xóa
                     </button>
@@ -330,6 +447,33 @@ const TeacherVerificationPage = () => {
                 ))}
               </ul>
             ) : null}
+          </div>
+
+          <div className="rounded-xl border border-slate-200 p-3 space-y-2">
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={commitSkillAuthenticity}
+                onChange={(event) => setCommitSkillAuthenticity(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                Cam kết rằng những kỹ năng chuyên môn của bạn là đúng với những gì bạn khai báo.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={commitCertificateAuthenticity}
+                onChange={(event) => setCommitCertificateAuthenticity(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                Cam kết rằng bằng giảng dạy của bạn đúng với kinh nghiệm và chuyên môn của bạn,
+                không giả mạo.
+              </span>
+            </label>
           </div>
 
           <button

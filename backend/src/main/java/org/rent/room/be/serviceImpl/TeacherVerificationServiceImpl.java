@@ -78,10 +78,10 @@ public class TeacherVerificationServiceImpl implements TeacherVerificationServic
     @Transactional(readOnly = true)
     public TeacherVerificationResponse getMyRequest() {
         User currentUser = userService.getCurrentUserEntity();
-        TeacherVerificationRequest entity = teacherVerificationRequestRepository
+        return teacherVerificationRequestRepository
                 .findTopByUserUserIdOrderByCreatedAtDesc(currentUser.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_VERIFICATION_NOT_FOUND));
-        return toResponse(entity);
+                .map(this::toResponse)
+                .orElse(null);
     }
 
     @Override
@@ -148,6 +148,25 @@ public class TeacherVerificationServiceImpl implements TeacherVerificationServic
     @Override
     public String uploadCertificate(MultipartFile file) {
         validateCertificateMultipart(file);
+        return uploadSingleCertificate(file);
+    }
+
+    @Override
+    public List<String> uploadCertificates(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new AppException(ErrorCode.CERTIFICATE_REQUIRED);
+        }
+
+        List<String> uploadedUrls = new ArrayList<>();
+        for (MultipartFile file : files) {
+            validateCertificateMultipart(file);
+            uploadedUrls.add(uploadSingleCertificate(file));
+        }
+
+        return uploadedUrls;
+    }
+
+    private String uploadSingleCertificate(MultipartFile file) {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = uploadService.uploadImage(file);
@@ -196,8 +215,30 @@ public class TeacherVerificationServiceImpl implements TeacherVerificationServic
 
     private void validateCertificateUrl(String fileUrl) {
         String extension = extractExtension(fileUrl).toLowerCase(Locale.ROOT);
-        if (!ALLOWED_CERTIFICATE_EXTENSIONS.contains(extension)) {
+        if (!ALLOWED_CERTIFICATE_EXTENSIONS.contains(extension) && !isTrustedCloudinaryCertificateUrl(fileUrl)) {
             throw new AppException(ErrorCode.INVALID_CERTIFICATE_FILE);
+        }
+    }
+
+    private boolean isTrustedCloudinaryCertificateUrl(String fileUrl) {
+        try {
+            URI uri = new URI(fileUrl);
+            String host = uri.getHost();
+            String path = uri.getPath();
+
+            if (!StringUtils.hasText(host) || !StringUtils.hasText(path)) {
+                return false;
+            }
+
+            String normalizedHost = host.toLowerCase(Locale.ROOT);
+            if (!normalizedHost.endsWith("res.cloudinary.com")) {
+                return false;
+            }
+
+            String normalizedPath = path.toLowerCase(Locale.ROOT);
+            return normalizedPath.contains("/image/upload/") || normalizedPath.contains("/raw/upload/");
+        } catch (URISyntaxException e) {
+            return false;
         }
     }
 

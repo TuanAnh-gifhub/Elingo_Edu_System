@@ -19,7 +19,6 @@ import {
   FaTiktok,
   FaFacebook,
 } from "react-icons/fa";
-import {  message } from "antd";
 import type { TeacherProfileDto } from "../../../services/teachers/teacherService";
 interface AboutUsProps {
   isDarkMode?: boolean;
@@ -27,22 +26,22 @@ interface AboutUsProps {
   variant?: "section" | "page";
 }
 
-const AboutUs = ({ isDarkMode, teacherProfiles = [], variant = "page" }: AboutUsProps) => {
+const AboutUs = ({ 
+  isDarkMode = false, 
+  teacherProfiles = [], 
+  variant = "page" // Lấy thêm variant từ Develop
+}: AboutUsProps) => {
+  // Lấy các State phục vụ tính năng từ nhánh Develop
   const [messageApi, contextHolder] = message.useMessage();
   const [isVisible, setIsVisible] = useState(true);
   const [email, setEmail] = useState("");
+  
+  // Logic xử lý Dark Mode nội bộ từ Develop (rất hữu ích để lưu cấu hình người dùng)
   const [internalDarkMode, setInternalDarkMode] = useState(() => {
     return localStorage.getItem("landing_dark_mode") === "true";
   });
   const aboutUsRef = useRef<HTMLDivElement>(null);
   const resolvedDarkMode = typeof isDarkMode === "boolean" ? isDarkMode : internalDarkMode;
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    messageApi.success("Cảm ơn bạn đã đăng ký nhận ưu đãi!");
-    console.log("Subscribing with email:", email);
-    setEmail("");
-  };
 
   useEffect(() => {
     const handleDarkModeChange = (event: Event) => {

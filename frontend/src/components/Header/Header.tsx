@@ -38,10 +38,6 @@ const HEADER_CONFIG = { MIN_HEIGHT: 64 } as const;
 
 const ICON_BUTTON_CLASS =
   "relative w-9 h-9 md:w-10 md:h-10 grid place-items-center rounded-full border border-transparent hover:border-[#4da6ff] shadow-sm hover:shadow-md hover:scale-105 transition-transform duration-300 ease-in-out origin-center will-change-transform";
-const PRIMARY_BUTTON_CLASS =
-  "px-1.5 md:px-4 py-1.5 md:py-2 font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out border hover:border-[#4da6ff]";
-const BUTTON_TEXT_HOVER_CLASS =
-  "text-[11px] md:text-xs whitespace-nowrap inline-block hover:scale-110 transition-transform duration-300 ease-in-out";
 
 const NAV_LINKS = [
   { to: "/", label: "Trang chủ" },
@@ -323,6 +319,10 @@ const Header = () => {
                   }}
                 />
                 {NAV_LINKS.map((item) => {
+                  const navTextClass = isHeaderTransparent
+                    ? "text-white! hover:text-white! visited:text-white! focus:text-white!"
+                    : "text-[#2563eb]! hover:text-[#2563eb]! visited:text-[#2563eb]! focus:text-[#2563eb]!";
+
                   return (
                     <Link
                       ref={(el) => {
@@ -335,11 +335,11 @@ const Header = () => {
                         setHoveredNavPath(item.to);
                         handleNavPointerEnter(item.to);
                       }}
-                      className="relative isolate inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold leading-none !text-[#2563eb] hover:!text-[#2563eb] visited:!text-[#2563eb] focus:!text-[#2563eb] transition-colors duration-200 select-none"
+                      className={`relative isolate inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold leading-none ${navTextClass} transition-colors duration-200 select-none`}
                     >
                       <motion.span
                         transition={{ duration: 0.18 }}
-                        className="relative z-20 !text-[#2563eb]"
+                        className={`relative z-20 ${isHeaderTransparent ? "text-white!" : "text-[#2563eb]!"}`}
                       >
                         {item.label}
                       </motion.span>
@@ -418,20 +418,6 @@ const Header = () => {
                         </span>
                       )}
                     </button>
-
-                    {/* Đăng phòng */}
-                    <button
-                      onClick={() => requireAuth(() => navigate("/post-item"))}
-                      className={`${PRIMARY_BUTTON_CLASS} inline-flex items-center justify-center h-10 md:h-11 px-3 md:px-5 py-2 md:py-2.5 bg-[#4da6ff]/70 hover:bg-[#4da6ff]/90 text-white border-[#4da6ff]/50 hover:border-[#4da6ff]`}
-                      title="Đăng tin"
-                    >
-                      <span
-                        className={`${BUTTON_TEXT_HOVER_CLASS} leading-none`}
-                      >
-                        Đăng phòng
-                      </span>
-                    </button>
-
                     {/* --- 5. USER MENU MỚI --- */}
                     {isLoading ? (
                       // Skeleton Loader khi đang check Auth từ Context

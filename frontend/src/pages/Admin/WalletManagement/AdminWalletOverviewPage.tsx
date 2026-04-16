@@ -200,10 +200,10 @@ const AdminWalletOverviewPage = () => {
                       <td className="p-2 border">{item.userName}</td>
                       <td className="p-2 border">{item.userEmail}</td>
                       <td className="p-2 border">
-                        {Number(item.balance).toLocaleString("vi-VN")} đ
+                        {Number(item.balance).toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-2 border">
-                        {Number(item.frozenAmount).toLocaleString("vi-VN")} đ
+                        {Number(item.frozenAmount).toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-2 border">{item.walletStatus}</td>
                     </tr>
@@ -325,7 +325,7 @@ const AdminWalletOverviewPage = () => {
                       <td className="p-2 border">{item.type}</td>
                       <td className="p-2 border">{item.status}</td>
                       <td className="p-2 border">
-                        {Number(item.amount).toLocaleString("vi-VN")} đ
+                        {Number(item.amount).toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-2 border">{item.description || "-"}</td>
                     </tr>
@@ -408,14 +408,14 @@ const AdminWalletOverviewPage = () => {
                       <td className="p-2 border">{item.ownerName || "-"}</td>
                       <td className="p-2 border">{item.renterName || "-"}</td>
                       <td className="p-2 border">
-                        {Number(item.grossAmount).toLocaleString("vi-VN")} đ
+                        {Number(item.grossAmount).toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-2 border">
                         {(Number(item.commissionRate || 0) * 100).toFixed(2)}% (
-                        {Number(item.commissionAmount).toLocaleString("vi-VN")} đ)
+                        {Number(item.commissionAmount).toLocaleString("vi-VN")} VNĐ)
                       </td>
                       <td className="p-2 border">
-                        {Number(item.netAmount).toLocaleString("vi-VN")} đ
+                        {Number(item.netAmount).toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-2 border">
                         {item.expectedReleaseAt

@@ -24,4 +24,6 @@ public interface TeacherVerificationService {
     TeacherVerificationResponse review(UUID id, TeacherVerificationStatus status, String adminNote);
 
     String uploadCertificate(MultipartFile file);
+
+    List<String> uploadCertificates(List<MultipartFile> files);
 }

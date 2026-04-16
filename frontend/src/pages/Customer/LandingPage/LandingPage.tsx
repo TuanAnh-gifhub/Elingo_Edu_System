@@ -239,8 +239,8 @@ const LandingPage = () => {
   const handleCategoryClick = (type: string) => {
     setSelectedCategory(type);
     const params = new URLSearchParams();
-    params.set('type', type);
-    navigate(`/products?${params.toString()}`);
+    params.set('keyword', type);
+    navigate(`/classes?${params.toString()}`);
   };
 
   const [teacherProfiles, setTeacherProfiles] = useState<TeacherProfileDto[]>([]);
@@ -509,7 +509,7 @@ const LandingPage = () => {
         <div id="official-stores" ref={officialStoresRef} className="max-w-7xl mx-auto p-8">
           <div className="text-center mb-12">
             <h1 className="text-xl md:text-2xl font-bold mb-4 text-[#4da6ff]">
-              <ScrambleText text="Đặt Lớp Học Trực Tuyến" triggerKey={decodeOfficialStores} />
+              <ScrambleText text="Lớp Học Trực Tuyến" triggerKey={decodeOfficialStores} />
             </h1>
           </div>
 
@@ -566,10 +566,10 @@ const LandingPage = () => {
                     listingId={room.listingId}
                     title={room.title}
                     location={room.location}
-                    capacity="8-12 people"
-                    price={Math.round(room.price / 23000)}
+                    capacity={room.capacity || "Lớp học"}
+                    price={room.price}
                     image={room.image}
-                    feature={{ icon: FaUsers, label: "Equipped" }}
+                    feature={room.feature}
                   />
                 ))}
               </div>
@@ -696,7 +696,7 @@ const LandingPage = () => {
                 onClick={() => setShowAllStores(!showAllStores)}
                 className={`border px-6 py-2 rounded-lg hover:scale-105 hover:shadow-lg transition-all duration-300 font-medium ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]' : 'border-gray-300 bg-white text-gray-700 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]'}`}
               >
-                Xem thêm 3 địa điểm
+                Xem thêm giáo viên
               </button>
             </div>
           )}

@@ -12,7 +12,7 @@ import { useAuth } from "../../../context/AuthContext";
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
 
 const formatCurrency = (amount: number) =>
-  Number(amount).toLocaleString("vi-VN") + " ₫";
+  Number(amount).toLocaleString("vi-VN") + " VNĐ";
 
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString("vi-VN", {

@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import {
   classRoomService,
   type ClassWalletDto,
+  type ClassWalletTransactionDto,
   type ClassRoomDto,
   type OnlineClassAccessDto,
   type UpdateClassRoomRequest,
@@ -455,8 +456,13 @@ const TeacherClassManagePage = () => {
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [loadingClassWallet, setLoadingClassWallet] = useState(true);
+  const [loadingClassWalletTransactions, setLoadingClassWalletTransactions] =
+    useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
   const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
+  const [classWalletTransactions, setClassWalletTransactions] = useState<
+    ClassWalletTransactionDto[]
+  >([]);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
@@ -581,6 +587,27 @@ const TeacherClassManagePage = () => {
     };
 
     loadClassWallet();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWalletTransactions = async () => {
+      try {
+        setLoadingClassWalletTransactions(true);
+        const transactions =
+          await classRoomService.getClassWalletTransactions(classId);
+        setClassWalletTransactions(transactions);
+      } catch {
+        setClassWalletTransactions([]);
+      } finally {
+        setLoadingClassWalletTransactions(false);
+      }
+    };
+
+    loadClassWalletTransactions();
   }, [classId]);
 
   useEffect(() => {
@@ -1361,6 +1388,12 @@ const TeacherClassManagePage = () => {
       setClaimingClassWallet(true);
       const claimedWallet = await classRoomService.claimClassWallet(classId);
       setClassWallet(claimedWallet);
+
+      const transactions = await classRoomService.getClassWalletTransactions(
+        classId,
+      );
+      setClassWalletTransactions(transactions);
+
       toast.success("Nhận tiền từ ví lớp thành công.");
     } catch (error) {
       const message =
@@ -1527,6 +1560,87 @@ const TeacherClassManagePage = () => {
             >
               {claimingClassWallet ? "Đang nhận tiền..." : "Nhận tiền ví lớp"}
             </button>
+          </div>
+
+          <div className="md:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Lịch sử giao dịch ví lớp
+              </h3>
+              <span className="text-xs text-slate-500">
+                Tiền vào ví lớp / tiền đã nhận
+              </span>
+            </div>
+
+            {loadingClassWalletTransactions ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Đang tải lịch sử giao dịch...
+              </p>
+            ) : classWalletTransactions.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Chưa có giao dịch ví lớp.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-slate-500">
+                      <th className="pb-2">Thời gian</th>
+                      <th className="pb-2">Loại</th>
+                      <th className="pb-2">Số tiền</th>
+                      <th className="pb-2">Người học</th>
+                      <th className="pb-2">Mô tả</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classWalletTransactions.map((tx) => {
+                      const isInflow = tx.transactionType === "CLASS_WALLET_IN";
+                      return (
+                        <tr
+                          key={tx.transactionId}
+                          className="border-b border-slate-100"
+                        >
+                          <td className="py-3 pr-2 text-slate-600">
+                            {tx.transactionTime
+                              ? new Date(tx.transactionTime).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "-"}
+                          </td>
+                          <td className="py-3 pr-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                isInflow
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {isInflow
+                                ? "Tiền vào ví lớp"
+                                : "Tiền đã nhận"}
+                            </span>
+                          </td>
+                          <td
+                            className={`py-3 pr-2 font-semibold ${
+                              isInflow ? "text-emerald-700" : "text-amber-700"
+                            }`}
+                          >
+                            {isInflow ? "+" : "-"}
+                            {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
+                          </td>
+                          <td className="py-3 pr-2 text-slate-700">
+                            {tx.studentName || "-"}
+                          </td>
+                          <td className="py-3 text-slate-600">
+                            {tx.description || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-white to-cyan-50/60 p-5 shadow-sm space-y-4">

@@ -40,6 +40,15 @@ export interface ClassWalletDto {
   claimedAt?: string;
 }
 
+export interface ClassWalletTransactionDto {
+  transactionId: string;
+  transactionType: "CLASS_WALLET_IN" | "CLASS_WALLET_OUT" | string;
+  amount: number;
+  transactionTime?: string;
+  studentName?: string;
+  description?: string;
+}
+
 export interface CreateClassRoomRequest {
   className: string;
   description: string;
@@ -156,6 +165,13 @@ export const classRoomService = {
   async claimClassWallet(classId: string): Promise<ClassWalletDto> {
     const res = await api.post(`/classes/${classId}/wallet/claim`);
     return res.data.result as ClassWalletDto;
+  },
+
+  async getClassWalletTransactions(
+    classId: string,
+  ): Promise<ClassWalletTransactionDto[]> {
+    const res = await api.get(`/classes/${classId}/wallet/transactions`);
+    return (res.data.result || []) as ClassWalletTransactionDto[];
   },
 
   async deleteClass(classId: string): Promise<string> {

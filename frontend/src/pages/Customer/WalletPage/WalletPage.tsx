@@ -4,7 +4,6 @@ import WalletCard from "./WalletCard";
 import WalletHistory from "./WalletHistory";
 import WalletPromotion from "./WalletPromotion";
 import ParallaxBackground from "../LandingPage/ParallaxBackground";
-import Footer from "../../../components/Footer/Footer";
 import {
   FaCoins,
   FaMobileAlt,
@@ -738,9 +737,6 @@ const WalletPage = () => {
                 {/* Feature Content */}
                 {renderFeature()}
             </div>
-
-            {/* Footer */}
-            <Footer isDarkMode={isDarkMode} />
         </div>
     );
 };

@@ -5,6 +5,11 @@ import {
   classRoomService,
   type ClassRoomDto,
 } from "../../../services/classes/classRoomService";
+import {
+  reviewService,
+  type ReviewDto,
+  type ReviewSummaryDto,
+} from "../../../services/reviews/reviewService";
 import RichTextContent from "../../../components/common/RichTextContent";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { walletService } from "../../../services/wallet/walletService";
@@ -43,6 +48,12 @@ const ClassDetailPage = () => {
   const [enrolling, setEnrolling] = useState(false);
   const [showConfirmEnroll, setShowConfirmEnroll] = useState(false);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummaryDto | null>(
+    null,
+  );
+  const [recentReviews, setRecentReviews] = useState<ReviewDto[]>([]);
 
   const isStudent = useMemo(() => isStudentRole(user?.role), [user?.role]);
   const hasClassEnded = useMemo(() => {
@@ -97,11 +108,42 @@ const ClassDetailPage = () => {
     checkEnrollment();
   }, [classId, isStudent, user?.userId]);
 
-  useEffect(() => {
+useEffect(() => {
     if (hasClassEnded) {
       setShowConfirmEnroll(false);
     }
   }, [hasClassEnded]);
+
+  // Logic tải đánh giá lớp học (Từ nhánh nhanhmoi)
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadReviews = async () => {
+      setReviewLoading(true);
+      setReviewError(null);
+
+      try {
+        const [summaryRes, reviewPageRes] = await Promise.all([
+          reviewService.getClassReviewSummary(classId),
+          reviewService.getClassReviews(classId, 0, 5),
+        ]);
+
+        setReviewSummary(summaryRes);
+        setRecentReviews(reviewPageRes.data || []);
+      } catch (error) {
+        console.error("Failed to load class reviews", error);
+        setReviewError("Không thể tải đánh giá khóa học.");
+        setReviewSummary(null);
+        setRecentReviews([]);
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    void loadReviews();
+  }, [classId]);
 
   const handleConfirmEnroll = async () => {
     if (!classId || !clazz) {
@@ -214,28 +256,65 @@ const ClassDetailPage = () => {
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasClassEnded) {
-                      toast.error("Lớp học đã kết thúc, không thể nhập học.");
-                      return;
-                    }
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasClassEnded) {
+                        toast.error("Lớp học đã kết thúc, không thể nhập học.");
+                        return;
+                      }
 
-                    setShowConfirmEnroll(true);
-                  }}
-                  disabled={checkingEnrollment || enrolling || hasClassEnded}
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
-                >
-                  {hasClassEnded
-                    ? "Lớp đã kết thúc"
-                    : enrolling
-                      ? "Đang xử lý..."
-                      : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ`}
-                </button>
+                      setShowConfirmEnroll(true);
+                    }}
+                    disabled={checkingEnrollment || enrolling || hasClassEnded}
+                    className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                  >
+                    {hasClassEnded
+                      ? "Lớp đã kết thúc"
+                      : enrolling
+                        ? "Đang xử lý..."
+                        : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+                    className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700"
+                  >
+                    Xem đánh giá lớp
+                  </button>
+                </div>
               )
             ) : (
-              <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+<div className="space-y-2">
+  {/* Nút 1: Luôn luôn cho phép xem đánh giá (Lấy từ nhánh Develop) */}
+  <button
+    type="button"
+    onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+    className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 transition-colors"
+  >
+    Xem đánh giá lớp
+  </button>
+
+  {/* Nút 2: Nút hành động chính (Lấy logic từ nhánh fix/layout) */}
+  <button
+    type="button"
+    // QUAN TRỌNG: Nút này phải gọi hàm handleEnroll hoặc navigate tới trang thanh toán, KHÔNG dẫn vào /reviews
+    onClick={() => navigate(`/checkout/${clazz.classId}`)} 
+    disabled={hasClassEnded || enrolling}
+    className={`w-full rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all ${
+      hasClassEnded ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
+    }`}
+  >
+    {hasClassEnded
+      ? "Lớp đã kết thúc"
+      : enrolling
+        ? "Đang xử lý..."
+        : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ`}
+  </button>
+
+  <p className="text-xs text-slate-500 text-center">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+</div>
             )}
             {isStudent && !isEnrolled && hasClassEnded ? (
               <p className="text-xs text-rose-600">Lớp đã kết thúc nên không thể thanh toán để nhập học.</p>
@@ -254,6 +333,52 @@ const ClassDetailPage = () => {
             <span className="font-medium">Email:</span> {clazz.teacherEmail || "Đang cập nhật"}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-lg font-semibold text-slate-900">Đánh giá khóa học</h2>
+          <button
+            type="button"
+            onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+            className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-700"
+          >
+            Xem tất cả đánh giá
+          </button>
+        </div>
+
+        {reviewSummary ? (
+          <div className="text-sm text-slate-600">
+            Điểm trung bình: <span className="font-semibold">{reviewSummary.averageRating.toFixed(1)}/5</span>
+            {" "}({reviewSummary.totalReviews} đánh giá)
+          </div>
+        ) : null}
+
+        {reviewLoading ? <p className="text-sm text-slate-500">Đang tải đánh giá...</p> : null}
+        {reviewError ? <p className="text-sm text-rose-600">{reviewError}</p> : null}
+
+        {!reviewLoading && !reviewError && recentReviews.length === 0 ? (
+          <p className="text-sm text-slate-500">Chưa có đánh giá nào cho khóa học này.</p>
+        ) : null}
+
+        {!reviewLoading && !reviewError && recentReviews.length > 0 ? (
+          <div className="space-y-3">
+            {recentReviews.map((review) => (
+              <article key={review.id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="font-semibold text-slate-900">{review.userName}</div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(review.createdAt).toLocaleString("vi-VN")}
+                  </div>
+                </div>
+                <div className="text-sm text-amber-600 mt-1">
+                  {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                </div>
+                <p className="text-sm text-slate-700 mt-2 whitespace-pre-line">{review.comment}</p>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {showConfirmEnroll ? (

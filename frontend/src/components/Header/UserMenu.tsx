@@ -7,7 +7,6 @@ import {
   FiLogOut,
   FiChevronDown,
   FiCreditCard,
-  FiFileText,
   FiStar,
 } from "react-icons/fi";
 
@@ -118,7 +117,7 @@ const UserMenu = ({ isLoggedIn, user, onLoginClick, onLogoutClick, isHeaderTrans
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition-colors"
             >
               <FiHeart className="w-4 h-4" />
-              Phòng yêu thích
+              Lớp học yêu thích
             </Link>
 
             <Link

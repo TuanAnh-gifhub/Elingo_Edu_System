@@ -7,7 +7,6 @@ import {
 } from "../../../services/subscription/subscriptionService";
 import { walletService } from "../../../services/wallet/walletService";
 import ParallaxBackground from "../LandingPage/ParallaxBackground";
-import Footer from "../../../components/Footer/Footer";
 import { useAuth } from "../../../context/AuthContext";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
@@ -52,11 +51,13 @@ const PackageCard = ({
   onPurchase,
   purchasing,
   isDarkMode,
+  isCurrentActive,
 }: {
   pkg: PackageResponse;
   onPurchase: (id: string) => void;
   purchasing: string | null;
   isDarkMode: boolean;
+  isCurrentActive: boolean;
 }) => {
   const isPurchasing = purchasing === pkg.packageId;
 
@@ -73,13 +74,20 @@ const PackageCard = ({
 
       <div className="p-6">
         {/* Name */}
-        <h3
-          className={`text-xl font-bold mb-1 ${
-            isDarkMode ? "text-white" : "text-gray-900"
-          }`}
-        >
-          {pkg.name}
-        </h3>
+        <div className="mb-1 flex items-center gap-2 flex-wrap">
+          <h3
+            className={`text-xl font-bold ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {pkg.name}
+          </h3>
+          {isCurrentActive ? (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+              Đang sử dụng
+            </span>
+          ) : null}
+        </div>
 
         {/* Description */}
         {pkg.description && (
@@ -148,11 +156,17 @@ const PackageCard = ({
 
         {/* Buy Button */}
         <button
-          onClick={() => onPurchase(pkg.packageId)}
-          disabled={isPurchasing}
+          onClick={() => {
+            if (!isCurrentActive) {
+              onPurchase(pkg.packageId);
+            }
+          }}
+          disabled={isPurchasing || isCurrentActive}
           className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#4da6ff] to-[#7c3aed] hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-[#4da6ff]/30"
         >
-          {isPurchasing ? (
+          {isCurrentActive ? (
+            "Đang sử dụng"
+          ) : isPurchasing ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -245,6 +259,12 @@ const SubscriptionPage = () => {
       setPurchaseError("Vui lòng đăng nhập để mua gói.");
       return;
     }
+
+    if (activeSubscription?.status === "ACTIVE" && activeSubscription.packageId === packageId) {
+      setPurchaseError("Bạn đang sử dụng gói này. Vui lòng chờ hết hạn để mua lại.");
+      return;
+    }
+
     setPurchasing(packageId);
     setPurchaseError(null);
     setPurchaseSuccess(null);
@@ -253,12 +273,18 @@ const SubscriptionPage = () => {
     setInsufficientPackageName(null);
 
     const selectedPackage = packages.find((pkg) => pkg.packageId === packageId);
+    const previousActiveSubscription = activeSubscription;
 
     try {
       const res = await subscriptionService.purchasePackage(packageId);
       const sub = res.data.result;
+      const switchedFromAnotherPackage =
+        previousActiveSubscription && previousActiveSubscription.packageId !== packageId;
+
       setPurchaseSuccess(
-        `Mua gói thành công! Gói "${sub.packageName}" có hiệu lực đến ${formatDate(sub.endDate)}.`
+        switchedFromAnotherPackage
+          ? `Đã chuyển từ gói "${previousActiveSubscription.packageName}" sang gói "${sub.packageName}". Hiệu lực đến ${formatDate(sub.endDate)}.`
+          : `Mua gói thành công! Gói "${sub.packageName}" có hiệu lực đến ${formatDate(sub.endDate)}.`,
       );
       await fetchData();
       setTab("history");
@@ -436,6 +462,7 @@ const SubscriptionPage = () => {
                     onPurchase={handlePurchase}
                     purchasing={purchasing}
                     isDarkMode={isDarkMode}
+                    isCurrentActive={activeSubscription?.status === "ACTIVE" && activeSubscription.packageId === pkg.packageId}
                   />
                 ))}
               </div>
@@ -558,8 +585,6 @@ const SubscriptionPage = () => {
           </div>
         )}
       </div>
-
-      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 };

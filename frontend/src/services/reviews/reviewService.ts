@@ -2,6 +2,7 @@ import api from "../../config/axios";
 
 export interface ReviewDto {
   id: string;
+  authorId?: string;
   classId?: string;
   className?: string;
   rating: number;
@@ -33,6 +34,11 @@ interface ApiResponse<T> {
 export interface CreateReviewPayload {
   rating: number;
   comment: string;
+}
+
+export interface UpdateReviewPayload {
+  rating?: number;
+  comment?: string;
 }
 
 export const reviewService = {
@@ -82,6 +88,21 @@ export const reviewService = {
       },
     );
     return response.data.result;
+  },
+
+  async updateReview(
+    reviewId: string,
+    payload: UpdateReviewPayload,
+  ): Promise<ReviewDto> {
+    const response = await api.put<ApiResponse<ReviewDto>>(
+      `/reviews/${reviewId}`,
+      payload,
+    );
+    return response.data.result;
+  },
+
+  async deleteReview(reviewId: string): Promise<void> {
+    await api.delete(`/reviews/${reviewId}`);
   },
 };
 

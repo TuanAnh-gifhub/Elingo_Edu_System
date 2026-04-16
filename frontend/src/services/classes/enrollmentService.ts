@@ -34,4 +34,9 @@ export const enrollmentService = {
     const res = await api.get("/enrollments/my");
     return (res.data.result || []) as EnrollmentResponse[];
   },
+
+  async getEnrollmentsByClassForAdmin(classId: string): Promise<EnrollmentResponse[]> {
+    const res = await api.get(`/enrollments/admin/class/${classId}`);
+    return (res.data.result || []) as EnrollmentResponse[];
+  },
 };

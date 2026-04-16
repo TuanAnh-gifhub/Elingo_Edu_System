@@ -19,4 +19,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     boolean existsByStudent_UserIdAndEnrolledClass_ClassId(UUID studentId, UUID classId);
 
     List<Enrollment> findByStudent_UserId(UUID studentId);
+
+    List<Enrollment> findByEnrolledClass_ClassId(UUID classId);
 }

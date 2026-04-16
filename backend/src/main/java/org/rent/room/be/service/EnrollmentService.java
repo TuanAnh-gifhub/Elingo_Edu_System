@@ -13,4 +13,6 @@ public interface EnrollmentService {
     boolean checkEnrollment(UUID classId);
 
     List<EnrollmentResponse> getMyEnrollments();
+
+    List<EnrollmentResponse> getEnrollmentsByClassId(UUID classId);
 }

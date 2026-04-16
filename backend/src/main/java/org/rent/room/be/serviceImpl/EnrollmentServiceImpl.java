@@ -161,6 +161,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollmentMapper.toResponseList(enrollmentRepository.findByStudent_UserId(student.getUserId()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EnrollmentResponse> getEnrollmentsByClassId(UUID classId) {
+        classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        return enrollmentMapper.toResponseList(enrollmentRepository.findByEnrolledClass_ClassId(classId));
+    }
+
     private boolean isStudent(User user) {
         return user.getRole() != null
                 && user.getRole().getRoleName() != null

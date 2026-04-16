@@ -55,6 +55,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     // 1. Tổng quan
     getItem(<Link to="/admin">Dashboard</Link>, "/admin", <AppstoreOutlined />),
 
+    getItem(
+      <Link to="/admin/classes">Quản lý lớp học</Link>,
+      "/admin/classes",
+      <AppstoreOutlined />,
+    ),
+
 
     // 4. Khách hàng
     getItem(

@@ -34,6 +34,7 @@ import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
 import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
 import AdminReviewManagementPage from "../pages/Admin/ReviewManagement/AdminReviewManagementPage";
+import AdminClassManagementPage from "../pages/Admin/ClassManagement/AdminClassManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -215,6 +216,10 @@ export const router = createBrowserRouter([
       {
         path: "customers",
         element: <UserManagement />,
+      },
+      {
+        path: "classes",
+        element: <AdminClassManagementPage />,
       },
       {
         path: "transactions",

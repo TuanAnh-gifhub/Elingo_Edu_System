@@ -11,11 +11,15 @@ export interface JitsiRoomOptions {
   roomPassword?: string;
   jwt?: string;
   isModerator?: boolean;
+  canUseRecording?: boolean;
+  autoStartRecording?: boolean;
+  recordingMode?: "file" | "stream";
+  onRecordingEvent?: (status: "started" | "processing" | "ready" | "failed") => void;
 }
 
 export interface JitsiApi {
   dispose?: () => void;
-  addListener?: (event: string, listener: () => void) => void;
+  addListener?: (event: string, listener: (...args: unknown[]) => void) => void;
   executeCommand?: (command: string, ...args: unknown[]) => void;
 }
 
@@ -77,6 +81,10 @@ export const createJitsiRoom = async ({
   roomPassword,
   jwt,
   isModerator,
+  canUseRecording = true,
+  autoStartRecording = false,
+  recordingMode = "file",
+  onRecordingEvent,
 }: JitsiRoomOptions): Promise<JitsiApi> => {
   await loadJitsiScript();
 
@@ -90,6 +98,24 @@ export const createJitsiRoom = async ({
 
   const fullRoomName = `vpaas-magic-cookie-65ee15fba0084777ade13da38e810287/${roomName}`;
 
+  const toolbarButtons = [
+    "microphone",
+    "camera",
+    "desktop",
+    "fullscreen",
+    "fodeviceselection",
+    "hangup",
+    "chat",
+    "settings",
+    "raisehand",
+    "videoquality",
+    "tileview",
+  ];
+
+  if (canUseRecording) {
+    toolbarButtons.push("recording");
+  }
+
   const api = new jitsiWindow.JitsiMeetExternalAPI(DEFAULT_JITSI_DOMAIN, {
     roomName: fullRoomName,
     parentNode,
@@ -102,19 +128,7 @@ export const createJitsiRoom = async ({
     interfaceConfigOverwrite: {
       HIDE_INVITE_MORE_HEADER: true,
       MOBILE_APP_PROMO: false,
-      TOOLBAR_BUTTONS: [
-        "microphone",
-        "camera",
-        "desktop",
-        "fullscreen",
-        "fodeviceselection",
-        "hangup",
-        "chat",
-        "settings",
-        "raisehand",
-        "videoquality",
-        "tileview",
-      ],
+      TOOLBAR_BUTTONS: toolbarButtons,
     },
     userInfo: displayName
       ? {
@@ -123,18 +137,64 @@ export const createJitsiRoom = async ({
       : undefined,
   });
 
-  // On 8x8/JaaS, locking room requires valid moderator privileges (typically JWT).
-  // Skip password lock when JWT/moderator context is missing to avoid "Lock failed" popup.
+  // Auto-apply password so students do not need to type manually.
+  const canAutoJoinWithPassword = Boolean(roomPassword && jwt);
   const canLockRoom = Boolean(roomPassword && isModerator && jwt);
 
-  if (canLockRoom) {
+  if (canAutoJoinWithPassword) {
     const applyRoomPassword = () => {
       api.executeCommand?.("password", roomPassword);
     };
 
     api.addListener?.("passwordRequired", applyRoomPassword);
 
-    api.addListener?.("videoConferenceJoined", applyRoomPassword);
+    // Only moderator should lock/reset the room password.
+    if (canLockRoom) {
+      api.addListener?.("videoConferenceJoined", applyRoomPassword);
+    }
+  }
+
+  const shouldAutoStartRecording = Boolean(autoStartRecording && canUseRecording && isModerator);
+
+  if (shouldAutoStartRecording) {
+    let started = false;
+
+    const startRecording = () => {
+      if (started) {
+        return;
+      }
+      started = true;
+
+      // Delay a bit so conference is fully joined before invoking recording command.
+      window.setTimeout(() => {
+        api.executeCommand?.("startRecording", {
+          mode: recordingMode,
+        });
+        onRecordingEvent?.("started");
+      }, 1200);
+    };
+
+    api.addListener?.("videoConferenceJoined", startRecording);
+  }
+
+  if (canUseRecording && onRecordingEvent) {
+    api.addListener?.("recordingStatusChanged", (...args: unknown[]) => {
+      const payload = args[0] as Record<string, unknown> | undefined;
+      const statusRaw = typeof payload?.status === "string" ? payload.status : "";
+      const status = statusRaw.toLowerCase();
+
+      if (status.includes("fail") || status.includes("error")) {
+        onRecordingEvent("failed");
+        return;
+      }
+
+      if (status.includes("ready") || status.includes("complete") || status.includes("on")) {
+        onRecordingEvent("ready");
+        return;
+      }
+
+      onRecordingEvent("processing");
+    });
   }
 
   return api;

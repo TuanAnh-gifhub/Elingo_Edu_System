@@ -98,4 +98,5 @@ jitsi:
     kid: ${JITSI_JAAS_KID:}
     private-key-pem: ${JITSI_JAAS_PRIVATE_KEY_PEM:}
     token-ttl-seconds: ${JITSI_JAAS_TOKEN_TTL_SECONDS:180}
+    webhook-secret: ${JITSI_JAAS_WEBHOOK_SECRET:}
 

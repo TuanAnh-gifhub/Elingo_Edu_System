@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaRegStar, FaStar, FaStarHalfAlt } from "react-icons/fa";
 import type { IconType } from "react-icons";
@@ -42,6 +42,10 @@ import {
   type QuizDto,
   type QuizImportResult,
 } from "../../../services/quizzes/quizService";
+import {
+  meetingRecordingService,
+  type MeetingRecordingDto,
+} from "../../../services/recordings/meetingRecordingService";
 import { createJitsiRoom, type JitsiApi } from "../../../utils/jitsiHelper";
 
 type TeacherTab =
@@ -445,6 +449,45 @@ const mapCourseToForm = (course: CourseDto): NewCourseForm => ({
   fileUrls: course.fileUrls || [],
 });
 
+const formatRecordingDuration = (durationSeconds?: number): string => {
+  if (!durationSeconds || durationSeconds <= 0) {
+    return "-";
+  }
+
+  const hours = Math.floor(durationSeconds / 3600);
+  const minutes = Math.floor((durationSeconds % 3600) / 60);
+  const seconds = durationSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+};
+
+const getRecordingStatusBadge = (status?: string) => {
+  const normalized = (status || "").toUpperCase();
+  if (normalized === "READY") {
+    return {
+      label: "Sẵn sàng",
+      className: "bg-emerald-100 text-emerald-700",
+    };
+  }
+  if (normalized === "FAILED") {
+    return {
+      label: "Thất bại",
+      className: "bg-rose-100 text-rose-700",
+    };
+  }
+
+  return {
+    label: "Đang xử lý",
+    className: "bg-amber-100 text-amber-700",
+  };
+};
+
 const TeacherClassManagePage = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
@@ -510,10 +553,29 @@ const TeacherClassManagePage = () => {
   const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [teacherRecordings, setTeacherRecordings] = useState<MeetingRecordingDto[]>([]);
+  const [loadingTeacherRecordings, setLoadingTeacherRecordings] = useState(false);
   const [claimingClassWallet, setClaimingClassWallet] = useState(false);
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
+
+  const loadTeacherRecordings = useCallback(async () => {
+    if (!classId) {
+      setTeacherRecordings([]);
+      return;
+    }
+
+    try {
+      setLoadingTeacherRecordings(true);
+      const data = await meetingRecordingService.getTeacherRecordings(classId);
+      setTeacherRecordings(data);
+    } catch {
+      setTeacherRecordings([]);
+    } finally {
+      setLoadingTeacherRecordings(false);
+    }
+  }, [classId]);
 
   useEffect(() => {
     if (!showEditClassForm) {
@@ -808,6 +870,14 @@ const TeacherClassManagePage = () => {
           parentNode: jitsiContainerRef.current as HTMLElement,
           displayName: user?.userName,
           isModerator: true,
+          canUseRecording: true,
+          autoStartRecording: true,
+          recordingMode: "file",
+          onRecordingEvent: (status) => {
+            if (status !== "failed") {
+              void loadTeacherRecordings();
+            }
+          },
         });
       } catch (error) {
         const message =
@@ -833,6 +903,10 @@ const TeacherClassManagePage = () => {
       }
     };
   }, [showOnlineClassModal, onlineClassAccess, user?.userName]);
+
+  useEffect(() => {
+    void loadTeacherRecordings();
+  }, [loadTeacherRecordings, showOnlineClassModal]);
 
   const getQuizzesByCourseId = (courseId: string) => {
     return quizzesOfClass.filter((quiz) => quiz.courseId === courseId);
@@ -2825,6 +2899,54 @@ const TeacherClassManagePage = () => {
           >
             {classInfo.onlineOpen ? "Lớp đang mở" : "Lớp đang đóng"}
           </span>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+            <p className="text-xs font-semibold text-slate-700">Video meeting đã lưu</p>
+            {loadingTeacherRecordings ? (
+              <p className="text-xs text-slate-500">Đang tải video meeting...</p>
+            ) : teacherRecordings.length === 0 ? (
+              <p className="text-xs text-slate-500">Chưa có video meeting.</p>
+            ) : (
+              <div className="space-y-2 max-h-56 overflow-auto pr-1">
+                {teacherRecordings.map((item) => (
+                  <div key={item.recordingId} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-slate-800 truncate">
+                        {item.title || "Bản ghi bài giảng"}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRecordingStatusBadge(item.status).className}`}
+                      >
+                        {getRecordingStatusBadge(item.status).label}
+                      </span>
+                    </div>
+                    <p className="text-slate-500 mt-1">
+                      Thời lượng: {formatRecordingDuration(item.durationSeconds)}
+                    </p>
+                    <p className="text-slate-500">
+                      Tạo lúc: {item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "-"}
+                    </p>
+                    <div className="mt-2">
+                      {item.recordingUrl ? (
+                        <a
+                          href={item.recordingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-md border border-blue-300 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          Xem lại bài giảng
+                        </a>
+                      ) : (
+                        <span className="inline-flex rounded-md border border-slate-200 px-2.5 py-1 font-semibold text-slate-500">
+                          Video chưa sẵn sàng
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       )}
 

@@ -836,7 +836,7 @@ const ClassListPage = () => {
               : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
           }`}
         >
-          Lớp đã enroll
+          Lớp đã gia nhập
         </button>
       </div>
       {renderSearchBar()}

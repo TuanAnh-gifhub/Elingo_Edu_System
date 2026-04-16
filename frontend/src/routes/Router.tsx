@@ -174,6 +174,8 @@ export const router = createBrowserRouter([
         path: "teacher-verification",
         element: <TeacherVerificationPage />,
         handle: { breadcrumb: "Xác minh giáo viên" },
+      },
+      {
         path: "subscription",
         element: <SubscriptionPage />,
         handle: { breadcrumb: "Gói đăng ký" },
@@ -232,6 +234,8 @@ export const router = createBrowserRouter([
       {
         path: "teacher-verification",
         element: <TeacherVerificationManagementPage />,
+      },
+      {
         path: "packages",
         element: <AdminPackageManagementPage />,
       },

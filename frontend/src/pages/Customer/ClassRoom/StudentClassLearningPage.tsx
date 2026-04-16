@@ -494,7 +494,7 @@ const StudentClassLearningPage = () => {
           Lớp học của tôi: {classInfo.className}
         </h1>
         <p className="text-slate-600 mt-1">
-          Theo dõi nội dung bài học và làm quiz trong lớp đã enroll.
+          Theo dõi nội dung bài học và làm quiz trong lớp đã gia nhập.
         </p>
       </div>
 

@@ -5,7 +5,6 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ParallaxBackground from "./ParallaxBackground";
 import HeroSection from "../../../components/HeroSection/HeroSection";
-import { FaStar } from "react-icons/fa";
 import ScrambleText from "../../../components/Header/ScrambleText";
 import RoomCard from "./RoomCard";
 import Footer from "../../../components/Footer/Footer";
@@ -32,25 +31,6 @@ const SIDEBAR_CATEGORIES = [
   { key: 'meeting', label: 'Khóa học doanh nghiệp', icon: FaBuilding, type: 'Khóa học doanh nghiệp' },
 ];
 
-interface ListingItem {
-  itemId: number | string;
-  title?: string;
-  brand?: string;
-  model?: string;
-  condition?: string;
-  price?: number;
-  userName?: string;
-  imageUrls?: string[];
-}
-
-interface Listing {
-  listingId: number | string;
-  item: ListingItem;
-  buyNowPrice?: number;
-  createdAt: string;
-  userName?: string;
-}
-
 interface Room {
   id: number | string;
   listingId?: number | string;
@@ -76,56 +56,8 @@ interface Room {
   };
 }
 
-interface RoomCategory {
-  id: string | number;
-  name: string;
-}
-
-interface ItemType {
-  itemTypeId: number | string;
-  name: string;
-}
-
-const transformListingToRoom = (listing: Listing): Room | null => {
-  if (!listing || !listing.item) {
-    return null;
-  }
-
-  const item = listing.item;
-
-  const calculateTimeAgo = (createdAt: string): string => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const diffMs = now.getTime() - created.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    return `${diffDays} ngày trước`;
-  };
-
-  return {
-    id: item.itemId,
-    listingId: listing.listingId,
-    image: item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : null,
-    title: item.title || 'Không có tiêu đề',
-    description: `${item.brand || 'N/A'} ${item.model || 'N/A'} - ${item.condition || 'N/A'}`,
-    price: listing.buyNowPrice || item.price || 0,
-    location: listing.userName || item.userName ? `Người bán: ${listing.userName || item.userName}` : "Việt Nam",
-    timeAgo: calculateTimeAgo(listing.createdAt),
-    products: [],
-    name: listing.userName || item.userName || 'Người bán',
-    logo: item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : null,
-    banner: item.imageUrls && item.imageUrls.length > 1 ? item.imageUrls[1] : null,
-  };
-};
-
 const LandingPage = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [stores, setStores] = useState<Room[]>([]);
   const [featuredStores, setFeaturedStores] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +65,6 @@ const LandingPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const navigate = useNavigate();
   const { setActiveSection } = useScrollspy();
-  const [roomCategories, setRoomCategories] = useState<RoomCategory[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const stored = localStorage.getItem('landing_dark_mode');
     return stored === 'true';
@@ -195,68 +126,15 @@ const LandingPage = () => {
 
   const [decodeLatestListings, setDecodeLatestListings] = useState(false);
   const [decodeOfficialStores, setDecodeOfficialStores] = useState(false);
-  const [decodeFeaturedStores, setDecodeFeaturedStores] = useState(false);
   const latestListingsRef = useRef<HTMLDivElement>(null);
   const officialStoresRef = useRef<HTMLDivElement>(null);
-  const featuredStoresRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
   const [sidebarBottom, setSidebarBottom] = useState<number | null>(null);
 
   const [latestListingsStart, setLatestListingsStart] = useState(0);
   const [officialStoresStart, setOfficialStoresStart] = useState(0);
-  const [featuredStoresStart, setFeaturedStoresStart] = useState(0);
-
   const [visibleStoreCount, setVisibleStoreCount] = useState(6);
   const [showAllStores, setShowAllStores] = useState(false);
-
-  useEffect(() => {
-    const fetchRoomCategories = async () => {
-      try {
-        const response = { data: { data: [] } };
-
-        if (response.data && response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-          const categoriesFromApi: RoomCategory[] = (response.data.data as ItemType[]).map(itemType => ({
-            id: itemType.itemTypeId,
-            name: itemType.name
-          }));
-
-          const allCategories: RoomCategory[] = [
-            { id: "all", name: "Tất cả" },
-            ...categoriesFromApi
-          ];
-
-          setRoomCategories(allCategories);
-          console.log('✅ Room categories loaded from API:', allCategories);
-        } else {
-          console.warn('⚠️ No class categories data from API, using default');
-          setRoomCategories([
-            { id: "all", name: "Tất cả lớp học" },
-            { id: "lop-1-1", name: "Lớp học 1-1" },
-            { id: "lop-nhom", name: "Lớp học nhóm" },
-            { id: "lop-ky-nang", name: "Lớp kỹ năng / workshop" },
-            { id: "lop-ngoai-ngu", name: "Lớp ngoại ngữ" },
-            { id: "lop-luyen-thi", name: "Lớp luyện thi" },
-            { id: "lop-truc-tuyen", name: "Lớp trực tuyến" },
-            { id: "lop-doanh-nghiep", name: "Khóa học doanh nghiệp" }
-          ]);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching class categories:', error);
-        setRoomCategories([
-          { id: "all", name: "Tất cả lớp học" },
-          { id: "lop-1-1", name: "Lớp học 1-1" },
-          { id: "lop-nhom", name: "Lớp học nhóm" },
-          { id: "lop-ky-nang", name: "Lớp kỹ năng / workshop" },
-          { id: "lop-ngoai-ngu", name: "Lớp ngoại ngữ" },
-          { id: "lop-luyen-thi", name: "Lớp luyện thi" },
-          { id: "lop-truc-tuyen", name: "Lớp trực tuyến" },
-          { id: "lop-doanh-nghiep", name: "Khóa học doanh nghiệp" }
-        ]);
-      }
-    };
-
-    fetchRoomCategories();
-  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -280,14 +158,12 @@ const LandingPage = () => {
         }));
 
         setRooms(mappedRooms);
-        setStores(mappedRooms);
         setFeaturedStores(mappedRooms);
         setTotalItems(data.length);
       } catch (error) {
-        console.error("❌ LandingPage - Error fetching classes:", error);
+        console.error(" LandingPage - Error fetching classes:", error);
         setError("Không thể tải danh sách lớp học");
         setRooms([]);
-        setStores([]);
         setFeaturedStores([]);
         setTotalItems(0);
       } finally {
@@ -315,15 +191,12 @@ const LandingPage = () => {
     );
     const latestEl = latestListingsRef.current;
     const officialEl = officialStoresRef.current;
-    const featuredEl = featuredStoresRef.current;
 
     if (latestEl) observer.observe(latestEl);
     if (officialEl) observer.observe(officialEl);
-    if (featuredEl) observer.observe(featuredEl);
     return () => {
       if (latestEl) observer.unobserve(latestEl);
       if (officialEl) observer.unobserve(officialEl);
-      if (featuredEl) observer.unobserve(featuredEl);
     };
   }, []);
 
@@ -743,7 +616,7 @@ const LandingPage = () => {
           {/* Removed "Đang hiển thị X / Y địa điểm" text for cleaner UI */}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {stores.slice(0, showAllStores ? stores.length : 6).map((store, idx) => (
+            {filteredStores.slice(0, showAllStores ? filteredStores.length : 6).map((store, idx) => (
               <motion.div
                 key={store.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -833,7 +706,7 @@ const LandingPage = () => {
             ))}
           </div>
 
-          {stores.length > visibleStoreCount && (
+          {filteredStores.length > visibleStoreCount && (
             <div className="flex justify-center">
               <button
                 onClick={() => setShowAllStores(!showAllStores)}

@@ -625,7 +625,7 @@ const LandingPage = () => {
                 </button>
 
                 <Link
-                  to="/products"
+                  to="/classes"
                   className={`border px-6 py-2 rounded-lg hover:scale-105 hover:shadow-lg transition-all duration-300 font-medium ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]' : 'border-gray-300 bg-white text-gray-700 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]'}`}
                 >
                   Xem thêm {totalItems.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} phòng học
@@ -733,7 +733,7 @@ const LandingPage = () => {
 
           <div className="flex justify-center mt-4 mb-8">
             <Link
-              to="/products"
+              to="/classes"
               className={`border px-6 py-2 rounded-lg hover:scale-105 hover:shadow-lg transition-all duration-300 font-medium ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]' : 'border-gray-300 bg-white text-gray-700 hover:bg-[#4da6ff] hover:text-white hover:border-[#4da6ff]'}`}
             >
               Xem thêm {totalItems.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} phòng học

@@ -30,11 +30,10 @@ interface MessageInputProps {
 }
 
 const quickReplies = [
-  "Phòng còn trống không ạ?",
-  "Địa chỉ cụ thể ở đâu ạ?",
-  "Giá thuê theo giờ bao nhiêu?",
-  "Có máy chiếu/wifi không ạ?",
-  "Cảm ơn"
+  "Lớp này còn nhận học viên không?",
+  "Lịch học cụ thể như thế nào?",
+  "Học phí theo buổi là bao nhiêu?",
+  "Em cảm ơn thầy/cô ạ!"
 ];
 
 const MessageInput = ({

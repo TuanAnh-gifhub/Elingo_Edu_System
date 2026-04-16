@@ -20,9 +20,13 @@ public interface ChatService {
 
     ConversationResponse getConversationById(UUID conversationId);
 
+    ConversationResponse getOrCreateDirectConversation(UUID currentUserId, UUID recipientId);
+
     void markAllMessagesInConversationAsRead(UUID conversationId, UUID recipientId);
 
     @Transactional
     MessageResponse saveMessageWithFile(MessageRequest request, UUID currentUserId, MultipartFile file) throws IOException;
+
+    void deleteConversationForCurrentUser(UUID conversationId, UUID currentUserId);
 }
 

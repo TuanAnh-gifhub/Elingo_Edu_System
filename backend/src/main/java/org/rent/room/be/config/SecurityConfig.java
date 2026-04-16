@@ -46,6 +46,7 @@ public class SecurityConfig {
                 "/files/**",
             "/api/v1/files/**",
             "/users/teachers/public",
+            "/users/public/**",
             "/packages/active",
             "/packages/{packageId}",
             "/ws/**"

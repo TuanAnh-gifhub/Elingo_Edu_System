@@ -20,6 +20,10 @@ import {
 import { FaGraduationCap, FaMedal } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../context/AuthContext";
+import {
+  userService,
+  type PublicUserProfileResponse,
+} from "../../../services/usersService";
 import commentService, {
   type CreateCommunityCommentRequest,
   type CommunityCommentResponse as CommunityApiCommentResponse,
@@ -83,6 +87,18 @@ interface CommunityPost {
 interface CommunityInsightStats {
   postsToday: number;
   studentsNeedingAdvice: number;
+}
+
+interface PublicAuthorProfile {
+  userId?: string;
+  userName: string;
+  role?: string;
+  gender?: string;
+  joinedAt?: string;
+  bio?: string;
+  expertise?: string;
+  experience?: string;
+  certificateCount?: number;
 }
 
 const initialInsightStats: CommunityInsightStats = {
@@ -191,7 +207,7 @@ function mapCommentFromApi(
     time: formatRelativeTime(comment.createdAt),
     content: isHiddenByAdmin
       ? COMMUNITY_RULES_VIOLATION_NOTE
-      : (comment.content || ""),
+      : comment.content || "",
     isHiddenByAdmin,
     hiddenReason: isHiddenByAdmin ? COMMUNITY_RULES_VIOLATION_NOTE : undefined,
   };
@@ -343,6 +359,16 @@ function formatCount(value: number) {
   return new Intl.NumberFormat("vi-VN").format(Math.max(0, value));
 }
 
+function isValidUuid(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
 function isTodayDate(isoDate?: string | null) {
   if (!isoDate) {
     return false;
@@ -434,6 +460,10 @@ function CommunityPage() {
   >(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isUploadingVideos, setIsUploadingVideos] = useState(false);
+  const [selectedAuthorProfile, setSelectedAuthorProfile] =
+    useState<PublicAuthorProfile | null>(null);
+  const [isLoadingAuthorProfile, setIsLoadingAuthorProfile] = useState(false);
+  const [authorProfileLoadFailed, setAuthorProfileLoadFailed] = useState(false);
   const contentInputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -493,7 +523,8 @@ function CommunityPage() {
         ).length;
 
         setCommunityInsights({
-          postsToday: postList.filter((post) => isTodayDate(post.createdAt)).length,
+          postsToday: postList.filter((post) => isTodayDate(post.createdAt))
+            .length,
           // Keep this metric tied to advice-seeking posts instead of total students.
           studentsNeedingAdvice: studentsNeedingAdviceFromPosts,
         });
@@ -1011,6 +1042,94 @@ function CommunityPage() {
     }
   };
 
+  const mapPublicProfile = (
+    profile: PublicUserProfileResponse,
+  ): PublicAuthorProfile => ({
+    userId: profile.userId,
+    userName: profile.userName || "Thành viên Elingo",
+    role: profile.role,
+    gender: profile.gender,
+    joinedAt: profile.joinedAt,
+    bio: profile.bio,
+    expertise: profile.expertise,
+    experience: profile.experience,
+    certificateCount: profile.certificateCount,
+  });
+
+  const openAuthorProfile = async (
+    authorId?: string,
+    authorName?: string,
+    role?: AudienceType,
+  ) => {
+    setAuthorProfileLoadFailed(false);
+
+    const isMyAccount = Boolean(
+      authorId && user?.userId && authorId === user.userId,
+    );
+    const fallbackProfile: PublicAuthorProfile = {
+      userId: authorId,
+      userName: authorName || user?.userName || "Thành viên Elingo",
+      role: isMyAccount ? user?.role : role,
+      gender: isMyAccount ? user?.gender : undefined,
+      joinedAt: isMyAccount ? user?.createdAt : undefined,
+    };
+
+    setSelectedAuthorProfile({
+      ...fallbackProfile,
+    });
+
+    if (!isValidUuid(authorId)) {
+      return;
+    }
+
+    setIsLoadingAuthorProfile(true);
+    try {
+      const response = await userService.getPublicProfile(authorId);
+      const payload =
+        response && typeof response === "object" && "data" in response
+          ? (response.data as { result?: PublicUserProfileResponse })
+          : (response as { result?: PublicUserProfileResponse } | undefined);
+
+      if (payload?.result) {
+        setSelectedAuthorProfile(mapPublicProfile(payload.result));
+      }
+    } catch (error) {
+      console.error("Không thể tải hồ sơ công khai của tác giả", error);
+      if (!isMyAccount) {
+        setAuthorProfileLoadFailed(true);
+      }
+    } finally {
+      setIsLoadingAuthorProfile(false);
+    }
+  };
+
+  const closeAuthorProfile = () => {
+    setSelectedAuthorProfile(null);
+    setIsLoadingAuthorProfile(false);
+    setAuthorProfileLoadFailed(false);
+  };
+
+  useEffect(() => {
+    if (!selectedAuthorProfile) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeAuthorProfile();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selectedAuthorProfile]);
+
   const deleteComment = async (comment: PostComment) => {
     if (typeof comment.id !== "string") {
       return;
@@ -1126,7 +1245,7 @@ function CommunityPage() {
             likes: Math.max(0, p.stats.likes + delta),
           },
         };
-      })
+      }),
     );
 
     try {
@@ -1135,23 +1254,23 @@ function CommunityPage() {
         throw new Error(response.message || "Không thể tải tương tác.");
       }
     } catch (error) {
-       // Revert optimistic update
-       setPosts((currentPosts) =>
-         currentPosts.map((p) => {
-           if (p.id !== post.id) return p;
-           return {
-             ...p,
-             hasLiked: isCurrentlyLiked,
-             stats: {
-               ...p.stats,
-               likes: Math.max(0, p.stats.likes - delta),
-             },
-           };
-         })
-       );
-       const message =
-         error instanceof Error ? error.message : "Thao tác thả tim thất bại.";
-       toast.error(message);
+      // Revert optimistic update
+      setPosts((currentPosts) =>
+        currentPosts.map((p) => {
+          if (p.id !== post.id) return p;
+          return {
+            ...p,
+            hasLiked: isCurrentlyLiked,
+            stats: {
+              ...p.stats,
+              likes: Math.max(0, p.stats.likes - delta),
+            },
+          };
+        }),
+      );
+      const message =
+        error instanceof Error ? error.message : "Thao tác thả tim thất bại.";
+      toast.error(message);
     }
   };
 
@@ -1230,7 +1349,6 @@ function CommunityPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </aside>
 
@@ -1426,12 +1544,25 @@ function CommunityPage() {
                   <div className="p-4 md:p-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
-                        <Avatar
-                          name={post.author}
-                          tone={
-                            mediaCardTones[postIndex % mediaCardTones.length]
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void openAuthorProfile(
+                              post.authorId,
+                              post.author,
+                              post.role,
+                            )
                           }
-                        />
+                          className="rounded-2xl transition hover:scale-[1.02]"
+                          aria-label={`Xem hồ sơ ${post.author}`}
+                        >
+                          <Avatar
+                            name={post.author}
+                            tone={
+                              mediaCardTones[postIndex % mediaCardTones.length]
+                            }
+                          />
+                        </button>
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <h2 className="font-semibold text-slate-900">
@@ -1708,7 +1839,9 @@ function CommunityPage() {
                     type="button"
                     onClick={() => void toggleLikePost(post)}
                     className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-slate-50 ${
-                      post.hasLiked ? "text-rose-500 hover:text-rose-600" : "text-slate-600 hover:text-rose-500"
+                      post.hasLiked
+                        ? "text-rose-500 hover:text-rose-600"
+                        : "text-slate-600 hover:text-rose-500"
                     }`}
                   >
                     <FiHeart className={post.hasLiked ? "fill-rose-500" : ""} />
@@ -1770,7 +1903,8 @@ function CommunityPage() {
                         </p>
                         {comment.isHiddenByAdmin ? (
                           <p className="mt-2 text-xs italic text-amber-700">
-                            {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
+                            {comment.hiddenReason ||
+                              COMMUNITY_RULES_VIOLATION_NOTE}
                           </p>
                         ) : null}
                       </div>
@@ -1786,7 +1920,9 @@ function CommunityPage() {
                     }}
                     className="text-sm font-medium text-sky-700 transition hover:text-sky-800"
                   >
-                    Xem thêm {getVisibleComments(post.commentsPreview).length - 2} bình luận
+                    Xem thêm{" "}
+                    {getVisibleComments(post.commentsPreview).length - 2} bình
+                    luận
                   </button>
                 ) : null}
               </div>
@@ -1796,7 +1932,6 @@ function CommunityPage() {
 
         <aside className="hidden xl:block">
           <div className="sticky top-24 space-y-4">
-
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 font-semibold">Gợi ý cho khu bài viết</h2>
               <div className="space-y-3 text-sm text-slate-600">
@@ -1838,10 +1973,23 @@ function CommunityPage() {
             <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1fr)_380px]">
               <div className="min-h-0 overflow-y-auto px-6 py-6 md:px-8">
                 <div className="flex items-start gap-3">
-                  <Avatar
-                    name={activeCommentsPost.author}
-                    tone="from-sky-500 to-indigo-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void openAuthorProfile(
+                        activeCommentsPost.authorId,
+                        activeCommentsPost.author,
+                        activeCommentsPost.role,
+                      )
+                    }
+                    className="rounded-2xl transition hover:scale-[1.02]"
+                    aria-label={`Xem hồ sơ ${activeCommentsPost.author}`}
+                  >
+                    <Avatar
+                      name={activeCommentsPost.author}
+                      tone="from-sky-500 to-indigo-500"
+                    />
+                  </button>
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="font-semibold text-slate-900">
@@ -1924,168 +2072,166 @@ function CommunityPage() {
 
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
                   {visibleActiveComments.length > 0 ? (
-                    visibleActiveComments.map(
-                      (comment, commentIndex) => {
-                        const isCommentOwner =
-                          typeof comment.id === "string" &&
-                          Boolean(user?.userId) &&
-                          comment.authorId === user?.userId;
-                        const canEditComment =
-                          isCommentOwner && !comment.isHiddenByAdmin;
-                        const canDeleteComment =
-                          isCommentOwner && !comment.isHiddenByAdmin;
-                        const canHideComment =
-                          isAdmin && !isCommentOwner && !comment.isHiddenByAdmin;
-                        const canManageComment =
-                          canEditComment || canDeleteComment || canHideComment;
-                        const isCommentMenuOpen =
-                          openCommentMenuId === comment.id;
-                        const isEditingComment =
-                          editingCommentId === comment.id;
-                        const isUpdatingComment =
-                          updatingCommentId === comment.id;
-                        const isDeletingComment =
-                          deletingCommentId === comment.id;
+                    visibleActiveComments.map((comment, commentIndex) => {
+                      const isCommentOwner =
+                        typeof comment.id === "string" &&
+                        Boolean(user?.userId) &&
+                        comment.authorId === user?.userId;
+                      const canEditComment =
+                        isCommentOwner && !comment.isHiddenByAdmin;
+                      const canDeleteComment =
+                        isCommentOwner && !comment.isHiddenByAdmin;
+                      const canHideComment =
+                        isAdmin && !isCommentOwner && !comment.isHiddenByAdmin;
+                      const canManageComment =
+                        canEditComment || canDeleteComment || canHideComment;
+                      const isCommentMenuOpen =
+                        openCommentMenuId === comment.id;
+                      const isEditingComment = editingCommentId === comment.id;
+                      const isUpdatingComment =
+                        updatingCommentId === comment.id;
+                      const isDeletingComment =
+                        deletingCommentId === comment.id;
 
-                        return (
-                          <div key={comment.id} className="flex gap-3">
-                            <Avatar
-                              name={comment.author}
-                              tone={
-                                mediaCardTones[
-                                  commentIndex % mediaCardTones.length
-                                ]
-                              }
-                            />
-                            <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-semibold text-slate-900">
-                                    {comment.author}
-                                  </span>
-                                  <span
-                                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
-                                  >
-                                    {comment.role}
-                                  </span>
-                                  <span className="text-xs text-slate-400">
-                                    {comment.time}
-                                  </span>
-                                </div>
-
-                                {canManageComment ? (
-                                  <div
-                                    className="relative shrink-0"
-                                    data-comment-menu-root="true"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setOpenCommentMenuId((currentMenuId) =>
-                                          currentMenuId === comment.id
-                                            ? null
-                                            : String(comment.id),
-                                        )
-                                      }
-                                      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                                    >
-                                      <FiMoreHorizontal />
-                                    </button>
-
-                                    {isCommentMenuOpen ? (
-                                      <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                                        {canEditComment ? (
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              isEditingComment
-                                                ? cancelEditingComment()
-                                                : startEditingComment(comment)
-                                            }
-                                            disabled={isDeletingComment}
-                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                          >
-                                            <FiEdit3 className="text-slate-500" />
-                                            {isEditingComment
-                                              ? "Đóng chỉnh sửa"
-                                              : "Chỉnh sửa bình luận"}
-                                          </button>
-                                        ) : null}
-                                        {canDeleteComment || canHideComment ? (
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              void deleteComment(comment)
-                                            }
-                                            disabled={
-                                              isDeletingComment ||
-                                              isUpdatingComment
-                                            }
-                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                          >
-                                            <FiTrash2 className="text-rose-500" />
-                                            {isDeletingComment
-                                              ? "Đang xử lý"
-                                              : canHideComment
-                                                ? "Ẩn vì vi phạm"
-                                                : "Xóa bình luận"}
-                                          </button>
-                                        ) : null}
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                ) : null}
+                      return (
+                        <div key={comment.id} className="flex gap-3">
+                          <Avatar
+                            name={comment.author}
+                            tone={
+                              mediaCardTones[
+                                commentIndex % mediaCardTones.length
+                              ]
+                            }
+                          />
+                          <div className="min-w-0 flex-1 rounded-3xl bg-white px-4 py-3 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold text-slate-900">
+                                  {comment.author}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[comment.role]}`}
+                                >
+                                  {comment.role}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {comment.time}
+                                </span>
                               </div>
 
-                              {isEditingComment ? (
-                                <div className="mt-3 space-y-3">
-                                  <textarea
-                                    value={editCommentContent}
-                                    onChange={(event) =>
-                                      setEditCommentContent(event.target.value)
+                              {canManageComment ? (
+                                <div
+                                  className="relative shrink-0"
+                                  data-comment-menu-root="true"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setOpenCommentMenuId((currentMenuId) =>
+                                        currentMenuId === comment.id
+                                          ? null
+                                          : String(comment.id),
+                                      )
                                     }
-                                    rows={3}
-                                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                                  />
-                                  <div className="flex flex-wrap justify-end gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={cancelEditingComment}
-                                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
-                                    >
-                                      Hủy
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        void submitCommentUpdate(comment)
-                                      }
-                                      disabled={isUpdatingComment}
-                                      className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                      {isUpdatingComment
-                                        ? "Đang lưu..."
-                                        : "Lưu thay đổi"}
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <>
-                                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                                    {comment.content}
-                                  </p>
-                                  {comment.isHiddenByAdmin ? (
-                                    <p className="mt-2 text-xs italic text-amber-700">
-                                      {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
-                                    </p>
+                                    className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                                  >
+                                    <FiMoreHorizontal />
+                                  </button>
+
+                                  {isCommentMenuOpen ? (
+                                    <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                                      {canEditComment ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            isEditingComment
+                                              ? cancelEditingComment()
+                                              : startEditingComment(comment)
+                                          }
+                                          disabled={isDeletingComment}
+                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          <FiEdit3 className="text-slate-500" />
+                                          {isEditingComment
+                                            ? "Đóng chỉnh sửa"
+                                            : "Chỉnh sửa bình luận"}
+                                        </button>
+                                      ) : null}
+                                      {canDeleteComment || canHideComment ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void deleteComment(comment)
+                                          }
+                                          disabled={
+                                            isDeletingComment ||
+                                            isUpdatingComment
+                                          }
+                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          <FiTrash2 className="text-rose-500" />
+                                          {isDeletingComment
+                                            ? "Đang xử lý"
+                                            : canHideComment
+                                              ? "Ẩn vì vi phạm"
+                                              : "Xóa bình luận"}
+                                        </button>
+                                      ) : null}
+                                    </div>
                                   ) : null}
-                                </>
-                              )}
+                                </div>
+                              ) : null}
                             </div>
+
+                            {isEditingComment ? (
+                              <div className="mt-3 space-y-3">
+                                <textarea
+                                  value={editCommentContent}
+                                  onChange={(event) =>
+                                    setEditCommentContent(event.target.value)
+                                  }
+                                  rows={3}
+                                  className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                />
+                                <div className="flex flex-wrap justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditingComment}
+                                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
+                                  >
+                                    Hủy
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void submitCommentUpdate(comment)
+                                    }
+                                    disabled={isUpdatingComment}
+                                    className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {isUpdatingComment
+                                      ? "Đang lưu..."
+                                      : "Lưu thay đổi"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                  {comment.content}
+                                </p>
+                                {comment.isHiddenByAdmin ? (
+                                  <p className="mt-2 text-xs italic text-amber-700">
+                                    {comment.hiddenReason ||
+                                      COMMUNITY_RULES_VIOLATION_NOTE}
+                                  </p>
+                                ) : null}
+                              </>
+                            )}
                           </div>
-                        );
-                      },
-                    )
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="rounded-3xl bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
                       Chưa có bình luận nào cho bài viết này.
@@ -2138,9 +2284,110 @@ function CommunityPage() {
           </div>
         </div>
       ) : null}
+
+      {selectedAuthorProfile ? (
+        <div
+          className="fixed inset-0 z-80 flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
+          onClick={closeAuthorProfile}
+        >
+          {(() => {
+            const resolvedRole = selectedAuthorProfile.role
+              ? normalizeRole(selectedAuthorProfile.role)
+              : null;
+            const isTeacherProfile = resolvedRole === "Giáo viên";
+
+            return (
+              <div
+                className="relative w-full max-w-2xl overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.2)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="bg-linear-to-r from-sky-500 to-indigo-500 px-6 py-5 pr-16 text-white">
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={selectedAuthorProfile.userName}
+                      tone="from-sky-500 to-indigo-500"
+                    />
+                    <div>
+                      <h3 className="text-lg font-bold">
+                        {selectedAuthorProfile.userName}
+                      </h3>
+                      <p className="text-sm text-sky-100">
+                        {resolvedRole || "Thành viên"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeAuthorProfile}
+                  className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+                >
+                  <FiX />
+                </button>
+
+                <div className="p-6">
+                  {isLoadingAuthorProfile ? (
+                    <p className="text-sm text-slate-500">
+                      Đang tải thông tin tài khoản...
+                    </p>
+                  ) : (
+                    <div className="space-y-3 text-sm text-slate-700">
+                      {authorProfileLoadFailed ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700">
+                          Không thể đồng bộ toàn bộ hồ sơ từ máy chủ, đang hiển
+                          thị thông tin cơ bản.
+                        </div>
+                      ) : null}
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="font-semibold">Giới tính:</span>{" "}
+                        {selectedAuthorProfile.gender || "Chưa cập nhật"}
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="font-semibold">Tham gia từ:</span>{" "}
+                        {selectedAuthorProfile.joinedAt
+                          ? new Date(
+                              selectedAuthorProfile.joinedAt,
+                            ).toLocaleDateString("vi-VN")
+                          : "Chưa cập nhật"}
+                      </div>
+                      {isTeacherProfile ? (
+                        <>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span className="font-semibold">Giới thiệu:</span>{" "}
+                            {selectedAuthorProfile.bio || "Chưa cập nhật"}
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span className="font-semibold">Kỹ năng:</span>{" "}
+                            {selectedAuthorProfile.expertise || "Chưa cập nhật"}
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span className="font-semibold">Kinh nghiệm:</span>{" "}
+                            {selectedAuthorProfile.experience ||
+                              "Chưa cập nhật"}
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span className="font-semibold">Số chứng chỉ:</span>{" "}
+                            {selectedAuthorProfile.certificateCount ?? 0}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-600">
+                          Tài khoản học sinh không có thông tin chuyên môn giáo
+                          viên.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export default CommunityPage;
-

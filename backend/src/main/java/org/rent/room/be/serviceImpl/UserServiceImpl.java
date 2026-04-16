@@ -3,9 +3,11 @@ package org.rent.room.be.serviceImpl;
 import lombok.RequiredArgsConstructor;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.constant.AuthProvider;
+import org.rent.room.be.constant.TeacherVerificationStatus;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.request.user.UpdateUserRequest;
+import org.rent.room.be.dto.response.PublicUserProfileResponse;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.dto.response.teacher.TeacherProfileResponse;
 import org.rent.room.be.entity.PasswordResetToken;
@@ -15,6 +17,7 @@ import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.UserMapper;
 import org.rent.room.be.repository.RoleRepository;
+import org.rent.room.be.repository.TeacherVerificationRequestRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.repository.mongo.PasswordResetTokenRepository;
 import org.rent.room.be.service.EmailService;
@@ -31,8 +34,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,6 +48,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final TeacherVerificationRequestRepository teacherVerificationRequestRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final UserMapper userMapper;
@@ -103,6 +109,28 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toUserResponse(user);
     }
+
+        @Override
+        @Transactional(readOnly = true)
+        public PublicUserProfileResponse getPublicProfile(UUID userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        var approvedVerificationRequest = teacherVerificationRequestRepository
+            .findTopByUserUserIdAndStatusOrderByCreatedAtDesc(user.getUserId(), TeacherVerificationStatus.APPROVED);
+
+        return PublicUserProfileResponse.builder()
+            .userId(user.getUserId())
+            .userName(user.getUserName())
+            .role(user.getRole() == null ? null : user.getRole().getRoleName())
+            .gender(user.getGender())
+            .joinedAt(user.getCreatedAt())
+            .bio(approvedVerificationRequest.map(req -> StringUtils.hasText(req.getBio()) ? req.getBio().trim() : null).orElse(null))
+            .expertise(approvedVerificationRequest.map(req -> StringUtils.hasText(req.getExpertise()) ? req.getExpertise().trim() : null).orElse(null))
+            .experience(approvedVerificationRequest.map(req -> StringUtils.hasText(req.getExperience()) ? req.getExperience().trim() : null).orElse(null))
+            .certificateCount(approvedVerificationRequest.map(req -> req.getCertificateFiles() == null ? 0 : req.getCertificateFiles().size()).orElse(0))
+            .build();
+        }
 
     @Override
     public PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active, String keyword) {
@@ -202,13 +230,47 @@ public class UserServiceImpl implements UserService {
         return userRepository.findActiveTeachers(Sort.by("createdAt").descending())
                 .stream()
                 .limit(safeLimit)
-                .map(teacher -> TeacherProfileResponse.builder()
-                        .teacherId(teacher.getUserId())
-                        .teacherName(teacher.getUserName())
-                        .avatar(null)
-                        .averageRating(0.0)
-                        .totalReviews(0)
-                        .build())
+            .map(teacher -> {
+                var approvedVerificationRequest = teacherVerificationRequestRepository
+                    .findTopByUserUserIdAndStatusOrderByCreatedAtDesc(
+                        teacher.getUserId(),
+                        TeacherVerificationStatus.APPROVED
+                    );
+
+                return TeacherProfileResponse.builder()
+                    .teacherId(teacher.getUserId())
+                    .teacherName(
+                        approvedVerificationRequest
+                            .map(req -> StringUtils.hasText(req.getFullName()) ? req.getFullName().trim() : null)
+                            .orElse(teacher.getUserName())
+                    )
+                    .avatar(null)
+                    .averageRating(0.0)
+                    .totalReviews(0)
+                    .certificateFiles(
+                        approvedVerificationRequest
+                            .map(req -> req.getCertificateFiles() == null
+                                ? List.<String>of()
+                                : req.getCertificateFiles())
+                            .orElseGet(ArrayList::new)
+                    )
+                    .bio(
+                        approvedVerificationRequest
+                            .map(req -> StringUtils.hasText(req.getBio()) ? req.getBio().trim() : null)
+                            .orElse(null)
+                    )
+                    .expertise(
+                        approvedVerificationRequest
+                            .map(req -> StringUtils.hasText(req.getExpertise()) ? req.getExpertise().trim() : null)
+                            .orElse(null)
+                    )
+                    .experience(
+                        approvedVerificationRequest
+                            .map(req -> StringUtils.hasText(req.getExperience()) ? req.getExperience().trim() : null)
+                            .orElse(null)
+                    )
+                    .build();
+            })
                 .collect(Collectors.toList());
     }
 

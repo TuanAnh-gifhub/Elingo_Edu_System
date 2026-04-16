@@ -6,6 +6,10 @@ export interface TeacherProfileDto {
   avatar: string;
   averageRating: number;
   totalReviews: number;
+  certificateFiles?: string[];
+  bio?: string;
+  expertise?: string;
+  experience?: string;
 }
 
 export type TeacherVerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -92,10 +96,17 @@ export const teacherService = {
   },
 
   async getMyVerificationRequest(): Promise<TeacherVerificationResponse | null> {
-    const response = await api.get<ApiResponse<TeacherVerificationResponse | null>>(
-      "/teacher-verification/my-request",
-    );
+    const response = await api.get<
+      ApiResponse<TeacherVerificationResponse | null>
+    >("/teacher-verification/my-request");
     return response.data.result || null;
+  },
+
+  async getMyCertificates(): Promise<string[]> {
+    const response = await api.get<ApiResponse<string[]>>(
+      "/teacher-verification/my-certificates",
+    );
+    return response.data.result || [];
   },
 
   async getAllVerificationRequests(): Promise<TeacherVerificationResponse[]> {
@@ -125,7 +136,9 @@ export const teacherService = {
     return response.data.result;
   },
 
-  async approveVerificationRequest(id: string): Promise<TeacherVerificationResponse> {
+  async approveVerificationRequest(
+    id: string,
+  ): Promise<TeacherVerificationResponse> {
     const response = await api.put<ApiResponse<TeacherVerificationResponse>>(
       `/admin/teacher-verification/${id}/approve`,
     );

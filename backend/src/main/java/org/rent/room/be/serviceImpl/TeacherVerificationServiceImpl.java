@@ -86,6 +86,16 @@ public class TeacherVerificationServiceImpl implements TeacherVerificationServic
 
     @Override
     @Transactional(readOnly = true)
+    public List<String> getMyCertificates() {
+        User currentUser = userService.getCurrentUserEntity();
+        return teacherVerificationRequestRepository
+                .findTopByUserUserIdOrderByCreatedAtDesc(currentUser.getUserId())
+                .map(request -> request.getCertificateFiles() == null ? List.<String>of() : request.getCertificateFiles())
+                .orElseGet(List::of);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TeacherVerificationResponse> getAllRequests() {
         return teacherVerificationRequestRepository.findAllByOrderByCreatedAtDesc()
                 .stream()

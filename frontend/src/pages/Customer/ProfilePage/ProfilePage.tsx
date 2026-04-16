@@ -8,6 +8,8 @@ import {
   FiUser,
   FiCheckCircle,
   FiCreditCard,
+  FiFileText,
+  FiExternalLink,
 } from "react-icons/fi";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -22,10 +24,22 @@ const formatDate = (dateString?: string) => {
   return date.toLocaleDateString("vi-VN");
 };
 
+const getCertificateLabel = (url: string, index: number) => {
+  try {
+    const pathname = new URL(url).pathname;
+    const rawName = pathname.split("/").pop();
+    if (!rawName) return `Chứng chỉ ${index + 1}`;
+    return decodeURIComponent(rawName);
+  } catch {
+    return `Chứng chỉ ${index + 1}`;
+  }
+};
+
 const ProfilePage = () => {
   const { isAuthenticated, user } = useAuth();
   const [verificationRequest, setVerificationRequest] =
     useState<TeacherVerificationResponse | null>(null);
+  const [myCertificates, setMyCertificates] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -39,11 +53,27 @@ const ProfilePage = () => {
       .then((request) => {
         if (isMounted) {
           setVerificationRequest(request);
+          if (request?.certificateFiles?.length) {
+            setMyCertificates(request.certificateFiles);
+          }
         }
       })
       .catch(() => {
         if (isMounted) {
           setVerificationRequest(null);
+        }
+      });
+
+    teacherService
+      .getMyCertificates()
+      .then((certificates) => {
+        if (isMounted) {
+          setMyCertificates(certificates || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setMyCertificates([]);
         }
       });
 
@@ -59,6 +89,9 @@ const ProfilePage = () => {
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
     user.userName || "User",
   )}&background=4da6ff&color=fff&size=256`;
+
+  const shouldShowTeacherDetails =
+    user.role?.toUpperCase() === "TEACHER" || Boolean(verificationRequest);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -90,7 +123,9 @@ const ProfilePage = () => {
 
         <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
           <div className="rounded-xl border border-slate-200 p-4">
-            <p className="mb-3 text-sm font-semibold text-slate-800">Thông tin cơ bản</p>
+            <p className="mb-3 text-sm font-semibold text-slate-800">
+              Thông tin cơ bản
+            </p>
             <div className="space-y-3 text-sm text-slate-700">
               <div className="flex items-center gap-2">
                 <FiUser className="h-4 w-4 text-sky-600" />
@@ -112,11 +147,41 @@ const ProfilePage = () => {
                 <FiCalendar className="h-4 w-4 text-sky-600" />
                 <span>Ngày tham gia: {formatDate(user.createdAt)}</span>
               </div>
+
+              {shouldShowTeacherDetails ? (
+                <>
+                  <div className="flex items-start gap-2">
+                    <FiFileText className="h-4 w-4 text-sky-600 mt-0.5" />
+                    <span className="whitespace-pre-line">
+                      Giới thiệu:{" "}
+                      {verificationRequest?.bio?.trim() || "Chưa cập nhật"}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <FiFileText className="h-4 w-4 text-sky-600 mt-0.5" />
+                    <span className="whitespace-pre-line">
+                      Kỹ năng:{" "}
+                      {verificationRequest?.expertise?.trim() ||
+                        "Chưa cập nhật"}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <FiFileText className="h-4 w-4 text-sky-600 mt-0.5" />
+                    <span className="whitespace-pre-line">
+                      Kinh nghiệm:{" "}
+                      {verificationRequest?.experience?.trim() ||
+                        "Chưa cập nhật"}
+                    </span>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 p-4">
-            <p className="mb-3 text-sm font-semibold text-slate-800">Trạng thái tài khoản</p>
+            <p className="mb-3 text-sm font-semibold text-slate-800">
+              Trạng thái tài khoản
+            </p>
             <div className="space-y-3 text-sm text-slate-700">
               <div className="flex items-center gap-2">
                 <FiCheckCircle className="h-4 w-4 text-emerald-500" />
@@ -127,7 +192,10 @@ const ProfilePage = () => {
               <div className="flex items-center gap-2">
                 <FiMail className="h-4 w-4 text-sky-600" />
                 <span>
-                  Trạng thái email: {user.emailVerified === false ? "Chưa xác minh" : "Đã xác minh"}
+                  Trạng thái email:{" "}
+                  {user.emailVerified === false
+                    ? "Chưa xác minh"
+                    : "Đã xác minh"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -168,9 +236,72 @@ const ProfilePage = () => {
                 {verificationRequest.status === "REJECTED" ? (
                   <span>
                     Đã bị từ chối
-                    {verificationRequest.adminNote ? ` - ${verificationRequest.adminNote}` : ""}
+                    {verificationRequest.adminNote
+                      ? ` - ${verificationRequest.adminNote}`
+                      : ""}
                   </span>
                 ) : null}
+              </div>
+            ) : null}
+
+            {verificationRequest ? (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <FiFileText className="h-4 w-4 text-sky-600" />
+                  <span>Chứng chỉ giáo viên</span>
+                </div>
+
+                {myCertificates.length ? (
+                  <div className="space-y-2">
+                    {myCertificates.map((certificateUrl, index) => (
+                      <a
+                        key={`${certificateUrl}-${index}`}
+                        href={certificateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 transition hover:bg-slate-100"
+                      >
+                        <span className="line-clamp-1 pr-2">
+                          {getCertificateLabel(certificateUrl, index)}
+                        </span>
+                        <FiExternalLink className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Chưa có chứng chỉ nào được tải lên.
+                  </p>
+                )}
+              </div>
+            ) : user.role?.toUpperCase() === "TEACHER" ? (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <FiFileText className="h-4 w-4 text-sky-600" />
+                  <span>Chứng chỉ giáo viên</span>
+                </div>
+                {myCertificates.length ? (
+                  <div className="space-y-2">
+                    {myCertificates.map((certificateUrl, index) => (
+                      <a
+                        key={`${certificateUrl}-${index}`}
+                        href={certificateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 transition hover:bg-slate-100"
+                      >
+                        <span className="line-clamp-1 pr-2">
+                          {getCertificateLabel(certificateUrl, index)}
+                        </span>
+                        <FiExternalLink className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Chưa có chứng chỉ nào được tải lên.
+                  </p>
+                )}
               </div>
             ) : null}
           </div>
@@ -182,4 +313,3 @@ const ProfilePage = () => {
 
 export { ProfilePage };
 export default ProfilePage;
-

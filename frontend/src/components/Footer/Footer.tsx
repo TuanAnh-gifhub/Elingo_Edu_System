@@ -78,10 +78,10 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ isDarkMode }, ref) => {
               </li>
               <li>
                 <Link
-                  to="/products"
+                  to="/classes"
                   className="text-sm text-gray-600 hover:text-[#4da6ff] transition-colors"
                 >
-                  Phòng học
+                  Lớp học
                 </Link>
               </li>
               <li>

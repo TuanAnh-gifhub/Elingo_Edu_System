@@ -88,6 +88,7 @@ const RoomCard = ({
   const navigate = useNavigate();
   const FeatureIcon = feature?.icon || FaUsers;
   const [isFavorite, setIsFavorite] = useState(false);
+  const formattedPricePerHour = `${Number(price || 0).toLocaleString("vi-VN")} VNĐ/giờ`;
 
   const handleClick = () => {
     if (onClick) {
@@ -166,31 +167,10 @@ const RoomCard = ({
           {/* Overlay with price and title - Only for large variant with showOverlay */}
           {isLarge && showOverlay && (
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-6 text-white">
-              <div className="text-3xl font-bold mb-3">${price}/hr</div>
+              <div className="text-3xl font-bold mb-3">{formattedPricePerHour}</div>
               <div className="text-xl font-semibold mb-1">{title}</div>
               <div className="text-base font-medium mb-1 opacity-90">{location}</div>
-              <div className="text-sm font-medium mb-4 opacity-80">{feature?.label || 'Equipped'}</div>
-
-              {/* Feature Icons */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1.5">
-                  <FaBed className="w-4 h-4 opacity-80" />
-                  <span className="text-sm">1</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <FaUsers className="w-4 h-4 opacity-80" />
-                  <span className="text-sm">{capacity.split('-')[1]?.replace(' people', '') || '12'}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <FaWifi className="w-4 h-4 opacity-80" />
-                  <span className="text-sm">1</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <FaDesktop className="w-4 h-4 opacity-80" />
-                  <span className="text-sm">1</span>
-                </div>
-              </div>
-
+              <div className="text-sm font-medium mb-4 opacity-80">{feature?.label || capacity}</div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -227,7 +207,7 @@ const RoomCard = ({
                     <span className="line-clamp-1 whitespace-nowrap">{feature?.label || capacity}</span>
                   </div>
                   <div className={`font-bold text-[#4da6ff] text-sm whitespace-nowrap`}>
-                    ${price}/hr
+                    {formattedPricePerHour}
                   </div>
                 </div>
               </>
@@ -245,7 +225,7 @@ const RoomCard = ({
                     <span className="line-clamp-1 text-xs">{feature?.label || capacity}</span>
                   </div>
                   <div className={`font-bold text-[#4da6ff] text-xs`}>
-                    ${price}/hr
+                    {formattedPricePerHour}
                   </div>
                 </div>
               </>
@@ -268,7 +248,7 @@ const RoomCard = ({
                     <span className="line-clamp-1">{feature?.label || capacity}</span>
                   </div>
                   <div className={`font-bold text-[#4da6ff] text-sm`}>
-                    ${price}/hr
+                    {formattedPricePerHour}
                   </div>
                 </div>
               </>

@@ -105,7 +105,7 @@ const WalletWithdrawManagementPage = () => {
                   <b>User:</b> {item.userName} ({item.userId})
                 </p>
                 <p>
-                  <b>Số tiền:</b> {Number(item.amount).toLocaleString("vi-VN")} đ
+                  <b>Số tiền:</b> {Number(item.amount).toLocaleString("vi-VN")} VNĐ
                 </p>
                 <p>
                   <b>Trạng thái:</b> {item.status}

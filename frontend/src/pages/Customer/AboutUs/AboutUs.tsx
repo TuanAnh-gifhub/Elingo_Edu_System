@@ -11,9 +11,7 @@ import {
   FaStar,
   FaQuoteLeft,
   FaQuoteRight,
-  FaEnvelope,
 } from "react-icons/fa";
-import {  message } from "antd";
 import type { TeacherProfileDto } from "../../../services/teachers/teacherService";
 interface AboutUsProps {
   isDarkMode?: boolean;
@@ -21,17 +19,8 @@ interface AboutUsProps {
 }
 
 const AboutUs = ({ isDarkMode = false, teacherProfiles = [] }: AboutUsProps) => {
-  const [messageApi, contextHolder] = message.useMessage();
   const [isVisible, setIsVisible] = useState(true);
-  const [email, setEmail] = useState("");
   const aboutUsRef = useRef<HTMLDivElement>(null);
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    messageApi.success("Cảm ơn bạn đã đăng ký nhận ưu đãi!");
-    console.log("Subscribing with email:", email);
-    setEmail("");
-  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -460,61 +449,6 @@ const AboutUs = ({ isDarkMode = false, teacherProfiles = [] }: AboutUsProps) => 
           </div>
         </motion.div>
 
-        {/* Section 4: Đăng Ký Nhận Ưu Đãi */}
-        <motion.div
-          initial={{ opacity: 1, y: 0 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mb-20 mt-20"
-        >
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-blue-500 to-blue-700 p-8 md:p-12">
-            {/* Decorative circles */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
-
-            <div className="relative z-10 text-center">
-              {/* Envelope Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                  <FaEnvelope className="text-white text-3xl" />
-                </div>
-              </div>
-
-              {/* Title */}
-              <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
-                Đăng Ký Nhận Ưu Đãi
-              </h2>
-
-              {/* Subtitle */}
-              <p className="text-sm md:text-base text-white/90 mb-8 max-w-2xl mx-auto">
-                Nhận thông tin và các phòng học mới và ưu đãi đặc biệt ngay
-                trong email của bạn
-              </p>
-
-              {/* Email Form */}
-              {contextHolder}
-              <form
-                onSubmit={handleSubscribe}
-                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Nhập email của bạn..."
-                  className="flex-1 px-4 py-3 rounded-lg border-2 border-blue-300 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-gray-700 placeholder-gray-400"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-lg whitespace-nowrap"
-                >
-                  Đăng ký
-                </button>
-              </form>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

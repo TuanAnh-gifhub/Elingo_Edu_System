@@ -498,7 +498,15 @@ const StudentClassLearningPage = () => {
   }
 
   if (loading) {
-    return <div className="max-w-6xl mx-auto p-6">Đang tải lớp học...</div>;
+    return (
+      <div className="max-w-6xl mx-auto p-6 flex items-center gap-3 text-slate-700">
+        <span
+          aria-hidden="true"
+          className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#4da6ff]/30 border-t-[#4da6ff]"
+        />
+        <span>Đang tải lớp học...</span>
+      </div>
+    );
   }
 
   if (!classInfo) {

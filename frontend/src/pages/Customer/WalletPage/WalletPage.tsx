@@ -366,7 +366,7 @@ const WalletPage = () => {
                                                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                                 >
-                                    {value.toLocaleString("vi-VN")} đ
+                                    {value.toLocaleString("vi-VN")} VNĐ
                                 </button>
                             ))}
                         </div>
@@ -497,7 +497,7 @@ const WalletPage = () => {
                                     >
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <p>
-                                                <b>{Number(req.amount).toLocaleString("vi-VN")} đ</b> - {req.status}
+                                                <b>{Number(req.amount).toLocaleString("vi-VN")} VNĐ</b> - {req.status}
                                             </p>
                                             <p className={isDarkMode ? 'text-gray-300' : 'text-gray-500'}>
                                                 {new Date(req.createdAt).toLocaleString("vi-VN")}
@@ -570,19 +570,19 @@ const WalletPage = () => {
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Tổng doanh thu</p>
                                 <p className="font-semibold">
-                                    {Number(revenueInfo?.totalIncome ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(revenueInfo?.totalIncome ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Tổng commission đã trả</p>
                                 <p className="font-semibold">
-                                    {Number(revenueInfo?.totalCommission ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(revenueInfo?.totalCommission ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Thực nhận (net)</p>
                                 <p className="font-semibold">
-                                    {Number(revenueInfo?.netRevenue ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(revenueInfo?.netRevenue ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                         </div>
@@ -590,19 +590,19 @@ const WalletPage = () => {
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Hệ thống đang giữ</p>
                                 <p className="font-semibold">
-                                    {Number(escrowInfo?.totalHoldingAmount ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(escrowInfo?.totalHoldingAmount ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Commission sẽ trừ</p>
                                 <p className="font-semibold">
-                                    {Number(escrowInfo?.totalCommissionAmount ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(escrowInfo?.totalCommissionAmount ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                             <div className={`rounded-md p-3 ${isDarkMode ? "bg-[#3a8bd8]/40 text-white" : "bg-gray-50 text-gray-900"}`}>
                                 <p className="opacity-80">Dự kiến cộng ví</p>
                                 <p className="font-semibold">
-                                    {Number(escrowInfo?.totalNetAmount ?? 0).toLocaleString("vi-VN")} đ
+                                    {Number(escrowInfo?.totalNetAmount ?? 0).toLocaleString("vi-VN")} VNĐ
                                 </p>
                             </div>
                         </div>
@@ -614,10 +614,10 @@ const WalletPage = () => {
                                 >
                                     <p className="text-sm font-semibold">Booking: {item.bookingId}</p>
                                     <p className="text-xs mt-1">
-                                        Giữ: {Number(item.grossAmount).toLocaleString("vi-VN")} đ | Commission:{" "}
+                                        Giữ: {Number(item.grossAmount).toLocaleString("vi-VN")} VNĐ | Commission:{" "}
                                         {(Number(item.commissionRate ?? 0) * 100).toFixed(2)}% (
-                                        {Number(item.commissionAmount).toLocaleString("vi-VN")} đ) | Còn lại:{" "}
-                                        {Number(item.netAmount).toLocaleString("vi-VN")} đ
+                                        {Number(item.commissionAmount).toLocaleString("vi-VN")} VNĐ) | Còn lại:{" "}
+                                        {Number(item.netAmount).toLocaleString("vi-VN")} VNĐ
                                     </p>
                                     <p className="text-xs mt-1">
                                         Dự kiến cộng ví:{" "}

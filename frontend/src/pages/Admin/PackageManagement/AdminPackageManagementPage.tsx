@@ -9,7 +9,7 @@ import {
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
 
-const formatCurrency = (v: number) => Number(v).toLocaleString("vi-VN") + " ₫";
+const formatCurrency = (v: number) => Number(v).toLocaleString("vi-VN") + " VNĐ";
 const formatDate = (s: string) => new Date(s).toLocaleDateString("vi-VN");
 
 const statusBadge: Record<string, string> = {
@@ -435,7 +435,7 @@ const AdminPackageManagementPage = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Giá (₫) <span className="text-red-500">*</span></label>
+                  <label className={labelCls}>Giá (VNĐ) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     min={1000}

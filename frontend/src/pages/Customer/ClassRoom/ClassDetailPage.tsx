@@ -193,7 +193,7 @@ const ClassDetailPage = () => {
           <div className="w-full md:w-72 shrink-0 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4 space-y-2">
             <p className="text-sm text-slate-500">Giá vào lớp</p>
             <p className="text-2xl font-bold text-cyan-700">
-              {Number(clazz.price || 0).toLocaleString("vi-VN")} đ
+              {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ
             </p>
             {isStudent ? (
               isEnrolled ? (
@@ -231,7 +231,7 @@ const ClassDetailPage = () => {
                     ? "Lớp đã kết thúc"
                     : enrolling
                       ? "Đang xử lý..."
-                      : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
+                      : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ`}
                 </button>
               )
             ) : (
@@ -261,7 +261,7 @@ const ClassDetailPage = () => {
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl space-y-4">
             <h3 className="text-lg font-semibold text-slate-900">Xác nhận nhập học</h3>
             <p className="text-sm text-slate-600">
-              Bạn có chắc chắn muốn bỏ ra {Number(clazz.price || 0).toLocaleString("vi-VN")} đ để vào lớp này không?
+              Bạn có chắc chắn muốn bỏ ra {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ để vào lớp này không?
             </p>
             <div className="flex justify-end gap-2">
               <button

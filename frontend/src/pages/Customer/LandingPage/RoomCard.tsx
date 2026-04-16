@@ -79,6 +79,7 @@ const RoomCard = ({
   capacity,
   price,
   image,
+  listingId,
   feature,
   onClick,
   variant = 'small',

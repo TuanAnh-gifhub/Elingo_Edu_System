@@ -12,7 +12,6 @@ public interface PostMapper {
 
     @Mapping(target = "authorId", source = "author.userId")
     @Mapping(target = "authorName", source = "author.userName")
-    @Mapping(target = "authorRole", source = "author.role.roleName")
     @Mapping(target = "comments", ignore = true)
     PostResponse toResponse(Post post);
 

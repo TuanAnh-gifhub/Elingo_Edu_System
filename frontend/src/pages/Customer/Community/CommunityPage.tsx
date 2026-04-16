@@ -32,7 +32,6 @@ import { uploadMultipleFiles } from "../../../services/upload/uploadService";
 
 type AudienceType = "Giáo viên" | "Học sinh";
 type PostType = "Quảng bá khóa học" | "Tìm khóa học" | "Thảo luận";
-type FeedFilter = "all" | "teacher" | "student";
 
 interface PostComment {
   id: number | string;
@@ -143,7 +142,12 @@ function normalizePostType(role?: string | null): PostType {
 }
 
 function shouldHidePostBadge(value?: string | null) {
-  return !value;
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "học sinh" || normalized === "tìm khóa học";
 }
 
 function formatRelativeTime(isoDate?: string | null) {
@@ -271,9 +275,6 @@ function mapCreatedPostToFeed(
   const safeAuthorName =
     post.authorName ?? fallback?.authorName ?? "Thành viên Elingo";
   const safePostId = post.postId ?? `local-${Date.now()}`;
-  const roleSource =
-    (post as Partial<CommunityPostResponse> & { authorRole?: string })
-      .authorRole ?? role;
   const media: CommunityMedia[] = [
     ...safeImages.map((imageUrl, index) => ({
       id: `${safePostId}-image-${index}`,
@@ -291,11 +292,11 @@ function mapCreatedPostToFeed(
     id: safePostId,
     authorId: post.authorId ?? fallback?.authorId,
     author: safeAuthorName,
-    role: normalizeRole(roleSource),
+    role: normalizeRole(role),
     subject: "Bài viết cộng đồng",
     time: formatRelativeTime(post.createdAt),
     visibility: post.active === false ? "Đã ẩn" : "Công khai",
-    postType: normalizePostType(roleSource),
+    postType: normalizePostType(role),
     headline: "",
     content: safeContent,
     tags: [],
@@ -398,7 +399,6 @@ function CommunityPage() {
   const { user, isAuthenticated } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "ROLE_ADMIN";
   const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
   const [communityInsights, setCommunityInsights] =
     useState<CommunityInsightStats>(initialInsightStats);
   const [content, setContent] = useState("");
@@ -474,14 +474,9 @@ function CommunityPage() {
         const postList = response?.result?.data ?? [];
 
         if (response) {
-          const mappedPosts = postList.map((post) => {
-            const fallbackRoleForOwnPost =
-              post.authorId && user?.userId && post.authorId === user.userId
-                ? user.role
-                : undefined;
-
-            return mapCreatedPostToFeed(post, fallbackRoleForOwnPost);
-          });
+          const mappedPosts = postList.map((post) =>
+            mapCreatedPostToFeed(post, user?.role),
+          );
           const hydratedPosts = await hydratePostsWithComments(mappedPosts);
           setPosts(hydratedPosts);
         } else {
@@ -1071,19 +1066,6 @@ function CommunityPage() {
   const activeCommentsPost = posts.find(
     (post) => typeof post.id === "string" && post.id === activeCommentsPostId,
   );
-
-  const visiblePosts = posts.filter((post) => {
-    if (feedFilter === "teacher") {
-      return post.role === "Giáo viên";
-    }
-
-    if (feedFilter === "student") {
-      return post.role === "Học sinh";
-    }
-
-    return true;
-  });
-
   const visibleActiveComments = activeCommentsPost
     ? getVisibleComments(activeCommentsPost.commentsPreview)
     : [];
@@ -1246,37 +1228,13 @@ function CommunityPage() {
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFeedFilter("all")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    feedFilter === "all"
-                      ? "bg-sky-600 text-white hover:bg-sky-700"
-                      : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
+                <button className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700">
                   Dành cho tất cả
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedFilter("teacher")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    feedFilter === "teacher"
-                      ? "bg-sky-600 text-white hover:bg-sky-700"
-                      : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
+                <button className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">
                   Giáo viên đăng bài
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedFilter("student")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    feedFilter === "student"
-                      ? "bg-sky-600 text-white hover:bg-sky-700"
-                      : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
+                <button className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">
                   Học sinh tìm lớp
                 </button>
               </div>
@@ -1402,13 +1360,7 @@ function CommunityPage() {
             </div>
           ) : null}
 
-          {!isLoadingPosts && visiblePosts.length === 0 ? (
-            <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-              Không có bài viết phù hợp với bộ lọc hiện tại.
-            </div>
-          ) : null}
-
-          {visiblePosts.map((post, postIndex) => (
+          {posts.map((post, postIndex) => (
             <article
               key={post.id}
               className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm"
@@ -1590,7 +1542,7 @@ function CommunityPage() {
                             </h3>
                           ) : null}
                           <p
-                            className={`${shouldShowHeadline(post) ? "mt-3" : "mt-0"} whitespace-pre-line text-sm leading-7 text-slate-700 md:text-[15px]`}
+                            className={`${shouldShowHeadline(post) ? "mt-3" : "mt-0"} text-sm leading-7 text-slate-700 md:text-[15px]`}
                           >
                             {post.content}
                           </p>
@@ -1877,7 +1829,7 @@ function CommunityPage() {
                 </div>
 
                 <div className="mt-5 space-y-4">
-                  <p className="whitespace-pre-line text-sm leading-7 text-slate-700 md:text-[15px]">
+                  <p className="text-sm leading-7 text-slate-700 md:text-[15px]">
                     {activeCommentsPost.content}
                   </p>
 

@@ -32,7 +32,6 @@ export interface CommunityPostResponse {
   postId: string;
   authorId: string;
   authorName: string;
-  authorRole?: string;
   content: string;
   images: string[];
   videos: string[];

@@ -150,11 +150,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EnrollmentResponse> getEnrollmentsByClassId(UUID classId) {
-        classRoomRepository.findById(classId)
-                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
-        return enrollmentMapper.toResponseList(enrollmentRepository.findByEnrolledClass_ClassId(classId));
     public List<EnrollmentResponse> getEnrollmentsByClass(UUID classId) {
         User currentUser = userService.getCurrentUserEntity();
         if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {

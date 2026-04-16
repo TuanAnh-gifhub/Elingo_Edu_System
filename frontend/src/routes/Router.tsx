@@ -35,6 +35,8 @@ import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
 import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
 import AdminReviewManagementPage from "../pages/Admin/ReviewManagement/AdminReviewManagementPage";
+import AdminClassManagementPage from "../pages/Admin/ClassManagement/AdminClassManagementPage";
+import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
 
 export const router = createBrowserRouter([
   {
@@ -204,23 +206,15 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <div className="p-6">
-            <h1
-              className="text-2xl font-bold mb-4"
-              style={{ color: "inherit" }}
-            >
-              Dashboard
-            </h1>
-            <p style={{ color: "inherit" }}>
-              Chào mừng đến với trang quản trị!
-            </p>
-          </div>
-        ),
+        element: <AdminDashboardPage />,
       },
       {
         path: "customers",
         element: <UserManagement />,
+      },
+      {
+        path: "classes",
+        element: <AdminClassManagementPage />,
       },
       {
         path: "transactions",

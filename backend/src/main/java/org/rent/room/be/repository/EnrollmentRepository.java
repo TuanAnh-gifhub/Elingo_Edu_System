@@ -19,4 +19,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     boolean existsByStudent_UserIdAndEnrolledClass_ClassId(UUID studentId, UUID classId);
 
     List<Enrollment> findByStudent_UserId(UUID studentId);
+
+    @Query("SELECT e FROM Enrollment e WHERE e.enrolledClass.classId = :classId ORDER BY e.enrollmentDate ASC, e.createdAt ASC")
+    List<Enrollment> findByClassIdOrderByEnrollmentDateAsc(@Param("classId") UUID classId);
 }

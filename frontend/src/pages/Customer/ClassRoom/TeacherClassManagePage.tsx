@@ -21,12 +21,15 @@ import {
   type UpdateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
 import {
+  enrollmentService,
+  type EnrollmentResponse,
+} from "../../../services/classes/enrollmentService";
+import {
   courseService,
   type CourseDto,
   type CreateCourseRequest,
   type UpdateCourseRequest,
 } from "../../../services/courses/courseService";
-import { userService, type UserResponse } from "../../../services/usersService";
 import {
   uploadMultipleFiles,
   uploadToCloudinary,
@@ -456,7 +459,7 @@ const TeacherClassManagePage = () => {
   const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
-  const [students, setStudents] = useState<UserResponse[]>([]);
+  const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
   const [showEditClassForm, setShowEditClassForm] = useState(false);
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
     INITIAL_EDIT_CLASS_FORM,
@@ -639,22 +642,29 @@ const TeacherClassManagePage = () => {
   }, [classId]);
 
   useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
     const loadStudents = async () => {
       try {
         setLoadingStudents(true);
-        const response = await userService.getAllUsers(1, 100, "STUDENT", true);
-        const result = response?.data?.result;
-        const list = (result?.data || []) as UserResponse[];
-        setStudents(list);
+        const enrollments = await enrollmentService.getClassEnrollments(classId);
+        const sortedEnrollments = [...enrollments].sort((first, second) => {
+          const firstTime = new Date(first.enrollmentDate || first.createdAt || 0).getTime();
+          const secondTime = new Date(second.enrollmentDate || second.createdAt || 0).getTime();
+          return firstTime - secondTime;
+        });
+        setClassEnrollments(sortedEnrollments);
       } catch {
-        setStudents([]);
+        setClassEnrollments([]);
       } finally {
         setLoadingStudents(false);
       }
     };
 
     loadStudents();
-  }, []);
+  }, [classId]);
 
   const rating = useMemo(() => {
     if (!classInfo) {
@@ -665,13 +675,8 @@ const TeacherClassManagePage = () => {
   }, [classInfo]);
 
   const registeredStudents = useMemo(() => {
-    const total = classInfo?.currentStudents || 0;
-    if (students.length === 0 || total <= 0) {
-      return [];
-    }
-
-    return students.slice(0, total);
-  }, [students, classInfo?.currentStudents]);
+    return classEnrollments;
+  }, [classEnrollments]);
 
   const feedbackList = useMemo<ClassroomFeedback[]>(() => {
     if (!classInfo) {
@@ -682,7 +687,7 @@ const TeacherClassManagePage = () => {
       return [];
     }
 
-    return registeredStudents.slice(0, 8).map((student, index) => {
+    return registeredStudents.slice(0, 8).map((enrollment, index) => {
       const classScore = getClassRating(classInfo.classId);
       const adjusted = Math.max(
         3.2,
@@ -690,8 +695,8 @@ const TeacherClassManagePage = () => {
       );
 
       return {
-        id: `${classInfo.classId}-fb-${student.userId}`,
-        studentName: student.userName,
+        id: `${classInfo.classId}-fb-${enrollment.studentId}`,
+        studentName: enrollment.studentName || "Học sinh",
         rating: Number(adjusted.toFixed(1)),
         comment:
           index % 2 === 0
@@ -2617,26 +2622,30 @@ const TeacherClassManagePage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-500 border-b">
+                    <th className="pb-2">STT</th>
                     <th className="pb-2">Tên học sinh</th>
-                    <th className="pb-2">Email</th>
-                    <th className="pb-2">Số điện thoại</th>
+                    <th className="pb-2">Thời gian nhập học</th>
                     <th className="pb-2">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {registeredStudents.map((student) => (
+                  {registeredStudents.map((enrollment, index) => (
                     <tr
-                      key={student.userId}
+                      key={enrollment.enrollmentId}
                       className="border-b border-slate-100"
                     >
+                      <td className="py-3 pr-2 text-slate-900 font-medium">
+                        {index + 1}
+                      </td>
                       <td className="py-3 pr-2 text-slate-900">
-                        {student.userName}
+                        {enrollment.studentName || "Học sinh"}
                       </td>
                       <td className="py-3 pr-2 text-slate-600">
-                        {student.email}
-                      </td>
-                      <td className="py-3 pr-2 text-slate-600">
-                        {student.phone || "-"}
+                        {enrollment.enrollmentDate
+                          ? new Date(enrollment.enrollmentDate).toLocaleString("vi-VN")
+                          : enrollment.createdAt
+                            ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
+                            : "-"}
                       </td>
                       <td className="py-3">
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">

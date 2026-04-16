@@ -148,6 +148,42 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollmentMapper.toResponseList(enrollmentRepository.findByStudent_UserId(student.getUserId()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EnrollmentResponse> getEnrollmentsByClass(UUID classId) {
+        User currentUser = userService.getCurrentUserEntity();
+        if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        String roleName = currentUser.getRole().getRoleName();
+
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        if ("TEACHER".equalsIgnoreCase(roleName)) {
+            if (classRoom.getTeacher() == null
+                    || classRoom.getTeacher().getUserId() == null
+                    || !classRoom.getTeacher().getUserId().equals(currentUser.getUserId())) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+        } else if ("STUDENT".equalsIgnoreCase(roleName)) {
+            boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
+                    currentUser.getUserId(),
+                    classId
+            );
+            if (!enrolled) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+        } else {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        return enrollmentMapper.toResponseList(
+                enrollmentRepository.findByClassIdOrderByEnrollmentDateAsc(classId)
+        );
+    }
+
     private boolean isStudent(User user) {
         return user.getRole() != null
                 && user.getRole().getRoleName() != null

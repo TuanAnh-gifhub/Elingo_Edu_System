@@ -67,6 +67,12 @@ public class EnrollmentController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/class/{classId}")
+    public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getEnrollmentsByClassId(
+            @PathVariable UUID classId
+    ) {
+        List<EnrollmentResponse> enrollments = enrollmentService.getEnrollmentsByClassId(classId);
     @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
     @GetMapping("/classes/{classId}")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getEnrollmentsByClass(

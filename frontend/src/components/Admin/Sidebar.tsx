@@ -5,7 +5,6 @@ import {
   AppstoreOutlined,
   TeamOutlined,
   DollarOutlined,
-  SettingOutlined,
   LogoutOutlined,
   StarOutlined,
   SafetyOutlined,
@@ -54,6 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const items: MenuItem[] = [
     // 1. Tổng quan
     getItem(<Link to="/admin">Dashboard</Link>, "/admin", <AppstoreOutlined />),
+
+    getItem(
+      <Link to="/admin/classes">Quản lý lớp học</Link>,
+      "/admin/classes",
+      <AppstoreOutlined />,
+    ),
 
 
     // 4. Khách hàng
@@ -112,21 +117,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       "/admin/community-posts",
       <MessageOutlined />,
     ),
-
-    getItem("Cài đặt hệ thống", "sub_settings", <SettingOutlined />, [
-      getItem(
-        <Link to="/admin/room-types">Loại phòng</Link>,
-        "/admin/room-types",
-      ),
-      getItem(
-        <Link to="/admin/amenities">Thiết bị & Tiện ích</Link>,
-        "/admin/amenities",
-      ),
-      getItem(
-        <Link to="/admin/settings">Cài đặt chung</Link>,
-        "/admin/settings",
-      ),
-    ]),
 
     // Logout
     getItem("Đăng xuất", "logout", <LogoutOutlined />),

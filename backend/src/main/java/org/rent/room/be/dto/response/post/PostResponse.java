@@ -21,6 +21,7 @@ public class PostResponse {
     UUID postId;
     UUID authorId;
     String authorName;
+    String authorRole;
     String content;
     List<String> images;
     List<String> videos;

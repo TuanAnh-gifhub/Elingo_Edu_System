@@ -5,6 +5,11 @@ import {
   classRoomService,
   type ClassRoomDto,
 } from "../../../services/classes/classRoomService";
+import {
+  reviewService,
+  type ReviewDto,
+  type ReviewSummaryDto,
+} from "../../../services/reviews/reviewService";
 import RichTextContent from "../../../components/common/RichTextContent";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { walletService } from "../../../services/wallet/walletService";
@@ -43,6 +48,12 @@ const ClassDetailPage = () => {
   const [enrolling, setEnrolling] = useState(false);
   const [showConfirmEnroll, setShowConfirmEnroll] = useState(false);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummaryDto | null>(
+    null,
+  );
+  const [recentReviews, setRecentReviews] = useState<ReviewDto[]>([]);
 
   const isStudent = useMemo(() => isStudentRole(user?.role), [user?.role]);
   const hasClassEnded = useMemo(() => {
@@ -98,6 +109,34 @@ const ClassDetailPage = () => {
   }, [classId, isStudent, user?.userId]);
 
   useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadReviews = async () => {
+      setReviewLoading(true);
+      setReviewError(null);
+
+      try {
+        const [summaryRes, reviewPageRes] = await Promise.all([
+          reviewService.getClassReviewSummary(classId),
+          reviewService.getClassReviews(classId, 0, 5),
+        ]);
+
+        setReviewSummary(summaryRes);
+        setRecentReviews(reviewPageRes.data || []);
+      } catch (error) {
+        console.error("Failed to load class reviews", error);
+        setReviewError("Không thể tải đánh giá khóa học.");
+        setReviewSummary(null);
+        setRecentReviews([]);
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    void loadReviews();
+  }, [classId]);
     if (hasClassEnded) {
       setShowConfirmEnroll(false);
     }
@@ -254,6 +293,52 @@ const ClassDetailPage = () => {
             <span className="font-medium">Email:</span> {clazz.teacherEmail || "Đang cập nhật"}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-lg font-semibold text-slate-900">Đánh giá khóa học</h2>
+          <button
+            type="button"
+            onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+            className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-700"
+          >
+            Xem tất cả đánh giá
+          </button>
+        </div>
+
+        {reviewSummary ? (
+          <div className="text-sm text-slate-600">
+            Điểm trung bình: <span className="font-semibold">{reviewSummary.averageRating.toFixed(1)}/5</span>
+            {" "}({reviewSummary.totalReviews} đánh giá)
+          </div>
+        ) : null}
+
+        {reviewLoading ? <p className="text-sm text-slate-500">Đang tải đánh giá...</p> : null}
+        {reviewError ? <p className="text-sm text-rose-600">{reviewError}</p> : null}
+
+        {!reviewLoading && !reviewError && recentReviews.length === 0 ? (
+          <p className="text-sm text-slate-500">Chưa có đánh giá nào cho khóa học này.</p>
+        ) : null}
+
+        {!reviewLoading && !reviewError && recentReviews.length > 0 ? (
+          <div className="space-y-3">
+            {recentReviews.map((review) => (
+              <article key={review.id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="font-semibold text-slate-900">{review.userName}</div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(review.createdAt).toLocaleString("vi-VN")}
+                  </div>
+                </div>
+                <div className="text-sm text-amber-600 mt-1">
+                  {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                </div>
+                <p className="text-sm text-slate-700 mt-2 whitespace-pre-line">{review.comment}</p>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {showConfirmEnroll ? (

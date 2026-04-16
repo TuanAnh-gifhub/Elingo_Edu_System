@@ -16,6 +16,8 @@ public interface ReviewService {
 
     PageResponse<ReviewResponse> getGlobalReviews(int page, int size);
 
+    PageResponse<ReviewResponse> getAdminReviews(int page, int size);
+
     ReviewSummaryResponse getSummaryByClass(UUID classId);
 
 

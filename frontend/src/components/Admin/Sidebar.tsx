@@ -3,9 +3,7 @@ import { Layout, Menu, type MenuProps } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import {
   AppstoreOutlined,
-  CalendarOutlined,
   TeamOutlined,
-  ShopOutlined,
   DollarOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -57,28 +55,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     // 1. Tổng quan
     getItem(<Link to="/admin">Dashboard</Link>, "/admin", <AppstoreOutlined />),
 
-    // 2. Nghiệp vụ chính: Quản lý Lịch đặt
-    getItem("Quản lý Đặt phòng", "sub_booking", <CalendarOutlined />, [
-      getItem(
-        <Link to="/admin/bookings/calendar">Lịch phòng (Calendar)</Link>,
-        "/admin/bookings/calendar",
-      ),
-      getItem(
-        <Link to="/admin/bookings/list">Danh sách đơn đặt</Link>,
-        "/admin/bookings/list",
-      ),
-      getItem(
-        <Link to="/admin/bookings/check-in">Check-in/Check-out</Link>,
-        "/admin/bookings/check-in",
-      ),
-    ]),
-
-    // 3. Quản lý Tài nguyên (Phòng ốc) -> BỎ HẾT CHILD
-    getItem(
-      <Link to="/admin/rooms">Quản lý Phòng & Cơ sở</Link>,
-      "/admin/rooms",
-      <ShopOutlined />,
-    ),
 
     // 4. Khách hàng
     getItem(

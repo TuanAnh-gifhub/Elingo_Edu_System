@@ -10,13 +10,13 @@ import org.rent.room.be.dto.request.review.CreateReviewRequest;
 import org.rent.room.be.dto.request.review.UpdateReviewRequest;
 import org.rent.room.be.dto.response.review.ReviewResponse;
 import org.rent.room.be.dto.response.review.ReviewSummaryResponse;
+import org.rent.room.be.security.SecurityUtils;
 import org.rent.room.be.service.ReviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.security.Principal;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -32,10 +32,9 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ApiResponse<ReviewResponse>> createReview(
             @RequestParam(required = false) UUID classId,
-            @Valid @RequestBody CreateReviewRequest request,
-            Principal principal
+            @Valid @RequestBody CreateReviewRequest request
     ) {
-        UUID userId = UUID.fromString(principal.getName());
+        UUID userId = SecurityUtils.requireCurrentUser().getUserId();
         ReviewResponse response = reviewService.createReview(userId, classId, request);
         return ResponseEntity.ok(ApiResponse.<ReviewResponse>builder()
                 .code(201)
@@ -71,6 +70,20 @@ public class ReviewController {
                 .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getAdminReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        PageResponse<ReviewResponse> response = reviewService.getAdminReviews(page, size);
+        return ResponseEntity.ok(ApiResponse.<PageResponse<ReviewResponse>>builder()
+                .code(200)
+                .message("Get admin reviews successfully")
+                .result(response)
+                .build());
+    }
+
     @GetMapping("/class/{classId}/summary")
     public ResponseEntity<ApiResponse<ReviewSummaryResponse>> getSummaryByClass(@PathVariable UUID classId) {
         ReviewSummaryResponse summary = reviewService.getSummaryByClass(classId);
@@ -85,10 +98,9 @@ public class ReviewController {
     @PutMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
             @PathVariable UUID reviewId,
-            @Valid @RequestBody UpdateReviewRequest request,
-            Principal principal
+            @Valid @RequestBody UpdateReviewRequest request
     ) {
-        UUID userId = UUID.fromString(principal.getName());
+        UUID userId = SecurityUtils.requireCurrentUser().getUserId();
         ReviewResponse response = reviewService.updateReview(reviewId, userId, request);
         return ResponseEntity.ok(ApiResponse.<ReviewResponse>builder()
                 .code(200)
@@ -100,10 +112,9 @@ public class ReviewController {
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> deleteReview(
-            @PathVariable UUID reviewId,
-            Principal principal
+            @PathVariable UUID reviewId
     ) {
-        UUID userId = UUID.fromString(principal.getName());
+        UUID userId = SecurityUtils.requireCurrentUser().getUserId();
         reviewService.deleteReview(reviewId, userId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .code(200)

@@ -143,13 +143,22 @@ const ClassDetailPage = () => {
             </p>
             {isStudent ? (
               isEnrolled ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/classes/${clazz.classId}/learning`)}
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold"
-                >
-                  Vào lớp học của tôi
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/classes/${clazz.classId}/learning`)}
+                    className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold"
+                  >
+                    Vào lớp học của tôi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+                    className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700"
+                  >
+                    Xem & viết đánh giá lớp
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"

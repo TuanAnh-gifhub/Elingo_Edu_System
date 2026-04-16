@@ -1,0 +1,197 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { reviewService, type ReviewDto } from "../../../services/reviews/reviewService";
+import { useAuth } from "../../../context/AuthContext";
+
+type ErrorWithResponse = { response?: { data?: { message?: string } } };
+
+const ClassReviewPage = () => {
+  const { classId } = useParams<{ classId: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const [reviews, setReviews] = useState<ReviewDto[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = async (targetPage = page) => {
+    if (!classId) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [reviewPage, summary] = await Promise.all([
+        reviewService.getClassReviews(classId, targetPage, 10),
+        reviewService.getClassReviewSummary(classId),
+      ]);
+      setReviews(reviewPage.data || []);
+      setPage(reviewPage.currentPage || 0);
+      setTotalPages(Math.max(1, reviewPage.totalPages || 1));
+      setAverageRating(summary.averageRating || 0);
+      setTotalReviews(summary.totalReviews || 0);
+    } catch (e: unknown) {
+      const err = e as ErrorWithResponse;
+      setError(err?.response?.data?.message || "Không thể tải đánh giá lớp học.");
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId]);
+
+  const handleSubmitReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!classId) return;
+
+    if (comment.trim().length < 10) {
+      setError("Nội dung đánh giá cần ít nhất 10 ký tự.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await reviewService.createClassReview(classId, {
+        rating,
+        comment: comment.trim(),
+      });
+      setComment("");
+      setRating(5);
+      await loadData(0);
+    } catch (e: unknown) {
+      const err = e as ErrorWithResponse;
+      setError(err?.response?.data?.message || "Không thể gửi đánh giá.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!classId) {
+    return <div className="max-w-5xl mx-auto p-6">Thiếu classId trên URL.</div>;
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto p-6 space-y-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <button
+          type="button"
+          onClick={() => navigate(`/classes/${classId}`)}
+          className="text-sm text-blue-600 hover:underline"
+        >
+          Quay lại lớp học
+        </button>
+        <h1 className="text-2xl font-bold text-slate-900 mt-2">Đánh giá lớp học</h1>
+        <p className="text-sm text-slate-600 mt-1">
+          Điểm trung bình: <span className="font-semibold">{averageRating.toFixed(1)}/5</span> ({totalReviews} đánh giá)
+        </p>
+      </div>
+
+      {error ? (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </div>
+      ) : null}
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">Gửi đánh giá của bạn</h2>
+        {!isAuthenticated ? (
+          <p className="text-sm text-slate-500">Bạn cần đăng nhập để gửi đánh giá.</p>
+        ) : (
+          <form onSubmit={handleSubmitReview} className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Số sao</label>
+              <select
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              >
+                <option value={5}>5 sao</option>
+                <option value={4}>4 sao</option>
+                <option value={3}>3 sao</option>
+                <option value={2}>2 sao</option>
+                <option value={1}>1 sao</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Nội dung đánh giá</label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                rows={4}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Chia sẻ trải nghiệm của bạn về lớp học..."
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
+            >
+              {submitting ? "Đang gửi..." : "Gửi đánh giá"}
+            </button>
+          </form>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Danh sách đánh giá</h2>
+
+        {loading ? <p className="text-sm text-slate-500 mt-3">Đang tải đánh giá...</p> : null}
+
+        {!loading && reviews.length === 0 ? (
+          <p className="text-sm text-slate-500 mt-3">Chưa có đánh giá nào cho lớp học này.</p>
+        ) : null}
+
+        <div className="mt-4 space-y-3">
+          {reviews.map((review) => (
+            <article key={review.id} className="rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="font-semibold text-slate-900">{review.userName}</div>
+                <div className="text-xs text-slate-500">
+                  {new Date(review.createdAt).toLocaleString("vi-VN")}
+                </div>
+              </div>
+              <div className="text-sm text-amber-600 mt-1">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div>
+              <p className="text-sm text-slate-700 mt-2 whitespace-pre-wrap">{review.comment}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={page <= 0 || loading}
+            onClick={() => void loadData(page - 1)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40"
+          >
+            Trước
+          </button>
+          <span className="text-sm text-slate-600">Trang {page + 1} / {totalPages}</span>
+          <button
+            type="button"
+            disabled={page + 1 >= totalPages || loading}
+            onClick={() => void loadData(page + 1)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40"
+          >
+            Tiếp
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default ClassReviewPage;
+

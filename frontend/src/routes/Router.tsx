@@ -25,6 +25,7 @@ import ClassDetailPage from "../pages/Customer/ClassRoom/ClassDetailPage";
 import TeacherClassManagePage from "../pages/Customer/ClassRoom/TeacherClassManagePage";
 import LessonQuizPage from "../pages/Customer/ClassRoom/LessonQuizPage";
 import StudentClassLearningPage from "../pages/Customer/ClassRoom/StudentClassLearningPage";
+import ClassReviewPage from "../pages/Customer/ClassRoom/ClassReviewPage";
 import CommunityPage from "../pages/Customer/Community/CommunityPage";
 import { ProfilePage } from "../pages/Customer/ProfilePage/ProfilePage";
 import TeacherVerificationPage from "../pages/Customer/TeacherVerification/TeacherVerificationPage";
@@ -32,6 +33,7 @@ import TeacherVerificationManagementPage from "../pages/Admin/TeacherVerificatio
 import SubscriptionPage from "../pages/Customer/Subscription/SubscriptionPage";
 import AdminPackageManagementPage from "../pages/Admin/PackageManagement/AdminPackageManagementPage";
 import AdminCommunityPostManagementPage from "../pages/Admin/CommunityManagement/AdminCommunityPostManagementPage";
+import AdminReviewManagementPage from "../pages/Admin/ReviewManagement/AdminReviewManagementPage";
 
 export const router = createBrowserRouter([
   {
@@ -150,6 +152,11 @@ export const router = createBrowserRouter([
         handle: { breadcrumb: "Lớp học của tôi" },
       },
       {
+        path: "classes/:classId/reviews",
+        element: <ClassReviewPage />,
+        handle: { breadcrumb: "Đánh giá lớp học" },
+      },
+      {
         path: "classes/:classId/lessons/:lessonId/quiz",
         element: <LessonQuizPage />,
         handle: { breadcrumb: "Bài kiểm tra" },
@@ -168,6 +175,8 @@ export const router = createBrowserRouter([
         path: "teacher-verification",
         element: <TeacherVerificationPage />,
         handle: { breadcrumb: "Xác minh giáo viên" },
+      },
+      {
         path: "subscription",
         element: <SubscriptionPage />,
         handle: { breadcrumb: "Gói đăng ký" },
@@ -226,8 +235,14 @@ export const router = createBrowserRouter([
       {
         path: "teacher-verification",
         element: <TeacherVerificationManagementPage />,
+      },
+      {
         path: "packages",
         element: <AdminPackageManagementPage />,
+      },
+      {
+        path: "reviews",
+        element: <AdminReviewManagementPage />,
       },
       {
         path: "community-posts",

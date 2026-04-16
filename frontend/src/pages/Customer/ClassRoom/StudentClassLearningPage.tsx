@@ -194,6 +194,13 @@ const StudentClassLearningPage = () => {
         <p className="text-slate-600 mt-1">
           Theo dõi nội dung bài học và làm quiz trong lớp đã enroll.
         </p>
+        <button
+          type="button"
+          onClick={() => navigate(`/classes/${classId}/reviews`)}
+          className="mt-3 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-700"
+        >
+          Đánh giá lớp học
+        </button>
       </div>
 
       <div className="rounded-2xl border border-cyan-100 bg-white p-2 flex flex-wrap gap-2 shadow-sm">

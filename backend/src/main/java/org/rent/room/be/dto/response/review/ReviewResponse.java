@@ -16,6 +16,8 @@ import java.util.UUID;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class ReviewResponse {
     UUID id;
+    UUID classId;
+    String className;
     Integer rating;
     String comment;
     String userName;

@@ -3,6 +3,7 @@ package org.rent.room.be.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.rent.room.be.base.ApiResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,15 +72,38 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 6. CATCH-ALL: Bắt tất cả các lỗi còn lại (RuntimeException, NullPointer, DB Error...)
-    // Đây là chốt chặn cuối cùng để API không bao giờ chết hoặc trả về stacktrace xấu xí
+        @ExceptionHandler(MaxUploadSizeExceededException.class)
+        public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+                int payloadTooLarge = 413;
+                return ResponseEntity.status(HttpStatusCode.valueOf(payloadTooLarge)).body(
+                                ApiResponse.builder()
+                                .code(payloadTooLarge)
+                                                .message("File qua lon. Vui long upload tep nho hon 50MB.")
+                                                .build()
+                );
+        }
+
+    // 6a. RuntimeException với message cụ thể (business logic errors)
+    // Trả message thật cho frontend thay vì "Uncategorized error"
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<?>> handleRuntimeException(RuntimeException e) {
+        log.error("RuntimeException: {}", e.getMessage());
+        String message = (e.getMessage() != null && !e.getMessage().isBlank())
+                ? e.getMessage()
+                : ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.builder()
+                        .code(HttpStatus.BAD_REQUEST.value())
+                        .message(message)
+                        .build());
+    }
+
+    // 6b. CATCH-ALL: Bắt tất cả các lỗi còn lại (NullPointer, DB Error...)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleUnwantedException(Exception e) {
-        // Ghi log lỗi ra console server để Developer sửa
         log.error("Uncaught Exception: ", e);
-
         ErrorCode errorCode = ErrorCode.UNCATEGORIZED_EXCEPTION;
-
         return ResponseEntity
                 .status(errorCode.getHttpStatusCode())
                 .body(ApiResponse.builder()

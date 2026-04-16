@@ -24,12 +24,14 @@ public enum ErrorCode {
     USER_NOT_FOUND(2002, "User not found", HttpStatus.NOT_FOUND),
     USER_NOT_AUTHENTICATED(2003, "User not authenticated", HttpStatus.UNAUTHORIZED),
     EMAIL_NOT_FOUND(2004, "Email not found", HttpStatus.NOT_FOUND),
+    EMAIL_NOT_VERIFIED(2005, "Email is not verified", HttpStatus.FORBIDDEN),
 
     // ClassRoom
     CLASS_NOT_FOUND(4001, "Class not found", HttpStatus.NOT_FOUND),
     CLASS_FULL(4005, "Class is full", HttpStatus.BAD_REQUEST),
     CLASS_INACTIVE(4006, "Class is not active", HttpStatus.BAD_REQUEST),
     STUDENT_ALREADY_ENROLLED(4007, "Student already enrolled in this class", HttpStatus.BAD_REQUEST),
+    CLASS_SELF_ENROLL_NOT_ALLOWED(4008, "Teacher cannot enroll own class", HttpStatus.BAD_REQUEST),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),
@@ -61,8 +63,18 @@ public enum ErrorCode {
     // Role
     ROLE_NOT_FOUND(3001, "Role not found", HttpStatus.NOT_FOUND),
 
+    // Teacher verification
+    TEACHER_VERIFICATION_NOT_FOUND(3101, "Teacher verification request not found", HttpStatus.NOT_FOUND),
+    TEACHER_VERIFICATION_ALREADY_PENDING(3102, "You already have a pending teacher verification request", HttpStatus.BAD_REQUEST),
+    TEACHER_VERIFICATION_ALREADY_APPROVED(3103, "Your account is already approved as teacher", HttpStatus.BAD_REQUEST),
+    INVALID_CERTIFICATE_FILE(3104, "Only image and PDF certificate files are allowed", HttpStatus.BAD_REQUEST),
+    CERTIFICATE_FILE_TOO_LARGE(3105, "Certificate file exceeds maximum size", HttpStatus.BAD_REQUEST),
+    CERTIFICATE_REQUIRED(3106, "At least one certificate file is required", HttpStatus.BAD_REQUEST),
+
     //Wallet
-    WALLET_NOT_FOUND(6001,"Người dùng chưa tạo ví cá nhân", HttpStatus.NOT_FOUND),
+    WALLET_NOT_FOUND(7001,"Người dùng chưa tạo ví cá nhân", HttpStatus.NOT_FOUND),
+    WALLET_LOCKED(7002, "Ví của bạn đang bị khóa", HttpStatus.BAD_REQUEST),
+    WALLET_INSUFFICIENT_BALANCE(7003, "Số dư ví không đủ", HttpStatus.BAD_REQUEST),
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung

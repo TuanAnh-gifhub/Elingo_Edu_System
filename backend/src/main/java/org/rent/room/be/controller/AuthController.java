@@ -80,6 +80,8 @@ public class AuthController {
     public ResponseEntity<ApiResponse<?>> sendOtp(
             @RequestBody CreateUsersRequest user
     ) {
+        // Registration role is always STUDENT, clients cannot self-assign elevated roles.
+        user.setRoleName("STUDENT");
         emailService.sendOtpRegister(user);
 
         return ResponseEntity.ok(
@@ -98,6 +100,7 @@ public class AuthController {
         CreateUsersRequest userRequest = emailService.verifyAndGetPendingUser(email, otp);
 
         userService.createUser(userRequest);
+        emailService.deletePendingUser(email);
 
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()

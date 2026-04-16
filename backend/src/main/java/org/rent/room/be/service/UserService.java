@@ -5,6 +5,7 @@ import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.request.user.UpdateUserRequest;
 import org.rent.room.be.dto.response.UserResponse;
+import org.rent.room.be.dto.response.teacher.TeacherProfileResponse;
 import org.rent.room.be.entity.User;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,14 @@ public interface UserService {
     void updateStatus(UUID id, Boolean active);
 
     UserResponse updateUser(UUID id, UpdateUserRequest request);
+
+    List<TeacherProfileResponse> getTopTeachers(int limit);
+
+    long countActiveTeachers();
+
+    PageResponse<UserResponse> getTeachers(int page, int size, Boolean active, String keyword);
+
+    void updateTeacherStatus(UUID teacherId, Boolean active);
 
     @Transactional(readOnly = true)
     User getCurrentUserEntity();

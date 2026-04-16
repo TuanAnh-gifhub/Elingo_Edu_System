@@ -43,8 +43,6 @@ spring:
     uri: ${SPRING_DATA_MONGODB_URI}
     auto-index-creation: true
 
-
-
 server:
   # Dùng 8080 mặc định khi chạy local nếu SERVER_PORT chưa được set
   port: ${SERVER_PORT:8080}
@@ -62,8 +60,8 @@ cors:
 jwt:
   # Nếu không có biến môi trường, dùng giá trị mặc định để chạy local
   secret-key: ${JWT_SECRET_KEY:YXQtYmFzZTY0LXNpbXBsZS1zZWNyZXQtdGVzdC1rZXktMzJi}
-  access-expiration: ${JWT_ACCESS_EXPIRATION:900000}       # 15 phút
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 ngày
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000} # 15 phút
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 ngày
 
 app:
   cookie:
@@ -87,3 +85,9 @@ payos:
   base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/deposit-result}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/deposit-result}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+  folder: ${CLOUDINARY_FOLDER:}

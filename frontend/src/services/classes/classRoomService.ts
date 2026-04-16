@@ -28,6 +28,7 @@ export interface CreateClassRoomRequest {
   endDate: string;
   maxStudents: number;
   schedule: string;
+  poster?: string;
 }
 
 export interface UpdateClassRoomRequest {
@@ -39,6 +40,7 @@ export interface UpdateClassRoomRequest {
   endDate: string;
   maxStudents: number;
   schedule: string;
+  poster?: string;
 }
 
 export interface ClassRoomPageResponse {
@@ -49,9 +51,48 @@ export interface ClassRoomPageResponse {
   data: ClassRoomDto[];
 }
 
+export interface ClassRoomFilterParams {
+  keyword?: string;
+  teacherId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  studyDay?: string;
+  studyHour?: string;
+}
+
 export const classRoomService = {
-  async getClasses(page = 1, size = 10): Promise<ClassRoomPageResponse> {
-    const res = await api.get("/classes", { params: { page, size } });
+  async getClasses(
+    page = 1,
+    size = 10,
+    filters?: ClassRoomFilterParams,
+  ): Promise<ClassRoomPageResponse> {
+    const params: Record<string, string | number> = { page, size };
+
+    if (filters?.keyword?.trim()) {
+      params.keyword = filters.keyword.trim();
+    }
+
+    if (filters?.teacherId?.trim()) {
+      params.teacherId = filters.teacherId.trim();
+    }
+
+    if (typeof filters?.minPrice === "number") {
+      params.minPrice = filters.minPrice;
+    }
+
+    if (typeof filters?.maxPrice === "number") {
+      params.maxPrice = filters.maxPrice;
+    }
+
+    if (filters?.studyDay?.trim()) {
+      params.studyDay = filters.studyDay.trim();
+    }
+
+    if (filters?.studyHour?.trim()) {
+      params.studyHour = filters.studyHour.trim();
+    }
+
+    const res = await api.get("/classes", { params });
     return res.data.result as ClassRoomPageResponse;
   },
 

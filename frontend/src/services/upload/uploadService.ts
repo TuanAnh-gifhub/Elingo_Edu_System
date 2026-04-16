@@ -1,20 +1,6 @@
+import api from "../../config/axios";
+
 type CloudinaryResourceType = "image" | "video" | "raw";
-
-interface CloudinaryUploadResponse {
-  secure_url: string;
-  resource_type: CloudinaryResourceType;
-  width?: number;
-  height?: number;
-  format?: string;
-  bytes?: number;
-  duration?: number;
-}
-
-interface CloudinaryErrorResponse {
-  error?: {
-    message?: string;
-  };
-}
 
 interface UploadOptions {
   folder?: string;
@@ -47,35 +33,26 @@ interface MediaMetadata {
   thumbnail?: string;
 }
 
-interface CloudinaryConfig {
-  cloudName: string;
-  uploadPreset: string;
+interface BackendUploadResponse {
+  url: string;
+  resourceType?: CloudinaryResourceType | string | null;
+  publicId?: string | null;
+  format?: string | null;
+  width?: number | null;
+  height?: number | null;
+  bytes?: number | null;
+  duration?: number | null;
 }
 
-const getCloudinaryConfig = (): CloudinaryConfig => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  const missingKeys: string[] = [];
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  result: T;
+}
 
-  if (!cloudName || cloudName.trim().length === 0) {
-    missingKeys.push("VITE_CLOUDINARY_CLOUD_NAME");
-  }
-
-  if (!uploadPreset || uploadPreset.trim().length === 0) {
-    missingKeys.push("VITE_CLOUDINARY_UPLOAD_PRESET");
-  }
-
-  if (missingKeys.length > 0) {
-    throw new Error(
-      `Cloudinary chưa được cấu hình. Thiếu biến môi trường: ${missingKeys.join(", ")}`,
-    );
-  }
-
-  return {
-    cloudName: cloudName.trim(),
-    uploadPreset: uploadPreset.trim(),
-  };
-};
+interface ApiErrorPayload {
+  message?: string;
+}
 
 const getFileExtension = (fileName: string): string | undefined => {
   const dotIndex = fileName.lastIndexOf(".");
@@ -84,14 +61,6 @@ const getFileExtension = (fileName: string): string | undefined => {
   }
 
   return fileName.slice(dotIndex + 1).toLowerCase();
-};
-
-const sanitizeFileName = (fileName: string): string => {
-  return fileName
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-zA-Z0-9._-]/g, "")
-    .replace(/-+/g, "-");
 };
 
 const resolveResourceType = (fileType: string): CloudinaryResourceType => {
@@ -166,93 +135,35 @@ const extractMediaMetadata = async (file: File): Promise<MediaMetadata> => {
   return { format, size: file.size };
 };
 
-const buildPublicId = (file: File, options: UploadOptions): string => {
-  const folder = options.folder?.trim() || "uploads";
-  const safeFolder = folder.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
-  const timestamp = Date.now();
-  const originalName = sanitizeFileName(file.name) || "file";
-  const providedName = options.fileName
-    ? sanitizeFileName(options.fileName)
-    : "";
-  const finalName = providedName || `${timestamp}-${originalName}`;
-  const dotIndex = finalName.lastIndexOf(".");
-  const finalNameWithoutExtension =
-    dotIndex > 0 ? finalName.slice(0, dotIndex) : finalName;
-
-  return `${safeFolder}/${finalNameWithoutExtension}`;
-};
-
-const uploadToCloudinaryApi = async (
+const uploadToBackendApi = async (
   file: File,
   options: UploadOptions,
-  config: CloudinaryConfig,
-): Promise<CloudinaryUploadResponse> => {
-  const endpoint = `https://api.cloudinary.com/v1_1/${config.cloudName}/auto/upload`;
+): Promise<BackendUploadResponse> => {
   const formData = new FormData();
 
   formData.append("file", file);
-  formData.append("upload_preset", config.uploadPreset);
-  formData.append("public_id", buildPublicId(file, options));
-
-  if (options.folder?.trim()) {
-    formData.append("folder", options.folder.trim());
-  }
 
   if (options.metadata && Object.keys(options.metadata).length > 0) {
-    const context = Object.entries(options.metadata)
-      .map(([key, value]) => `${key}=${value}`)
-      .join("|");
-    formData.append("context", context);
+    formData.append("metadata", JSON.stringify(options.metadata));
   }
 
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", endpoint, true);
-
-    xhr.upload.onprogress = (event) => {
-      if (!options.onProgress) {
-        return;
-      }
-
-      const progress = event.lengthComputable
-        ? (event.loaded / event.total) * 100
-        : 0;
-      options.onProgress(progress, file);
-    };
-
-    xhr.onerror = () => reject(new Error("Không thể kết nối đến Cloudinary."));
-
-    xhr.onload = () => {
-      const responseText = xhr.responseText || "";
-      const isSuccess = xhr.status >= 200 && xhr.status < 300;
-
-      if (isSuccess) {
-        try {
-          resolve(JSON.parse(responseText) as CloudinaryUploadResponse);
-          return;
-        } catch {
-          reject(new Error("Cloudinary trả về dữ liệu không hợp lệ."));
+  const response = await api.post<ApiResponse<BackendUploadResponse>>(
+    "/files/cloudinary",
+    formData,
+    {
+      onUploadProgress: (event) => {
+        if (!options.onProgress) {
           return;
         }
-      }
 
-      try {
-        const errorBody = JSON.parse(responseText) as CloudinaryErrorResponse;
-        reject(
-          new Error(
-            errorBody.error?.message ||
-              `Upload thất bại với mã lỗi ${xhr.status} từ Cloudinary.`,
-          ),
-        );
-      } catch {
-        reject(
-          new Error(`Upload thất bại với mã lỗi ${xhr.status} từ Cloudinary.`),
-        );
-      }
-    };
+        const total = event.total ?? 0;
+        const progress = total > 0 ? (event.loaded / total) * 100 : 0;
+        options.onProgress(progress, file);
+      },
+    },
+  );
 
-    xhr.send(formData);
-  });
+  return response.data.result;
 };
 
 const createFailedUploadResult = (
@@ -275,22 +186,9 @@ export const uploadToCloudinary = async (
   file: File,
   options: UploadOptions = {},
 ): Promise<UploadResult> => {
-  let cloudinaryConfig: CloudinaryConfig;
-  try {
-    cloudinaryConfig = getCloudinaryConfig();
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Cloudinary chưa được cấu hình. Hãy kiểm tra file .env.";
-    throw new Error(
-      `${message} Sau khi cập nhật .env, hãy restart Vite server.`,
-    );
-  }
-
   try {
     const [uploadData, mediaMetadata] = await Promise.all([
-      uploadToCloudinaryApi(file, options, cloudinaryConfig),
+      uploadToBackendApi(file, options),
       extractMediaMetadata(file),
     ]);
 
@@ -298,8 +196,9 @@ export const uploadToCloudinary = async (
       success: true,
       data: {
         resourceType:
-          uploadData.resource_type || resolveResourceType(file.type),
-        url: uploadData.secure_url,
+          (uploadData.resourceType as CloudinaryResourceType) ||
+          resolveResourceType(file.type),
+        url: uploadData.url,
         width: uploadData.width || mediaMetadata.width,
         height: uploadData.height || mediaMetadata.height,
         format: uploadData.format || mediaMetadata.format,
@@ -310,7 +209,16 @@ export const uploadToCloudinary = async (
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Upload file thất bại.";
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof (error as { response?: { data?: ApiErrorPayload } }).response?.data
+        ?.message === "string"
+        ? (error as { response?: { data?: ApiErrorPayload } }).response!.data!
+            .message!
+        : error instanceof Error
+          ? error.message
+          : "Upload file thất bại.";
     return createFailedUploadResult(file, message);
   }
 };

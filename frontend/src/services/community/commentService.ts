@@ -34,6 +34,7 @@ export interface UpdateCommunityCommentRequest {
 }
 
 export type DeleteCommunityCommentResponse = string;
+export type RestoreCommunityCommentResponse = string;
 
 const commentService = {
   getCommentsByPostId: async (
@@ -41,6 +42,19 @@ const commentService = {
   ): Promise<ApiResponse<CommunityCommentResponse[]>> => {
     const response = await api.get<ApiResponse<CommunityCommentResponse[]>>(
       "/comments",
+      {
+        params: { postId },
+      },
+    );
+
+    return response.data;
+  },
+
+  getHiddenCommentsByPostId: async (
+    postId: string,
+  ): Promise<ApiResponse<CommunityCommentResponse[]>> => {
+    const response = await api.get<ApiResponse<CommunityCommentResponse[]>>(
+      "/comments/hidden",
       {
         params: { postId },
       },
@@ -78,6 +92,16 @@ const commentService = {
     const response = await api.delete<
       ApiResponse<DeleteCommunityCommentResponse>
     >(`/comments/${commentId}`);
+
+    return response.data;
+  },
+
+  restoreComment: async (
+    commentId: string,
+  ): Promise<ApiResponse<RestoreCommunityCommentResponse>> => {
+    const response = await api.post<ApiResponse<RestoreCommunityCommentResponse>>(
+      `/comments/${commentId}/restore`,
+    );
 
     return response.data;
   },

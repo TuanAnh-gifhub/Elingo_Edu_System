@@ -53,6 +53,10 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.SOCIAL_ACCOUNT_REQUIRED);
         }
 
+        if (Boolean.FALSE.equals(user.getEmailVerified())) {
+            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -72,7 +76,6 @@ public class AuthServiceImpl implements AuthService {
 
         if (user == null) {
             Role renterRole = roleRepository.findByRoleName("STUDENT")
-                    .or(() -> roleRepository.findByRoleName("STEACHER"))
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
             user = User.builder()
@@ -83,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
                     .active(true)
                     .provider(AuthProvider.GOOGLE)
                     .passwordHash(null)
+                    .emailVerified(true)
                     .build();
 
             userRepository.save(user);
@@ -92,6 +96,10 @@ public class AuthServiceImpl implements AuthService {
 
             if (user.getProvider() == AuthProvider.LOCAL) {
                 user.setProvider(AuthProvider.BOTH);
+            }
+
+            if (user.getEmailVerified() == null) {
+                user.setEmailVerified(true);
             }
 
             userRepository.save(user);

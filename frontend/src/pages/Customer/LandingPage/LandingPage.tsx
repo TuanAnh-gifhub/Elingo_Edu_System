@@ -14,6 +14,10 @@ import {
   classRoomService,
   type ClassRoomDto,
 } from "../../../services/classes/classRoomService";
+import {
+  teacherService,
+  type TeacherProfileDto,
+} from "../../../services/teachers/teacherService";
 
 const useScrollspy = () => ({ setActiveSection: (_section: string) => { void _section; } });
 
@@ -305,9 +309,6 @@ const LandingPage = () => {
           if (entry.target.id === "official-stores") {
             setDecodeOfficialStores(entry.isIntersecting);
           }
-          if (entry.target.id === "featured-stores") {
-            setDecodeFeaturedStores(entry.isIntersecting);
-          }
         });
       },
       { threshold: 0.3 }
@@ -384,6 +385,22 @@ const LandingPage = () => {
     params.set('type', type);
     navigate(`/products?${params.toString()}`);
   };
+
+  const [teacherProfiles, setTeacherProfiles] = useState<TeacherProfileDto[]>([]);
+
+  useEffect(() => {
+    const fetchTeacherProfiles = async () => {
+      try {
+        const teachers = await teacherService.getTopTeachers(8);
+        setTeacherProfiles(teachers);
+      } catch (error) {
+        console.error("❌ LandingPage - Error fetching top teachers:", error);
+        setTeacherProfiles([]);
+      }
+    };
+
+    fetchTeacherProfiles();
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full" style={{ background: isDarkMode ? '#1a1a2e' : '#f5f7fa' }}>
@@ -841,7 +858,7 @@ const LandingPage = () => {
       </div>
 
       {/* About Us Section */}
-      <AboutUs isDarkMode={isDarkMode} />
+      <AboutUs isDarkMode={isDarkMode} teacherProfiles={teacherProfiles} />
 
       {/* Footer - Outside of content div to avoid sidebar margin */}
       <Footer ref={footerRef} isDarkMode={isDarkMode} />

@@ -4,7 +4,6 @@ import {
   FiBookmark,
   FiClock,
   FiEdit3,
-  FiFilter,
   FiGlobe,
   FiHeart,
   FiImage,
@@ -14,12 +13,11 @@ import {
   FiSend,
   FiTrash2,
   FiTrendingUp,
-  FiUserPlus,
   FiUsers,
   FiVideo,
   FiX,
 } from "react-icons/fi";
-import { FaChalkboardTeacher, FaGraduationCap, FaMedal } from "react-icons/fa";
+import { FaGraduationCap, FaMedal } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../context/AuthContext";
 import commentService, {
@@ -42,6 +40,8 @@ interface PostComment {
   role: AudienceType;
   time: string;
   content: string;
+  isHiddenByAdmin?: boolean;
+  hiddenReason?: string;
 }
 
 interface CommunityMedia {
@@ -79,149 +79,17 @@ interface CommunityPost {
   hasLiked?: boolean;
 }
 
-const communityStats = [
-  { label: "Bài viết hôm nay", value: "124", icon: FiEdit3 },
-  { label: "Giáo viên đang hoạt động", value: "58", icon: FaChalkboardTeacher },
-  { label: "Học sinh cần tư vấn", value: "92", icon: FaGraduationCap },
-];
+interface CommunityInsightStats {
+  postsToday: number;
+  studentsNeedingAdvice: number;
+}
 
-const trendingTopics = [
-  "IELTS cấp tốc 6.5+",
-  "Luyện speaking 1 kèm 1",
-  "Gia sư Toán online lớp 10",
-  "Khóa học tiếng Anh cho người đi làm",
-  "Workshop giao tiếp tiếng Anh cuối tuần",
-];
+const initialInsightStats: CommunityInsightStats = {
+  postsToday: 0,
+  studentsNeedingAdvice: 0,
+};
 
-const suggestedGroups = [
-  {
-    name: "Cộng đồng IELTS Elingo",
-    members: "2.4k thành viên",
-    tone: "from-sky-500 to-cyan-400",
-  },
-  {
-    name: "Giáo viên ngoại ngữ chất lượng",
-    members: "1.2k thành viên",
-    tone: "from-emerald-500 to-teal-400",
-  },
-  {
-    name: "Học sinh tìm lớp phù hợp",
-    members: "3.1k thành viên",
-    tone: "from-amber-500 to-orange-400",
-  },
-];
-
-const initialPosts: CommunityPost[] = [
-  {
-    id: 1,
-    author: "Cô Minh Anh",
-    role: "Giáo viên",
-    subject: "IELTS / Speaking",
-    time: "15 phút trước",
-    visibility: "Công khai",
-    postType: "Quảng bá khóa học",
-    headline: "Mở lớp IELTS Speaking 1 kèm 1 cho người mất gốc đến 6.5+",
-    content:
-      "Mình mở 6 slot học thử miễn phí trong tuần này cho học viên muốn cải thiện phản xạ speaking. Lộ trình cá nhân hóa theo mục tiêu du học, đi làm hoặc thi đầu ra. Học online buổi tối, có feedback từng bài nói và mock test cuối tuần.",
-    tags: ["IELTS", "Speaking", "1 kèm 1", "Online buổi tối"],
-    media: [
-      { id: "1-1", type: "placeholder", value: "Lộ trình 8 tuần" },
-      { id: "1-2", type: "placeholder", value: "Mock test cuối tuần" },
-    ],
-    stats: { likes: 128, comments: 24, shares: 12 },
-    commentsPreview: [
-      {
-        id: 11,
-        author: "Hà Vy",
-        role: "Học sinh",
-        time: "8 phút trước",
-        content:
-          "Lớp này phù hợp cho người đang ở mức 4.5 lên 6.0 trong 3 tháng không cô?",
-      },
-      {
-        id: 12,
-        author: "Cô Minh Anh",
-        role: "Giáo viên",
-        time: "5 phút trước",
-        content:
-          "Phù hợp em nhé, cô sẽ test đầu vào và điều chỉnh lesson plan riêng.",
-      },
-    ],
-  },
-  {
-    id: 2,
-    author: "Nguyễn Khánh Linh",
-    role: "Học sinh",
-    subject: "Tiếng Anh giao tiếp",
-    time: "37 phút trước",
-    visibility: "Thành viên Elingo",
-    postType: "Tìm khóa học",
-    headline:
-      "Cần tìm lớp tiếng Anh giao tiếp cho người đi làm, học sau 8h tối",
-    content:
-      "Mình đang đi làm full-time, cần khóa học giao tiếp online tập trung vào họp, thuyết trình và phản xạ trong môi trường công sở. Ngân sách khoảng 1.5 đến 2 triệu mỗi tháng, ưu tiên lớp nhỏ hoặc mentor theo sát.",
-    tags: ["Người đi làm", "Giao tiếp", "Buổi tối", "Lớp nhỏ"],
-    media: [
-      { id: "2-1", type: "placeholder", value: "Mục tiêu trong 4 tháng" },
-    ],
-    stats: { likes: 76, comments: 31, shares: 4 },
-    commentsPreview: [
-      {
-        id: 21,
-        author: "Thầy Quang Huy",
-        role: "Giáo viên",
-        time: "20 phút trước",
-        content:
-          "Thầy có lớp 6 người, học 2 buổi tối mỗi tuần, tập trung nhiều vào tình huống công việc.",
-      },
-      {
-        id: 22,
-        author: "Mai Trang",
-        role: "Học sinh",
-        time: "16 phút trước",
-        content:
-          "Mình đang học dạng lớp này và thấy hiệu quả nếu có speaking club cuối tuần nữa.",
-      },
-    ],
-  },
-  {
-    id: 3,
-    author: "Thầy Đức Mạnh",
-    role: "Giáo viên",
-    subject: "Toán THPT",
-    time: "1 giờ trước",
-    visibility: "Công khai",
-    postType: "Thảo luận",
-    headline:
-      "Theo mọi người học sinh lớp 12 đang cần gì nhất ở lớp Toán online?",
-    content:
-      "Mình đang thiết kế lại khóa ôn thi THPTQG môn Toán và muốn lấy thêm insight từ phụ huynh và học sinh. Các bạn ưu tiên chữa đề, học theo chuyên đề hay cần mentor theo sát tiến độ hơn?",
-    tags: ["Toán 12", "THPTQG", "Khảo sát", "Ôn thi"],
-    media: [
-      { id: "3-1", type: "placeholder", value: "Khảo sát nội dung khóa học" },
-      { id: "3-2", type: "placeholder", value: "Bảng tiến độ tuần" },
-    ],
-    stats: { likes: 93, comments: 42, shares: 7 },
-    commentsPreview: [
-      {
-        id: 31,
-        author: "Phạm Hoàng",
-        role: "Học sinh",
-        time: "45 phút trước",
-        content:
-          "Em cần chữa đề có phân tích lỗi sai chi tiết hơn là chỉ giải nhanh.",
-      },
-      {
-        id: 32,
-        author: "Lan Anh",
-        role: "Học sinh",
-        time: "39 phút trước",
-        content:
-          "Nếu có bảng theo dõi tiến độ và deadline bài tập thì sẽ giữ kỷ luật tốt hơn nhiều.",
-      },
-    ],
-  },
-];
+// Không dùng mock data — toàn bộ bài viết được tải từ API
 
 const roleStyles: Record<AudienceType, string> = {
   "Giáo viên": "bg-sky-100 text-sky-700",
@@ -241,6 +109,8 @@ const mediaCardTones = [
 ];
 
 const SUCCESS_CODES = new Set([0, 200]);
+const COMMUNITY_RULES_VIOLATION_NOTE =
+  "Bình luận này đã bị ẩn vì vi phạm quy tắc cộng đồng.";
 
 const SUCCESS_TOAST_OPTIONS = {
   style: {
@@ -269,6 +139,15 @@ function normalizePostType(role?: string | null): PostType {
   return normalizeRole(role) === "Giáo viên"
     ? "Quảng bá khóa học"
     : "Tìm khóa học";
+}
+
+function shouldHidePostBadge(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "học sinh" || normalized === "tìm khóa học";
 }
 
 function formatRelativeTime(isoDate?: string | null) {
@@ -304,6 +183,8 @@ function formatRelativeTime(isoDate?: string | null) {
 function mapCommentFromApi(
   comment: Partial<CommunityApiCommentResponse>,
 ): PostComment {
+  const isHiddenByAdmin = comment.active === false;
+
   return {
     id:
       comment.commentId ||
@@ -312,7 +193,11 @@ function mapCommentFromApi(
     author: comment.authorName || "Thành viên Elingo",
     role: "Học sinh",
     time: formatRelativeTime(comment.createdAt),
-    content: comment.content || "",
+    content: isHiddenByAdmin
+      ? COMMUNITY_RULES_VIOLATION_NOTE
+      : (comment.content || ""),
+    isHiddenByAdmin,
+    hiddenReason: isHiddenByAdmin ? COMMUNITY_RULES_VIOLATION_NOTE : undefined,
   };
 }
 
@@ -321,6 +206,8 @@ function mapCreatedCommentToFeed(
   role?: string | null,
   fallback?: { content?: string; authorName?: string },
 ): PostComment {
+  const isHiddenByAdmin = comment.active === false;
+
   return {
     id:
       comment.commentId ||
@@ -329,7 +216,11 @@ function mapCreatedCommentToFeed(
     author: comment.authorName || fallback?.authorName || "Thành viên Elingo",
     role: normalizeRole(role),
     time: formatRelativeTime(comment.createdAt),
-    content: comment.content ?? fallback?.content ?? "",
+    content: isHiddenByAdmin
+      ? COMMUNITY_RULES_VIOLATION_NOTE
+      : (comment.content ?? fallback?.content ?? ""),
+    isHiddenByAdmin,
+    hiddenReason: isHiddenByAdmin ? COMMUNITY_RULES_VIOLATION_NOTE : undefined,
   };
 }
 
@@ -449,6 +340,42 @@ function getMediaUrls(post: CommunityPost, mediaType: "image" | "video") {
     .map((mediaItem) => mediaItem.value);
 }
 
+function formatCount(value: number) {
+  return new Intl.NumberFormat("vi-VN").format(Math.max(0, value));
+}
+
+function isTodayDate(isoDate?: string | null) {
+  if (!isoDate) {
+    return false;
+  }
+
+  const parsedDate = new Date(isoDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
+  return (
+    parsedDate.getFullYear() === now.getFullYear() &&
+    parsedDate.getMonth() === now.getMonth() &&
+    parsedDate.getDate() === now.getDate()
+  );
+}
+
+function isAdviceSeekingContent(content?: string | null) {
+  const normalized = (content || "").toLowerCase();
+
+  return (
+    normalized.includes("tư vấn") ||
+    normalized.includes("tim lop") ||
+    normalized.includes("tìm lớp") ||
+    normalized.includes("tim khoa hoc") ||
+    normalized.includes("tìm khóa học") ||
+    normalized.includes("can hoc") ||
+    normalized.includes("cần học")
+  );
+}
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -470,7 +397,10 @@ function Avatar({ name, tone }: { name: string; tone: string }) {
 
 function CommunityPage() {
   const { user, isAuthenticated } = useAuth();
-  const [posts, setPosts] = useState<CommunityPost[]>(initialPosts);
+  const isAdmin = user?.role === "ADMIN" || user?.role === "ROLE_ADMIN";
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [communityInsights, setCommunityInsights] =
+    useState<CommunityInsightStats>(initialInsightStats);
   const [content, setContent] = useState("");
   const [composerAssets, setComposerAssets] = useState<ComposerAsset[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
@@ -540,18 +470,32 @@ function CommunityPage() {
       setIsLoadingPosts(true);
 
       try {
-        const response = await communityService.getPosts(1, 20);
-        const postList = response.result?.data ?? [];
+        const response = await communityService.getPosts(1, 50);
+        const postList = response?.result?.data ?? [];
 
-        if (postList.length > 0) {
+        if (response) {
           const mappedPosts = postList.map((post) =>
             mapCreatedPostToFeed(post, user?.role),
           );
           const hydratedPosts = await hydratePostsWithComments(mappedPosts);
           setPosts(hydratedPosts);
+        } else {
+          setPosts([]);
         }
+
+        const studentsNeedingAdviceFromPosts = postList.filter((post) =>
+          isAdviceSeekingContent(post.content),
+        ).length;
+
+        setCommunityInsights({
+          postsToday: postList.filter((post) => isTodayDate(post.createdAt)).length,
+          // Keep this metric tied to advice-seeking posts instead of total students.
+          studentsNeedingAdvice: studentsNeedingAdviceFromPosts,
+        });
       } catch (error) {
         console.error("Không thể tải bài viết cộng đồng", error);
+        setPosts([]);
+        setCommunityInsights(initialInsightStats);
       } finally {
         setIsLoadingPosts(false);
       }
@@ -825,6 +769,17 @@ function CommunityPage() {
     setEditCommentContent("");
   };
 
+  const canCurrentUserSeeComment = (comment: PostComment) => {
+    if (!comment.isHiddenByAdmin) {
+      return true;
+    }
+
+    return Boolean(user?.userId) && comment.authorId === user?.userId;
+  };
+
+  const getVisibleComments = (comments: PostComment[]) =>
+    comments.filter(canCurrentUserSeeComment);
+
   useEffect(() => {
     if (!activeCommentsPostId) {
       return;
@@ -920,7 +875,7 @@ function CommunityPage() {
   };
 
   const startEditingComment = (comment: PostComment) => {
-    if (typeof comment.id !== "string") {
+    if (typeof comment.id !== "string" || comment.isHiddenByAdmin) {
       return;
     }
 
@@ -963,6 +918,38 @@ function CommunityPage() {
           ...currentPost,
           commentsPreview: currentPost.commentsPreview.filter(
             (comment) => String(comment.id) !== commentId,
+          ),
+          stats: {
+            ...currentPost.stats,
+            comments: Math.max(0, currentPost.stats.comments - 1),
+          },
+        };
+      }),
+    );
+  };
+
+  const hideCommentAsViolationInPosts = (commentId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((currentPost) => {
+        const hasComment = currentPost.commentsPreview.some(
+          (comment) => String(comment.id) === commentId,
+        );
+
+        if (!hasComment) {
+          return currentPost;
+        }
+
+        return {
+          ...currentPost,
+          commentsPreview: currentPost.commentsPreview.map((comment) =>
+            String(comment.id) === commentId
+              ? {
+                  ...comment,
+                  isHiddenByAdmin: true,
+                  hiddenReason: COMMUNITY_RULES_VIOLATION_NOTE,
+                  content: COMMUNITY_RULES_VIOLATION_NOTE,
+                }
+              : comment,
           ),
           stats: {
             ...currentPost.stats,
@@ -1024,8 +1011,23 @@ function CommunityPage() {
       return;
     }
 
+    if (comment.isHiddenByAdmin) {
+      toast.info("Bình luận này đã bị ẩn vì vi phạm quy tắc cộng đồng.");
+      return;
+    }
+
+    const isCommentOwner =
+      Boolean(user?.userId) && comment.authorId === user?.userId;
+
+    if (!isCommentOwner && !isAdmin) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      "Bạn có chắc muốn xóa bình luận này không?",
+      isAdmin && !isCommentOwner
+        ? "Bạn có chắc muốn ẩn bình luận này vì vi phạm quy tắc cộng đồng không?"
+        : "Bạn có chắc muốn xóa bình luận này không?",
     );
     if (!confirmed) {
       return;
@@ -1041,11 +1043,17 @@ function CommunityPage() {
         throw new Error(response.message || "Không thể xóa bình luận.");
       }
 
-      removeCommentFromPosts(comment.id);
+      if (isAdmin && !isCommentOwner) {
+        hideCommentAsViolationInPosts(comment.id);
+        toast.success("Đã ẩn bình luận vi phạm.", SUCCESS_TOAST_OPTIONS);
+      } else {
+        removeCommentFromPosts(comment.id);
+        toast.success("Xóa bình luận thành công.", SUCCESS_TOAST_OPTIONS);
+      }
+
       if (editingCommentId === comment.id) {
         cancelEditingComment();
       }
-      toast.success("Xóa bình luận thành công.", SUCCESS_TOAST_OPTIONS);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Xóa bình luận thất bại.";
@@ -1058,6 +1066,22 @@ function CommunityPage() {
   const activeCommentsPost = posts.find(
     (post) => typeof post.id === "string" && post.id === activeCommentsPostId,
   );
+  const visibleActiveComments = activeCommentsPost
+    ? getVisibleComments(activeCommentsPost.commentsPreview)
+    : [];
+
+  const communityStats = [
+    {
+      label: "Bài viết hôm nay",
+      value: formatCount(communityInsights.postsToday),
+      icon: FiEdit3,
+    },
+    {
+      label: "Học sinh cần tư vấn",
+      value: formatCount(communityInsights.studentsNeedingAdvice),
+      icon: FaGraduationCap,
+    },
+  ];
 
   const toggleLikePost = async (post: CommunityPost) => {
     if (typeof post.id !== "string") {
@@ -1136,7 +1160,7 @@ function CommunityPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-120 xl:max-w-140">
+            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-120 xl:max-w-140">
               {communityStats.map((stat) => {
                 const Icon = stat.icon;
                 return (
@@ -1189,25 +1213,6 @@ function CommunityPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">Chủ đề nổi bật</h2>
-                <FiFilter className="text-slate-400" />
-              </div>
-              <div className="space-y-2">
-                {trendingTopics.map((topic, index) => (
-                  <button
-                    key={topic}
-                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition hover:bg-slate-50"
-                  >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-sm font-semibold text-slate-700">
-                      {index + 1}
-                    </span>
-                    <span className="text-sm text-slate-700">{topic}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -1384,16 +1389,20 @@ function CommunityPage() {
                             <h2 className="font-semibold text-slate-900">
                               {post.author}
                             </h2>
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
-                            >
-                              {post.role}
-                            </span>
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
-                            >
-                              {post.postType}
-                            </span>
+                            {!shouldHidePostBadge(post.role) ? (
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[post.role]}`}
+                              >
+                                {post.role}
+                              </span>
+                            ) : null}
+                            {!shouldHidePostBadge(post.postType) ? (
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[post.postType]}`}
+                              >
+                                {post.postType}
+                              </span>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                             <span>{post.subject}</span>
@@ -1681,7 +1690,7 @@ function CommunityPage() {
               </div>
 
               <div className="space-y-4 bg-slate-50/70 px-4 py-4 md:px-6">
-                {post.commentsPreview
+                {getVisibleComments(post.commentsPreview)
                   .slice(0, 2)
                   .map((comment, commentIndex) => (
                     <div key={comment.id} className="flex gap-3">
@@ -1711,10 +1720,15 @@ function CommunityPage() {
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {comment.content}
                         </p>
+                        {comment.isHiddenByAdmin ? (
+                          <p className="mt-2 text-xs italic text-amber-700">
+                            {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   ))}
-                {post.commentsPreview.length > 2 ? (
+                {getVisibleComments(post.commentsPreview).length > 2 ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -1724,7 +1738,7 @@ function CommunityPage() {
                     }}
                     className="text-sm font-medium text-sky-700 transition hover:text-sky-800"
                   >
-                    Xem thêm {post.commentsPreview.length - 2} bình luận
+                    Xem thêm {getVisibleComments(post.commentsPreview).length - 2} bình luận
                   </button>
                 ) : null}
               </div>
@@ -1734,34 +1748,6 @@ function CommunityPage() {
 
         <aside className="hidden xl:block">
           <div className="sticky top-24 space-y-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">Nhóm bạn có thể quan tâm</h2>
-                <FiUsers className="text-slate-400" />
-              </div>
-              <div className="space-y-3">
-                {suggestedGroups.map((group) => (
-                  <div
-                    key={group.name}
-                    className="rounded-3xl border border-slate-100 p-3"
-                  >
-                    <div
-                      className={`mb-3 h-24 rounded-[20px] bg-linear-to-br ${group.tone}`}
-                    />
-                    <div className="font-semibold text-slate-900">
-                      {group.name}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-500">
-                      {group.members}
-                    </div>
-                    <button className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">
-                      <FiUserPlus />
-                      Tham gia nhóm
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 font-semibold">Gợi ý cho khu bài viết</h2>
@@ -1813,16 +1799,20 @@ function CommunityPage() {
                       <div className="font-semibold text-slate-900">
                         {activeCommentsPost.author}
                       </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[activeCommentsPost.role]}`}
-                      >
-                        {activeCommentsPost.role}
-                      </span>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[activeCommentsPost.postType]}`}
-                      >
-                        {activeCommentsPost.postType}
-                      </span>
+                      {!shouldHidePostBadge(activeCommentsPost.role) ? (
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleStyles[activeCommentsPost.role]}`}
+                        >
+                          {activeCommentsPost.role}
+                        </span>
+                      ) : null}
+                      {!shouldHidePostBadge(activeCommentsPost.postType) ? (
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${postTypeStyles[activeCommentsPost.postType]}`}
+                        >
+                          {activeCommentsPost.postType}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                       <span>{activeCommentsPost.subject}</span>
@@ -1881,17 +1871,25 @@ function CommunityPage() {
 
               <div className="flex min-h-0 flex-col border-t border-slate-100 bg-slate-50/70 lg:border-l lg:border-t-0">
                 <div className="border-b border-slate-100 px-6 py-4 text-sm font-semibold text-slate-700">
-                  {activeCommentsPost.stats.comments} bình luận
+                  {visibleActiveComments.length} bình luận
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-                  {activeCommentsPost.commentsPreview.length > 0 ? (
-                    activeCommentsPost.commentsPreview.map(
+                  {visibleActiveComments.length > 0 ? (
+                    visibleActiveComments.map(
                       (comment, commentIndex) => {
-                        const canManageComment =
+                        const isCommentOwner =
                           typeof comment.id === "string" &&
                           Boolean(user?.userId) &&
                           comment.authorId === user?.userId;
+                        const canEditComment =
+                          isCommentOwner && !comment.isHiddenByAdmin;
+                        const canDeleteComment =
+                          isCommentOwner && !comment.isHiddenByAdmin;
+                        const canHideComment =
+                          isAdmin && !isCommentOwner && !comment.isHiddenByAdmin;
+                        const canManageComment =
+                          canEditComment || canDeleteComment || canHideComment;
                         const isCommentMenuOpen =
                           openCommentMenuId === comment.id;
                         const isEditingComment =
@@ -1948,37 +1946,43 @@ function CommunityPage() {
 
                                     {isCommentMenuOpen ? (
                                       <div className="absolute right-0 top-10 z-20 min-w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            isEditingComment
-                                              ? cancelEditingComment()
-                                              : startEditingComment(comment)
-                                          }
-                                          disabled={isDeletingComment}
-                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          <FiEdit3 className="text-slate-500" />
-                                          {isEditingComment
-                                            ? "Đóng chỉnh sửa"
-                                            : "Chỉnh sửa bình luận"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void deleteComment(comment)
-                                          }
-                                          disabled={
-                                            isDeletingComment ||
-                                            isUpdatingComment
-                                          }
-                                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          <FiTrash2 className="text-rose-500" />
-                                          {isDeletingComment
-                                            ? "Đang xóa bình luận"
-                                            : "Xóa bình luận"}
-                                        </button>
+                                        {canEditComment ? (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              isEditingComment
+                                                ? cancelEditingComment()
+                                                : startEditingComment(comment)
+                                            }
+                                            disabled={isDeletingComment}
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                          >
+                                            <FiEdit3 className="text-slate-500" />
+                                            {isEditingComment
+                                              ? "Đóng chỉnh sửa"
+                                              : "Chỉnh sửa bình luận"}
+                                          </button>
+                                        ) : null}
+                                        {canDeleteComment || canHideComment ? (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              void deleteComment(comment)
+                                            }
+                                            disabled={
+                                              isDeletingComment ||
+                                              isUpdatingComment
+                                            }
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                          >
+                                            <FiTrash2 className="text-rose-500" />
+                                            {isDeletingComment
+                                              ? "Đang xử lý"
+                                              : canHideComment
+                                                ? "Ẩn vì vi phạm"
+                                                : "Xóa bình luận"}
+                                          </button>
+                                        ) : null}
                                       </div>
                                     ) : null}
                                   </div>
@@ -2018,9 +2022,16 @@ function CommunityPage() {
                                   </div>
                                 </div>
                               ) : (
-                                <p className="mt-2 text-sm leading-6 text-slate-600">
-                                  {comment.content}
-                                </p>
+                                <>
+                                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                                    {comment.content}
+                                  </p>
+                                  {comment.isHiddenByAdmin ? (
+                                    <p className="mt-2 text-xs italic text-amber-700">
+                                      {comment.hiddenReason || COMMUNITY_RULES_VIOLATION_NOTE}
+                                    </p>
+                                  ) : null}
+                                </>
                               )}
                             </div>
                           </div>
@@ -2084,3 +2095,4 @@ function CommunityPage() {
 }
 
 export default CommunityPage;
+

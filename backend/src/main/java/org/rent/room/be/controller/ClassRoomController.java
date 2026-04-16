@@ -1,6 +1,7 @@
 package org.rent.room.be.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,7 +30,7 @@ public class ClassRoomController {
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping
     public ResponseEntity<ApiResponse<ClassRoomResponse>> createClass(
-            @RequestBody CreateClassRoomRequest request
+            @Valid @RequestBody CreateClassRoomRequest request
     ) {
         ClassRoomResponse response = classRoomService.createClass(request);
         return ResponseEntity.ok(
@@ -60,9 +62,23 @@ public class ClassRoomController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UUID teacherId,
-            @RequestParam(required = false) Boolean active
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String studyDay,
+            @RequestParam(required = false) String studyHour
     ) {
-        PageResponse<ClassRoomResponse> result = classRoomService.getClasses(page - 1, size, keyword, teacherId, active);
+        PageResponse<ClassRoomResponse> result = classRoomService.getClasses(
+                page - 1,
+                size,
+                keyword,
+                teacherId,
+                active,
+                minPrice,
+                maxPrice,
+                studyDay,
+                studyHour
+        );
         return ResponseEntity.ok(
                 ApiResponse.<PageResponse<ClassRoomResponse>>builder()
                         .code(200)
@@ -76,7 +92,7 @@ public class ClassRoomController {
     @PutMapping("/{classId}")
     public ResponseEntity<ApiResponse<ClassRoomResponse>> updateClass(
             @PathVariable UUID classId,
-            @RequestBody UpdateClassRoomRequest request
+            @Valid @RequestBody UpdateClassRoomRequest request
     ) {
         ClassRoomResponse response = classRoomService.updateClass(classId, request);
         return ResponseEntity.ok(

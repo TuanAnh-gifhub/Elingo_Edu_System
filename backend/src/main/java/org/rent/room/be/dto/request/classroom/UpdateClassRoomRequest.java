@@ -1,5 +1,6 @@
 package org.rent.room.be.dto.request.classroom;
 
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -23,6 +24,10 @@ public class UpdateClassRoomRequest {
     LocalDateTime endDate;
     Integer maxStudents;
     String schedule;
+
+    @Size(max = 1000, message = "Poster URL must not exceed 1000 characters")
+    String poster;
+
     Boolean active;
 }
 

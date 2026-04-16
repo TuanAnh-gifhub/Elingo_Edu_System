@@ -10,6 +10,8 @@ import org.rent.room.be.dto.response.chat.ReadReceiptResponse;
 import org.rent.room.be.entity.Conversation;
 import org.rent.room.be.entity.Message;
 import org.rent.room.be.entity.User;
+import org.rent.room.be.exception.AppException;
+import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.ChatMapper;
 import org.rent.room.be.repository.ConversationRepository;
 import org.rent.room.be.repository.MessageRepository;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -58,15 +61,15 @@ public class ChatServiceImpl implements ChatService {
                 .build();
 
         Message saved = messageRepository.save(newMessage);
-        broadcastMessage(chatMapper.toMessageResponse(saved), sender.getUserId(), recipient.getUserId());
+        broadcastMessage(chatMapper.toMessageResponse(saved), sender.getEmail(), recipient.getEmail());
     }
 
     @Override
     public List<ConversationResponse> getUserConversations(UUID userId) {
         return conversationRepository
-                .findAllByUser1UserIdOrUser2UserIdOrderByUpdatedAtDesc(userId, userId)
+                .findVisibleConversationsByUserId(userId)
                 .stream()
-                .map(chatMapper::toConversationResponse)
+                .map(this::toConversationResponseWithPreview)
                 .toList();
     }
 
@@ -86,7 +89,20 @@ public class ChatServiceImpl implements ChatService {
     public ConversationResponse getConversationById(UUID conversationId) {
         Conversation conv = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
-        return chatMapper.toConversationResponse(conv);
+        return toConversationResponseWithPreview(conv);
+    }
+
+    @Override
+    @Transactional
+    public ConversationResponse getOrCreateDirectConversation(UUID currentUserId, UUID recipientId) {
+        if (currentUserId.equals(recipientId)) {
+            throw new RuntimeException("Cannot create conversation with yourself");
+        }
+
+        User sender = userService.findByUserId(currentUserId);
+        User recipient = userService.findByUserId(recipientId);
+        Conversation conversation = getOrCreateConversation(sender, recipient);
+        return toConversationResponseWithPreview(conversation);
     }
 
     @Transactional
@@ -105,9 +121,9 @@ public class ChatServiceImpl implements ChatService {
         });
         messageRepository.saveAll(unreadMessages);
 
-        UUID originalSenderId = unreadMessages.getFirst().getSender().getUserId();
+        String originalSenderEmail = unreadMessages.getFirst().getSender().getEmail();
         messagingTemplate.convertAndSendToUser(
-                originalSenderId.toString(),
+                originalSenderEmail,
                 "/queue/read-receipt",
                 new ReadReceiptResponse(conversationId, userId)
         );
@@ -144,9 +160,23 @@ public class ChatServiceImpl implements ChatService {
         Message saved = messageRepository.save(newMessage);
         MessageResponse response = chatMapper.toMessageResponse(saved);
 
-        broadcastMessage(response, sender.getUserId(), recipient.getUserId());
+        broadcastMessage(response, sender.getEmail(), recipient.getEmail());
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public void deleteConversationForCurrentUser(UUID conversationId, UUID currentUserId) {
+        Conversation conversation = conversationRepository
+                .findByConversationIdAndParticipant(conversationId, currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
+
+        Set<UUID> hiddenByUserIds = conversation.getHiddenByUserIds();
+        hiddenByUserIds.add(currentUserId);
+        conversation.setHiddenByUserIds(hiddenByUserIds);
+        conversation.setUpdatedAt(LocalDateTime.now());
+        conversationRepository.save(conversation);
     }
 
     private Conversation getOrCreateConversation(User sender, User recipient) {
@@ -162,22 +192,77 @@ public class ChatServiceImpl implements ChatService {
                             .build();
                 });
 
+        if (conversation.getHiddenByUserIds() != null) {
+            conversation.getHiddenByUserIds().remove(sender.getUserId());
+            conversation.getHiddenByUserIds().remove(recipient.getUserId());
+        }
         conversation.setUpdatedAt(LocalDateTime.now());
         return conversationRepository.save(conversation);
     }
 
-    private void broadcastMessage(MessageResponse response, UUID senderId, UUID recipientId) {
+    private void broadcastMessage(MessageResponse response, String senderPrincipalName, String recipientPrincipalName) {
         messagingTemplate.convertAndSendToUser(
-                recipientId.toString(),
+                recipientPrincipalName,
                 "/queue/messages",
                 response
         );
 
         messagingTemplate.convertAndSendToUser(
-                senderId.toString(),
+                senderPrincipalName,
                 "/queue/messages",
                 response
         );
+    }
+
+    private ConversationResponse toConversationResponseWithPreview(Conversation conversation) {
+        ConversationResponse response = chatMapper.toConversationResponse(conversation);
+
+        Message previewMessage = messageRepository
+                .findTopByConversationConversationIdOrderByCreatedAtDesc(conversation.getConversationId())
+                .orElse(null);
+
+        String preview = normalizeMessagePreview(previewMessage);
+
+        if (preview == null) {
+            // Fallback for legacy data where createdAt/order can be inconsistent.
+            List<Message> history = messageRepository
+                    .findByConversationConversationIdOrderByCreatedAtAsc(conversation.getConversationId());
+            for (int index = history.size() - 1; index >= 0; index--) {
+                Message candidate = history.get(index);
+                String candidatePreview = normalizeMessagePreview(candidate);
+                if (candidatePreview != null) {
+                    preview = candidatePreview;
+                    previewMessage = candidate;
+                    break;
+                }
+            }
+        }
+
+        response.setLastMessage(preview);
+        response.setLastSenderName(
+                previewMessage != null && previewMessage.getSender() != null
+                        ? previewMessage.getSender().getUserName()
+                        : null
+        );
+
+        return response;
+    }
+
+    private String normalizeMessagePreview(Message message) {
+        if (message == null) {
+            return null;
+        }
+
+        String preview = message.getMessageBody();
+        if (preview != null && !preview.isBlank()) {
+            return preview;
+        }
+
+        if (message.getImageUrl() != null && !message.getImageUrl().isBlank()) {
+            return "Đã gửi tệp đính kèm";
+        }
+
+        return null;
     }
 }
 

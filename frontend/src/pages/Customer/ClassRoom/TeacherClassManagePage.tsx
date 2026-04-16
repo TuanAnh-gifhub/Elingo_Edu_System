@@ -15,16 +15,22 @@ import { FaFilePowerpoint } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   classRoomService,
+  type ClassWalletDto,
+  type ClassWalletTransactionDto,
   type ClassRoomDto,
+  type OnlineClassAccessDto,
   type UpdateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
+import {
+  enrollmentService,
+  type EnrollmentResponse,
+} from "../../../services/classes/enrollmentService";
 import {
   courseService,
   type CourseDto,
   type CreateCourseRequest,
   type UpdateCourseRequest,
 } from "../../../services/courses/courseService";
-import { userService, type UserResponse } from "../../../services/usersService";
 import {
   uploadMultipleFiles,
   uploadToCloudinary,
@@ -195,6 +201,8 @@ const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
 
 const CLASS_COURSE_FILE_UPLOAD_FOLDER = "class-course-files";
+const MAX_COURSE_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+const MAX_COURSE_UPLOAD_TOTAL_BYTES = 300 * 1024 * 1024;
 
 const ALLOWED_COURSE_EXTENSIONS = new Set([
   "pdf",
@@ -231,6 +239,25 @@ const getExtension = (fileName: string): string => {
   }
 
   return fileName.slice(dotIndex + 1).toLowerCase();
+};
+
+const formatFileSizeMb = (bytes: number): string => {
+  return `${Math.round(bytes / (1024 * 1024))}MB`;
+};
+
+const isFileTooLargeError = (message?: string): boolean => {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("file quá lớn") ||
+    normalized.includes("vượt quá") ||
+    normalized.includes("payload too large") ||
+    normalized.includes("file size too large") ||
+    normalized.includes("maximum is")
+  );
 };
 
 const getFileNameFromUrl = (fileUrl: string, index: number): string => {
@@ -428,10 +455,17 @@ const TeacherClassManagePage = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingClassWallet, setLoadingClassWallet] = useState(true);
+  const [loadingClassWalletTransactions, setLoadingClassWalletTransactions] =
+    useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
+  const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
+  const [classWalletTransactions, setClassWalletTransactions] = useState<
+    ClassWalletTransactionDto[]
+  >([]);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
-  const [students, setStudents] = useState<UserResponse[]>([]);
+  const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
   const [showEditClassForm, setShowEditClassForm] = useState(false);
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
     INITIAL_EDIT_CLASS_FORM,
@@ -466,6 +500,7 @@ const TeacherClassManagePage = () => {
     useState<Set<string>>(() => new Set());
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [importingQuizId, setImportingQuizId] = useState<string | null>(null);
+  const [togglingQuizOpenId, setTogglingQuizOpenId] = useState<string | null>(null);
   const [quizImportResultByQuizId, setQuizImportResultByQuizId] = useState<
     Record<string, QuizImportResult>
   >({});
@@ -474,6 +509,9 @@ const TeacherClassManagePage = () => {
   );
   const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
+  const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [claimingClassWallet, setClaimingClassWallet] = useState(false);
+  const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
 
@@ -525,6 +563,51 @@ const TeacherClassManagePage = () => {
     };
 
     loadClass();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWallet = async () => {
+      try {
+        setLoadingClassWallet(true);
+        const wallet = await classRoomService.getClassWallet(classId);
+        setClassWallet(wallet);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể tải ví lớp học.";
+        toast.error(message);
+      } finally {
+        setLoadingClassWallet(false);
+      }
+    };
+
+    loadClassWallet();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWalletTransactions = async () => {
+      try {
+        setLoadingClassWalletTransactions(true);
+        const transactions =
+          await classRoomService.getClassWalletTransactions(classId);
+        setClassWalletTransactions(transactions);
+      } catch {
+        setClassWalletTransactions([]);
+      } finally {
+        setLoadingClassWalletTransactions(false);
+      }
+    };
+
+    loadClassWalletTransactions();
   }, [classId]);
 
   useEffect(() => {
@@ -586,22 +669,29 @@ const TeacherClassManagePage = () => {
   }, [classId]);
 
   useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
     const loadStudents = async () => {
       try {
         setLoadingStudents(true);
-        const response = await userService.getAllUsers(1, 100, "STUDENT", true);
-        const result = response?.data?.result;
-        const list = (result?.data || []) as UserResponse[];
-        setStudents(list);
+        const enrollments = await enrollmentService.getClassEnrollments(classId);
+        const sortedEnrollments = [...enrollments].sort((first, second) => {
+          const firstTime = new Date(first.enrollmentDate || first.createdAt || 0).getTime();
+          const secondTime = new Date(second.enrollmentDate || second.createdAt || 0).getTime();
+          return firstTime - secondTime;
+        });
+        setClassEnrollments(sortedEnrollments);
       } catch {
-        setStudents([]);
+        setClassEnrollments([]);
       } finally {
         setLoadingStudents(false);
       }
     };
 
     loadStudents();
-  }, []);
+  }, [classId]);
 
   const rating = useMemo(() => {
     if (!classInfo) {
@@ -612,13 +702,8 @@ const TeacherClassManagePage = () => {
   }, [classInfo]);
 
   const registeredStudents = useMemo(() => {
-    const total = classInfo?.currentStudents || 0;
-    if (students.length === 0 || total <= 0) {
-      return [];
-    }
-
-    return students.slice(0, total);
-  }, [students, classInfo?.currentStudents]);
+    return classEnrollments;
+  }, [classEnrollments]);
 
   const feedbackList = useMemo<ClassroomFeedback[]>(() => {
     if (!classInfo) {
@@ -629,7 +714,7 @@ const TeacherClassManagePage = () => {
       return [];
     }
 
-    return registeredStudents.slice(0, 8).map((student, index) => {
+    return registeredStudents.slice(0, 8).map((enrollment, index) => {
       const classScore = getClassRating(classInfo.classId);
       const adjusted = Math.max(
         3.2,
@@ -637,8 +722,8 @@ const TeacherClassManagePage = () => {
       );
 
       return {
-        id: `${classInfo.classId}-fb-${student.userId}`,
-        studentName: student.userName,
+        id: `${classInfo.classId}-fb-${enrollment.studentId}`,
+        studentName: enrollment.studentName || "Học sinh",
         rating: Number(adjusted.toFixed(1)),
         comment:
           index % 2 === 0
@@ -654,24 +739,75 @@ const TeacherClassManagePage = () => {
     return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
   }, [courses, quizzes]);
 
-  useEffect(() => {
-    if (activeTab === "online") {
-      setShowOnlineClassModal(true);
+  const handleStartOnlineClass = async () => {
+    if (!classId) {
+      return;
     }
-  }, [activeTab]);
+
+    try {
+      setOpeningOnlineClass(true);
+      setUpdatingOnlineStatus(true);
+
+      const updated = await classRoomService.updateOnlineStatus(classId, {
+        onlineOpen: true,
+      });
+      setClassInfo(updated);
+
+      const access = await classRoomService.getOnlineAccess(classId);
+      setOnlineClassAccess(access);
+      setShowOnlineClassModal(true);
+      toast.success("Đã mở lớp học trực tuyến.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể mở lớp học trực tuyến.";
+      toast.error(message);
+    } finally {
+      setUpdatingOnlineStatus(false);
+      setOpeningOnlineClass(false);
+    }
+  };
+
+  const handleStopOnlineClass = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setUpdatingOnlineStatus(true);
+      const updated = await classRoomService.updateOnlineStatus(classId, {
+        onlineOpen: false,
+      });
+      setClassInfo(updated);
+      setShowOnlineClassModal(false);
+      setOnlineClassAccess(null);
+      toast.success("Đã đóng lớp học trực tuyến.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể đóng lớp học trực tuyến.";
+      toast.error(message);
+    } finally {
+      setUpdatingOnlineStatus(false);
+    }
+  };
 
   useEffect(() => {
-    if (!showOnlineClassModal || !classId || !jitsiContainerRef.current) {
+    if (!showOnlineClassModal || !onlineClassAccess || !jitsiContainerRef.current) {
       return;
     }
 
     const mountJitsi = async () => {
       try {
-        setOpeningOnlineClass(true);
         jitsiApiRef.current = await createJitsiRoom({
-          classId,
+          roomName: onlineClassAccess.roomName,
+          roomPassword: onlineClassAccess.roomPassword,
+          jwt: onlineClassAccess.jwt,
           parentNode: jitsiContainerRef.current as HTMLElement,
           displayName: user?.userName,
+          isModerator: true,
         });
       } catch (error) {
         const message =
@@ -696,7 +832,7 @@ const TeacherClassManagePage = () => {
         jitsiContainerRef.current.innerHTML = "";
       }
     };
-  }, [showOnlineClassModal, classId, user?.userName]);
+  }, [showOnlineClassModal, onlineClassAccess, user?.userName]);
 
   const getQuizzesByCourseId = (courseId: string) => {
     return quizzesOfClass.filter((quiz) => quiz.courseId === courseId);
@@ -756,6 +892,24 @@ const TeacherClassManagePage = () => {
       return;
     }
 
+    const oversizedFile = files.find(
+      (file) => file.size > MAX_COURSE_FILE_SIZE_BYTES,
+    );
+    if (oversizedFile) {
+      toast.error(
+        `File ${oversizedFile.name} vượt quá ${formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)} mỗi file.`,
+      );
+      return;
+    }
+
+    const selectedTotalBytes = files.reduce((total, file) => total + file.size, 0);
+    if (selectedTotalBytes > MAX_COURSE_UPLOAD_TOTAL_BYTES) {
+      toast.error(
+        `Tổng dung lượng file đang chọn vượt quá ${formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)} mỗi lần upload.`,
+      );
+      return;
+    }
+
     try {
       setUploadingCourseFiles(true);
 
@@ -768,12 +922,22 @@ const TeacherClassManagePage = () => {
         .map((result) => result.data.url);
 
       const failedCount = results.length - successUrls.length;
+      const failedResults = results.filter((result) => !result.success);
+      const hasTooLargeError = failedResults.some((result) =>
+        isFileTooLargeError(result.error),
+      );
 
       if (successUrls.length > 0) {
         setNewCourseForm((prev) => ({
           ...prev,
           fileUrls: [...prev.fileUrls, ...successUrls],
         }));
+      }
+
+      if (hasTooLargeError) {
+        toast.error(
+          "Có file quá lớn nên không thể upload. Vui lòng giảm dung lượng file hoặc chia nhỏ file.",
+        );
       }
 
       if (failedCount > 0) {
@@ -809,6 +973,24 @@ const TeacherClassManagePage = () => {
       return;
     }
 
+    const oversizedFile = files.find(
+      (file) => file.size > MAX_COURSE_FILE_SIZE_BYTES,
+    );
+    if (oversizedFile) {
+      toast.error(
+        `File ${oversizedFile.name} vượt quá ${formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)} mỗi file.`,
+      );
+      return;
+    }
+
+    const selectedTotalBytes = files.reduce((total, file) => total + file.size, 0);
+    if (selectedTotalBytes > MAX_COURSE_UPLOAD_TOTAL_BYTES) {
+      toast.error(
+        `Tổng dung lượng file đang chọn vượt quá ${formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)} mỗi lần upload.`,
+      );
+      return;
+    }
+
     try {
       setUploadingEditCourseFiles(true);
 
@@ -821,12 +1003,22 @@ const TeacherClassManagePage = () => {
         .map((result) => result.data.url);
 
       const failedCount = results.length - successUrls.length;
+      const failedResults = results.filter((result) => !result.success);
+      const hasTooLargeError = failedResults.some((result) =>
+        isFileTooLargeError(result.error),
+      );
 
       if (successUrls.length > 0) {
         setEditCourseForm((prev) => ({
           ...prev,
           fileUrls: [...prev.fileUrls, ...successUrls],
         }));
+      }
+
+      if (hasTooLargeError) {
+        toast.error(
+          "Có file quá lớn nên không thể upload. Vui lòng giảm dung lượng file hoặc chia nhỏ file.",
+        );
       }
 
       if (failedCount > 0) {
@@ -1156,6 +1348,74 @@ const TeacherClassManagePage = () => {
     }
   };
 
+  const handleToggleQuizOpen = async (quiz: QuizDto) => {
+    try {
+      setTogglingQuizOpenId(quiz.quizId);
+
+      const updated = await quizService.updateQuiz(quiz.quizId, {
+        title: quiz.title?.trim() || "Quiz",
+        description: quiz.description || "",
+        maxAttempts: Number(quiz.maxAttempts) || 1,
+        durationMinutes: Number(quiz.durationMinutes) || 30,
+        isOpen: !Boolean(quiz.isOpen),
+      });
+
+      setQuizzes((prev) =>
+        prev.map((item) => (item.quizId === quiz.quizId ? updated : item)),
+      );
+
+      toast.success(
+        updated.isOpen
+          ? "Đã mở quiz cho học sinh làm bài."
+          : "Đã đóng quiz, học sinh tạm thời không thể làm bài.",
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật trạng thái mở/đóng quiz.";
+      toast.error(message);
+    } finally {
+      setTogglingQuizOpenId(null);
+    }
+  };
+
+  const handleClaimClassWallet = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setClaimingClassWallet(true);
+      const claimedWallet = await classRoomService.claimClassWallet(classId);
+      setClassWallet(claimedWallet);
+
+      const transactions = await classRoomService.getClassWalletTransactions(
+        classId,
+      );
+      setClassWalletTransactions(transactions);
+
+      toast.success("Nhận tiền từ ví lớp thành công.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể nhận tiền từ ví lớp.";
+      toast.error(message);
+    } finally {
+      setClaimingClassWallet(false);
+    }
+  };
+
+  const classWalletEndDate = classWallet?.endDate
+    ? new Date(classWallet.endDate)
+    : null;
+  const isClassWalletDue = classWalletEndDate
+    ? Date.now() >= classWalletEndDate.getTime()
+    : false;
+  const canClaimClassWallet =
+    isClassWalletDue && Number(classWallet?.balance || 0) > 0;
+
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
   }
@@ -1211,6 +1471,11 @@ const TeacherClassManagePage = () => {
                 {rating}/5
               </span>
             </div>
+            <div className="mt-2 text-xs text-slate-500">
+              Ví lớp: {loadingClassWallet
+                ? "Đang tải..."
+                : `${Number(classWallet?.balance || 0).toLocaleString("vi-VN")} đ`}
+            </div>
           </div>
         </div>
       </div>
@@ -1264,6 +1529,119 @@ const TeacherClassManagePage = () => {
           <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50 to-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Đánh giá trung bình</p>
             <p className="text-3xl font-bold text-slate-900 mt-2">{rating}</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Số dư ví lớp</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">
+              {loadingClassWallet
+                ? "..."
+                : Number(classWallet?.balance || 0).toLocaleString("vi-VN")}
+              <span className="ml-1 text-base font-semibold text-slate-600">đ</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              {classWallet?.endDate
+                ? `Mở nhận tiền sau: ${new Date(classWallet.endDate).toLocaleString("vi-VN")}`
+                : "Chưa có ngày kết thúc để mở nhận tiền."}
+            </p>
+            {classWallet?.claimedAt ? (
+              <p className="mt-1 text-xs text-emerald-700">
+                Đã nhận tiền lúc: {new Date(classWallet.claimedAt).toLocaleString("vi-VN")}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleClaimClassWallet}
+              disabled={
+                loadingClassWallet ||
+                claimingClassWallet ||
+                !canClaimClassWallet
+              }
+              className="mt-3 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {claimingClassWallet ? "Đang nhận tiền..." : "Nhận tiền ví lớp"}
+            </button>
+          </div>
+
+          <div className="md:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Lịch sử giao dịch ví lớp
+              </h3>
+              <span className="text-xs text-slate-500">
+                Tiền vào ví lớp / tiền đã nhận
+              </span>
+            </div>
+
+            {loadingClassWalletTransactions ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Đang tải lịch sử giao dịch...
+              </p>
+            ) : classWalletTransactions.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Chưa có giao dịch ví lớp.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-slate-500">
+                      <th className="pb-2">Thời gian</th>
+                      <th className="pb-2">Loại</th>
+                      <th className="pb-2">Số tiền</th>
+                      <th className="pb-2">Người học</th>
+                      <th className="pb-2">Mô tả</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classWalletTransactions.map((tx) => {
+                      const isInflow = tx.transactionType === "CLASS_WALLET_IN";
+                      return (
+                        <tr
+                          key={tx.transactionId}
+                          className="border-b border-slate-100"
+                        >
+                          <td className="py-3 pr-2 text-slate-600">
+                            {tx.transactionTime
+                              ? new Date(tx.transactionTime).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "-"}
+                          </td>
+                          <td className="py-3 pr-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                isInflow
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {isInflow
+                                ? "Tiền vào ví lớp"
+                                : "Tiền đã nhận"}
+                            </span>
+                          </td>
+                          <td
+                            className={`py-3 pr-2 font-semibold ${
+                              isInflow ? "text-emerald-700" : "text-amber-700"
+                            }`}
+                          >
+                            {isInflow ? "+" : "-"}
+                            {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
+                          </td>
+                          <td className="py-3 pr-2 text-slate-700">
+                            {tx.studentName || "-"}
+                          </td>
+                          <td className="py-3 text-slate-600">
+                            {tx.description || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-white to-cyan-50/60 p-5 shadow-sm space-y-4">
@@ -1601,7 +1979,9 @@ const TeacherClassManagePage = () => {
                     </p>
                     <p className="text-xs text-slate-500">
                       Hỗ trợ: Word, Excel, PowerPoint, Video, Âm thanh, Hình
-                      ảnh, PDF
+                      ảnh, PDF. Tối đa {formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)}/file,
+                      {" "}
+                      {formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)}/lần upload.
                     </p>
                   </div>
 
@@ -2302,6 +2682,35 @@ const TeacherClassManagePage = () => {
                         ) : null}
                       </div>
                     ) : null}
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          quiz.isOpen
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {quiz.isOpen ? "Quiz đang mở" : "Quiz đang khóa"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleQuizOpen(quiz)}
+                        disabled={togglingQuizOpenId === quiz.quizId}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold border disabled:opacity-60 ${
+                          quiz.isOpen
+                            ? "border-rose-300 text-rose-700 hover:bg-rose-50"
+                            : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                      >
+                        {togglingQuizOpenId === quiz.quizId
+                          ? "Đang cập nhật..."
+                          : quiz.isOpen
+                            ? "Đóng quiz"
+                            : "Mở quiz"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2328,26 +2737,30 @@ const TeacherClassManagePage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-500 border-b">
+                    <th className="pb-2">STT</th>
                     <th className="pb-2">Tên học sinh</th>
-                    <th className="pb-2">Email</th>
-                    <th className="pb-2">Số điện thoại</th>
+                    <th className="pb-2">Thời gian nhập học</th>
                     <th className="pb-2">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {registeredStudents.map((student) => (
+                  {registeredStudents.map((enrollment, index) => (
                     <tr
-                      key={student.userId}
+                      key={enrollment.enrollmentId}
                       className="border-b border-slate-100"
                     >
+                      <td className="py-3 pr-2 text-slate-900 font-medium">
+                        {index + 1}
+                      </td>
                       <td className="py-3 pr-2 text-slate-900">
-                        {student.userName}
+                        {enrollment.studentName || "Học sinh"}
                       </td>
                       <td className="py-3 pr-2 text-slate-600">
-                        {student.email}
-                      </td>
-                      <td className="py-3 pr-2 text-slate-600">
-                        {student.phone || "-"}
+                        {enrollment.enrollmentDate
+                          ? new Date(enrollment.enrollmentDate).toLocaleString("vi-VN")
+                          : enrollment.createdAt
+                            ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
+                            : "-"}
                       </td>
                       <td className="py-3">
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
@@ -2369,15 +2782,35 @@ const TeacherClassManagePage = () => {
             Lớp học trực tuyến
           </h2>
           <p className="text-sm text-slate-600">
-            Bấm mở phòng học trực tuyến để bắt đầu buổi học Jitsi.
+            Chỉ giáo viên sở hữu lớp mới có thể mở lớp. Học sinh chỉ tham gia được khi lớp đang mở.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowOnlineClassModal(true)}
-            className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleStartOnlineClass}
+              disabled={openingOnlineClass || updatingOnlineStatus}
+              className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105 disabled:opacity-60"
+            >
+              {openingOnlineClass ? "Đang mở lớp..." : "Mở lớp học trực tuyến"}
+            </button>
+            <button
+              type="button"
+              onClick={handleStopOnlineClass}
+              disabled={!classInfo.onlineOpen || updatingOnlineStatus}
+              className="rounded-xl border border-rose-300 text-rose-700 px-4 py-2 text-sm font-semibold hover:bg-rose-50 disabled:opacity-60"
+            >
+              Đóng lớp học trực tuyến
+            </button>
+          </div>
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+              classInfo.onlineOpen
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-600"
+            }`}
           >
-            Mở lớp học trực tuyến
-          </button>
+            {classInfo.onlineOpen ? "Lớp đang mở" : "Lớp đang đóng"}
+          </span>
         </section>
       )}
 
@@ -2430,7 +2863,7 @@ const TeacherClassManagePage = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowOnlineClassModal(false)}
+                onClick={handleStopOnlineClass}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700"
               >
                 Đóng

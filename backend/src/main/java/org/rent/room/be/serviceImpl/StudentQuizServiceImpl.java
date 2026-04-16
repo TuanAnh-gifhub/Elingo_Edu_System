@@ -39,6 +39,7 @@ public class StudentQuizServiceImpl implements StudentQuizService {
     public StudentQuizTakeResponse getQuizForTake(UUID quizId) {
         CustomUserDetails user = SecurityUtils.requireCurrentUser();
         Quiz quiz = loadQuizWithAccess(quizId, user.getUserId());
+        ensureQuizOpenForAttempt(quiz);
 
         int max = effectiveMaxAttempts(quiz);
         int used = (int) quizAttemptRepository.countByQuiz_QuizIdAndStudent_UserId(quizId, user.getUserId());
@@ -58,6 +59,7 @@ public class StudentQuizServiceImpl implements StudentQuizService {
                 .title(quiz.getTitle())
                 .description(quiz.getDescription())
                 .maxAttempts(max)
+                .durationMinutes(effectiveDurationMinutes(quiz))
                 .attemptsUsed(used)
                 .attemptsRemaining(max - used)
                 .questions(questionResponses)
@@ -69,6 +71,7 @@ public class StudentQuizServiceImpl implements StudentQuizService {
     public QuizSubmitResultResponse submitQuiz(UUID quizId, SubmitQuizRequest request) {
         CustomUserDetails user = SecurityUtils.requireCurrentUser();
         Quiz quiz = loadQuizWithAccess(quizId, user.getUserId());
+        ensureQuizOpenForAttempt(quiz);
 
         int max = effectiveMaxAttempts(quiz);
         long used = quizAttemptRepository.countByQuiz_QuizIdAndStudent_UserId(quizId, user.getUserId());
@@ -96,10 +99,6 @@ public class StudentQuizServiceImpl implements StudentQuizService {
             }
             answerByQuestion.put(ansReq.getQuestionId(), ansReq);
         }
-        if (answerByQuestion.size() != questions.size()) {
-            throw new AppException(ErrorCode.INVALID_QUIZ_SUBMISSION);
-        }
-
         List<QuizAttemptAnswer> attemptAnswers = new ArrayList<>();
         List<QuizSubmitQuestionResultResponse> details = new ArrayList<>();
         int correctCount = 0;
@@ -115,7 +114,7 @@ public class StudentQuizServiceImpl implements StudentQuizService {
         for (Question question : orderedQuestions) {
             SubmitQuizAnswerRequest ansReq = answerByQuestion.get(question.getQuestionId());
 
-            Set<UUID> selected = ansReq.getSelectedOptionIds() == null
+            Set<UUID> selected = ansReq == null || ansReq.getSelectedOptionIds() == null
                     ? new HashSet<>()
                     : new HashSet<>(ansReq.getSelectedOptionIds());
 
@@ -205,6 +204,68 @@ public class StudentQuizServiceImpl implements StudentQuizService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public StudentQuizAttemptReviewResponse getMyAttemptDetail(UUID quizId, UUID attemptId) {
+        CustomUserDetails user = SecurityUtils.requireCurrentUser();
+        Quiz quiz = loadQuizWithAccess(quizId, user.getUserId());
+
+        QuizAttempt attempt = quizAttemptRepository
+                .findByQuizAttemptIdAndQuiz_QuizIdAndStudent_UserId(attemptId, quizId, user.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_ATTEMPT_NOT_FOUND));
+
+        Map<UUID, QuizAttemptAnswer> answerByQuestionId = attempt.getAnswers().stream()
+                .collect(Collectors.toMap(answer -> answer.getQuestion().getQuestionId(), answer -> answer));
+
+        List<Question> questions = questionRepository.findByQuiz_QuizIdWithOptions(quizId);
+        questions.sort(Comparator.comparing(
+                Question::getOrderIndex,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+
+        List<StudentQuizAttemptReviewQuestionResponse> reviewQuestions = questions.stream()
+                .map(question -> {
+                    QuizAttemptAnswer answer = answerByQuestionId.get(question.getQuestionId());
+                    Set<UUID> selectedIds = answer == null
+                            ? Set.of()
+                            : Optional.ofNullable(answer.getSelectedOptionIds()).orElse(Set.of());
+
+                    List<StudentQuizAttemptReviewOptionResponse> options = question.getOptions().stream()
+                            .sorted(Comparator.comparing(
+                                    QuestionOption::getOrderIndex,
+                                    Comparator.nullsLast(Comparator.naturalOrder())))
+                            .map(option -> StudentQuizAttemptReviewOptionResponse.builder()
+                                    .optionId(option.getOptionId())
+                                    .optionText(option.getOptionText())
+                                    .orderIndex(option.getOrderIndex())
+                                    .selected(selectedIds.contains(option.getOptionId()))
+                                    .correct(Boolean.TRUE.equals(option.getIsCorrect()))
+                                    .build())
+                            .toList();
+
+                    return StudentQuizAttemptReviewQuestionResponse.builder()
+                            .questionId(question.getQuestionId())
+                            .questionText(question.getQuestionText())
+                            .questionType(question.getQuestionType())
+                            .orderIndex(question.getOrderIndex())
+                            .correct(answer != null && answer.isCorrect())
+                            .options(options)
+                            .build();
+                })
+                .toList();
+
+        return StudentQuizAttemptReviewResponse.builder()
+                .quizAttemptId(attempt.getQuizAttemptId())
+                .quizId(quizId)
+                .quizTitle(quiz.getTitle())
+                .quizDescription(quiz.getDescription())
+                .score(attempt.getScore())
+                .correctCount(attempt.getCorrectCount())
+                .totalQuestions(attempt.getTotalQuestions())
+                .submittedAt(attempt.getSubmittedAt())
+                .questions(reviewQuestions)
+                .build();
+    }
+
     private Quiz loadQuizWithAccess(UUID quizId, UUID studentId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
@@ -222,6 +283,20 @@ public class StudentQuizServiceImpl implements StudentQuizService {
             return 1;
         }
         return m;
+    }
+
+    private static int effectiveDurationMinutes(Quiz quiz) {
+        Integer duration = quiz.getDurationMinutes();
+        if (duration == null || duration < 1) {
+            return 30;
+        }
+        return duration;
+    }
+
+    private static void ensureQuizOpenForAttempt(Quiz quiz) {
+        if (!Boolean.TRUE.equals(quiz.getIsOpen())) {
+            throw new AppException(ErrorCode.QUIZ_CLOSED);
+        }
     }
 
     private StudentQuizQuestionResponse toStudentQuestion(Question q) {

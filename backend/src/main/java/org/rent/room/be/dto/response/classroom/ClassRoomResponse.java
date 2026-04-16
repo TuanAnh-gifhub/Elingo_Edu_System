@@ -33,6 +33,7 @@ public class ClassRoomResponse {
     boolean active;
     String schedule;
     String poster;
+    Boolean onlineOpen;
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;

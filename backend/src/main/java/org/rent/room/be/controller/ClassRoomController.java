@@ -8,14 +8,20 @@ import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
+import org.rent.room.be.dto.request.classroom.UpdateClassOnlineStatusRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
+import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
+import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
+import org.rent.room.be.security.SecurityUtils;
 import org.rent.room.be.service.ClassRoomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -32,7 +38,8 @@ public class ClassRoomController {
     public ResponseEntity<ApiResponse<ClassRoomResponse>> createClass(
             @Valid @RequestBody CreateClassRoomRequest request
     ) {
-        ClassRoomResponse response = classRoomService.createClass(request);
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassRoomResponse response = classRoomService.createClass(request, currentTeacherId);
         return ResponseEntity.ok(
                 ApiResponse.<ClassRoomResponse>builder()
                         .code(201)
@@ -94,11 +101,93 @@ public class ClassRoomController {
             @PathVariable UUID classId,
             @Valid @RequestBody UpdateClassRoomRequest request
     ) {
-        ClassRoomResponse response = classRoomService.updateClass(classId, request);
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassRoomResponse response = classRoomService.updateClass(classId, request, currentTeacherId);
         return ResponseEntity.ok(
                 ApiResponse.<ClassRoomResponse>builder()
                         .code(200)
                         .message("Update class successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/{classId}/online-status")
+    public ResponseEntity<ApiResponse<ClassRoomResponse>> updateOnlineStatus(
+            @PathVariable UUID classId,
+            @Valid @RequestBody UpdateClassOnlineStatusRequest request
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassRoomResponse response = classRoomService.updateOnlineStatus(classId, request.getOnlineOpen(), currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassRoomResponse>builder()
+                        .code(200)
+                        .message("Update class online status successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/{classId}/wallet")
+    public ResponseEntity<ApiResponse<ClassWalletResponse>> getClassWallet(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassWalletResponse response = classRoomService.getClassWallet(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletResponse>builder()
+                        .code(200)
+                        .message("Get class wallet successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PostMapping("/{classId}/wallet/claim")
+    public ResponseEntity<ApiResponse<ClassWalletResponse>> claimClassWallet(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassWalletResponse response = classRoomService.claimClassWallet(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletResponse>builder()
+                        .code(200)
+                        .message("Claim class wallet successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/{classId}/wallet/transactions")
+    public ResponseEntity<ApiResponse<List<ClassWalletTransactionResponse>>> getClassWalletTransactions(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        List<ClassWalletTransactionResponse> response = classRoomService.getClassWalletTransactions(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<ClassWalletTransactionResponse>>builder()
+                        .code(200)
+                        .message("Get class wallet transactions successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/{classId}/online-access")
+    public ResponseEntity<ApiResponse<OnlineClassAccessResponse>> getOnlineAccess(
+            @PathVariable UUID classId
+    ) {
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        OnlineClassAccessResponse response = classRoomService.getOnlineClassAccess(classId, currentUserId);
+        return ResponseEntity.ok(
+                ApiResponse.<OnlineClassAccessResponse>builder()
+                        .code(200)
+                        .message("Get online class access successfully")
                         .result(response)
                         .build()
         );

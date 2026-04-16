@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.ColumnDefault;
 import org.rent.room.be.base.BaseEntity;
 
 import java.util.List;
@@ -38,6 +39,16 @@ public class Quiz extends BaseEntity {
     /** Số lần tối đa học sinh được làm bài (do giáo viên quy định). null hoặc nhỏ hơn 1 được coi là 1. */
     @Column(name = "max_attempts")
     Integer maxAttempts;
+
+    /** Thời gian làm bài (phút). */
+    @Column(name = "duration_minutes")
+    Integer durationMinutes;
+
+    /** Trạng thái mở bài quiz cho học sinh. Mặc định khóa khi tạo mới. */
+    @Builder.Default
+    @ColumnDefault("false")
+    @Column(name = "is_open", nullable = false)
+    Boolean isOpen = false;
 
     @OneToMany(
             mappedBy = "quiz",

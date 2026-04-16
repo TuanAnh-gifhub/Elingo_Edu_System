@@ -1,4 +1,4 @@
-import { FaEllipsisV } from "react-icons/fa";
+import { FaEllipsisV, FaTrashAlt } from "react-icons/fa";
 
 interface ChatHeaderProps {
   selectedChat: {
@@ -11,10 +11,17 @@ interface ChatHeaderProps {
       };
     };
   } | null;
+  onDeleteConversation?: () => void;
+  deletingConversation?: boolean;
   isDarkMode?: boolean;
 }
 
-const ChatHeader = ({ selectedChat, isDarkMode = false }: ChatHeaderProps) => {
+const ChatHeader = ({
+  selectedChat,
+  onDeleteConversation,
+  deletingConversation = false,
+  isDarkMode = false,
+}: ChatHeaderProps) => {
   if (!selectedChat) return null;
 
   const displayName = selectedChat.name || 'Unknown User';
@@ -56,6 +63,26 @@ const ChatHeader = ({ selectedChat, isDarkMode = false }: ChatHeaderProps) => {
         
         {/* Action buttons */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!onDeleteConversation || deletingConversation}
+            onClick={() => {
+              if (!onDeleteConversation) {
+                return;
+              }
+
+              const confirmed = window.confirm(
+                "Bạn có chắc muốn xóa cuộc trò chuyện này không?",
+              );
+              if (confirmed) {
+                onDeleteConversation();
+              }
+            }}
+            className={`p-2 transition-colors disabled:opacity-50 ${isDarkMode ? 'text-rose-300 hover:text-rose-200' : 'text-rose-500 hover:text-rose-600'}`}
+            title="Xóa cuộc trò chuyện"
+          >
+            <FaTrashAlt className="w-4 h-4" />
+          </button>
           <button 
             className={`p-2 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
             title="Thông tin"

@@ -11,6 +11,7 @@ import java.util.List;
 public interface ReviewMapper {
 
     @Mapping(target = "id", source = "reviewId")
+    @Mapping(target = "authorId", source = "author.userId")
     @Mapping(target = "classId", source = "classRoom.classId")
     @Mapping(target = "className", source = "classRoom.className")
     @Mapping(target = "userName", source = "author.userName")

@@ -256,28 +256,46 @@ useEffect(() => {
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasClassEnded) {
-                      toast.error("Lớp học đã kết thúc, không thể nhập học.");
-                      return;
-                    }
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasClassEnded) {
+                        toast.error("Lớp học đã kết thúc, không thể nhập học.");
+                        return;
+                      }
 
-                    setShowConfirmEnroll(true);
-                  }}
-                  disabled={checkingEnrollment || enrolling || hasClassEnded}
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
-                >
-                  {hasClassEnded
-                    ? "Lớp đã kết thúc"
-                    : enrolling
-                      ? "Đang xử lý..."
-                      : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
-                </button>
+                      setShowConfirmEnroll(true);
+                    }}
+                    disabled={checkingEnrollment || enrolling || hasClassEnded}
+                    className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                  >
+                    {hasClassEnded
+                      ? "Lớp đã kết thúc"
+                      : enrolling
+                        ? "Đang xử lý..."
+                        : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} đ`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+                    className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700"
+                  >
+                    Xem đánh giá lớp
+                  </button>
+                </div>
               )
             ) : (
-              <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/classes/${clazz.classId}/reviews`)}
+                  className="w-full rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700"
+                >
+                  Xem đánh giá lớp
+                </button>
+                <p className="text-xs text-slate-500">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+              </div>
             )}
             {isStudent && !isEnrolled && hasClassEnded ? (
               <p className="text-xs text-rose-600">Lớp đã kết thúc nên không thể thanh toán để nhập học.</p>

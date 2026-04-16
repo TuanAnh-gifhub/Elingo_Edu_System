@@ -10,6 +10,10 @@ const AdminReviewManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
+  const [actionLoadingReviewId, setActionLoadingReviewId] = useState<string | null>(null);
 
   const loadReviews = async (targetPage = page) => {
     setLoading(true);
@@ -50,6 +54,64 @@ const AdminReviewManagementPage = () => {
       );
     });
   }, [reviews, keyword]);
+
+  const startEditReview = (review: ReviewDto) => {
+    setEditingReviewId(review.id);
+    setEditRating(review.rating);
+    setEditComment(review.comment);
+    setError(null);
+  };
+
+  const cancelEditReview = () => {
+    setEditingReviewId(null);
+    setEditRating(5);
+    setEditComment("");
+  };
+
+  const handleSaveEditReview = async (reviewId: string) => {
+    if (editComment.trim().length < 10) {
+      setError("Nội dung đánh giá cần ít nhất 10 ký tự.");
+      return;
+    }
+
+    setActionLoadingReviewId(reviewId);
+    setError(null);
+    try {
+      await reviewService.updateReview(reviewId, {
+        rating: editRating,
+        comment: editComment.trim(),
+      });
+      cancelEditReview();
+      await loadReviews(page);
+    } catch (e: unknown) {
+      const err = e as ErrorWithResponse;
+      setError(err?.response?.data?.message || "Không thể cập nhật đánh giá.");
+    } finally {
+      setActionLoadingReviewId(null);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    const confirmed = window.confirm("Bạn có chắc muốn xóa đánh giá này?");
+    if (!confirmed) {
+      return;
+    }
+
+    setActionLoadingReviewId(reviewId);
+    setError(null);
+    try {
+      await reviewService.deleteReview(reviewId);
+      if (editingReviewId === reviewId) {
+        cancelEditReview();
+      }
+      await loadReviews(page);
+    } catch (e: unknown) {
+      const err = e as ErrorWithResponse;
+      setError(err?.response?.data?.message || "Không thể xóa đánh giá.");
+    } finally {
+      setActionLoadingReviewId(null);
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -106,8 +168,70 @@ const AdminReviewManagementPage = () => {
                   {new Date(review.createdAt).toLocaleString("vi-VN")}
                 </div>
               </div>
-              <div className="text-sm text-amber-600 mt-1">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div>
-              <p className="text-sm text-slate-700 mt-2 whitespace-pre-wrap">{review.comment}</p>
+              {editingReviewId === review.id ? (
+                <div className="mt-3 space-y-3">
+                  <select
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={editRating}
+                    onChange={(event) => setEditRating(Number(event.target.value))}
+                  >
+                    <option value={5}>5 sao</option>
+                    <option value={4}>4 sao</option>
+                    <option value={3}>3 sao</option>
+                    <option value={2}>2 sao</option>
+                    <option value={1}>1 sao</option>
+                  </select>
+                  <textarea
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    rows={4}
+                    value={editComment}
+                    onChange={(event) => setEditComment(event.target.value)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveEditReview(review.id)}
+                      disabled={actionLoadingReviewId === review.id}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                      {actionLoadingReviewId === review.id ? "Đang lưu..." : "Lưu"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditReview}
+                      disabled={actionLoadingReviewId === review.id}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm text-amber-600 mt-1">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div>
+                  <p className="text-sm text-slate-700 mt-2 whitespace-pre-wrap">{review.comment}</p>
+                </>
+              )}
+
+              {editingReviewId !== review.id ? (
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEditReview(review)}
+                    className="rounded-lg border border-blue-300 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteReview(review.id)}
+                    disabled={actionLoadingReviewId === review.id}
+                    className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    {actionLoadingReviewId === review.id ? "Đang xóa..." : "Xóa"}
+                  </button>
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

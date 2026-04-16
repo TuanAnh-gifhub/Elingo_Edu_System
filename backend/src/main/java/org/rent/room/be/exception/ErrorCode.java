@@ -82,6 +82,11 @@ public enum ErrorCode {
     WALLET_LOCKED(7002, "Ví của bạn đang bị khóa", HttpStatus.BAD_REQUEST),
     WALLET_INSUFFICIENT_BALANCE(7003, "Số dư ví không đủ", HttpStatus.BAD_REQUEST),
 
+    // Subscription
+    SUBSCRIPTION_PACKAGE_NOT_FOUND(7101, "Không tìm thấy gói đăng ký", HttpStatus.NOT_FOUND),
+    SUBSCRIPTION_PACKAGE_INACTIVE(7102, "Gói đăng ký này không còn hoạt động", HttpStatus.BAD_REQUEST),
+    SUBSCRIPTION_ALREADY_ACTIVE(7103, "Bạn đang sử dụng gói này. Vui lòng chờ hết hạn để mua lại", HttpStatus.BAD_REQUEST),
+
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung
     ;

@@ -26,6 +26,7 @@ import {
   studentQuizService,
   type QuizAttemptSummary,
 } from "../../../services/quizzes/studentQuizService";
+import { reviewService, type ReviewSummaryDto } from "../../../services/reviews/reviewService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
 import type { EnrollmentResponse } from "../../../services/classes/enrollmentService";
 import RichTextContent from "../../../components/common/RichTextContent";
@@ -178,6 +179,7 @@ const StudentClassLearningPage = () => {
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummaryDto | null>(null);
   const [attemptsByQuizId, setAttemptsByQuizId] = useState<
     Record<string, QuizAttemptSummary[]>
   >({});
@@ -192,6 +194,11 @@ const StudentClassLearningPage = () => {
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
+
+  const renderRatingStars = (rating: number) => {
+    const rounded = Math.max(0, Math.min(5, Math.round(rating)));
+    return `${"★".repeat(rounded)}${"☆".repeat(5 - rounded)}`;
+  };
 
   useEffect(() => {
     if (!classId) {
@@ -298,6 +305,24 @@ const StudentClassLearningPage = () => {
     };
 
     loadClassStudents();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      setReviewSummary(null);
+      return;
+    }
+
+    const loadReviewSummary = async () => {
+      try {
+        const summary = await reviewService.getClassReviewSummary(classId);
+        setReviewSummary(summary);
+      } catch {
+        setReviewSummary(null);
+      }
+    };
+
+    void loadReviewSummary();
   }, [classId]);
 
   const quizzesOfClass = useMemo(() => {
@@ -524,6 +549,11 @@ const StudentClassLearningPage = () => {
         </h1>
         <p className="text-slate-600 mt-1">
           Theo dõi nội dung bài học và làm quiz trong lớp đã gia nhập.
+        </p>
+        <p className="mt-2 text-sm text-amber-600">
+          {reviewSummary && reviewSummary.totalReviews > 0
+            ? `${renderRatingStars(reviewSummary.averageRating)} ${reviewSummary.averageRating.toFixed(1)}/5 (${reviewSummary.totalReviews} đánh giá)`
+            : "Chưa có đánh giá lớp học"}
         </p>
         <button
           type="button"

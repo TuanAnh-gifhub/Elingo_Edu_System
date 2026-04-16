@@ -124,22 +124,38 @@ public class SubscriptionPackageServiceImpl implements SubscriptionPackageServic
     public UserSubscriptionResponse purchasePackage(UUID packageId) {
         User currentUser = userService.getCurrentUserEntity();
         SubscriptionPackage pkg = findPackageOrThrow(packageId);
+        LocalDateTime now = LocalDateTime.now();
+        List<UserSubscription> activeSubscriptions = resolveCurrentActiveSubscriptions(currentUser, now);
 
         if (!pkg.isActive()) {
-            throw new RuntimeException("Gói đăng ký này không còn hoạt động");
+            throw new AppException(ErrorCode.SUBSCRIPTION_PACKAGE_INACTIVE);
+        }
+
+        boolean isSamePackageActive = activeSubscriptions.stream()
+                .anyMatch(subscription -> subscription.getSubscriptionPackage().getPackageId().equals(packageId));
+        if (isSamePackageActive) {
+            throw new AppException(ErrorCode.SUBSCRIPTION_ALREADY_ACTIVE);
+        }
+
+        if (!activeSubscriptions.isEmpty()) {
+            activeSubscriptions.forEach(subscription -> {
+                subscription.setStatus(SubscriptionStatus.CANCELLED);
+                subscription.setEndDate(now);
+            });
+            subscriptionRepository.saveAll(activeSubscriptions);
         }
 
         Wallet wallet = walletService.getOrCreateWallet(currentUser);
 
         if (wallet.getWalletStatus() == WalletStatus.LOCKED) {
-            throw new RuntimeException("Ví của bạn đã bị khóa, không thể mua gói");
+            throw new AppException(ErrorCode.WALLET_LOCKED);
         }
 
         BigDecimal price = pkg.getPrice();
         BigDecimal available = wallet.getBalance().subtract(wallet.getFrozenAmount());
 
         if (available.compareTo(price) < 0) {
-            throw new RuntimeException("Số dư ví không đủ để mua gói. Cần: " + price + ", hiện có: " + available);
+            throw new AppException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
         }
 
         // Deduct balance
@@ -161,7 +177,6 @@ public class SubscriptionPackageServiceImpl implements SubscriptionPackageServic
         WalletTransaction savedTx = walletTransactionRepository.save(tx);
 
         // Create subscription
-        LocalDateTime now = LocalDateTime.now();
         LocalDateTime endDate = now.plusDays(pkg.getDurationDays());
 
         UserSubscription subscription = UserSubscription.builder()
@@ -198,13 +213,16 @@ public class SubscriptionPackageServiceImpl implements SubscriptionPackageServic
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public UserSubscriptionResponse getMyActiveSubscription() {
         User currentUser = userService.getCurrentUserEntity();
-        return subscriptionRepository
-                .findFirstByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)
-                .map(this::toSubscriptionResponse)
-                .orElse(null);
+        LocalDateTime now = LocalDateTime.now();
+        List<UserSubscription> activeSubscriptions = resolveCurrentActiveSubscriptions(currentUser, now);
+        if (activeSubscriptions.isEmpty()) {
+            return null;
+        }
+
+        return toSubscriptionResponse(activeSubscriptions.get(0));
     }
 
     @Override
@@ -234,7 +252,29 @@ public class SubscriptionPackageServiceImpl implements SubscriptionPackageServic
 
     private SubscriptionPackage findPackageOrThrow(UUID packageId) {
         return packageRepository.findById(packageId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy gói đăng ký với id: " + packageId));
+                .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PACKAGE_NOT_FOUND));
+    }
+
+    private List<UserSubscription> resolveCurrentActiveSubscriptions(User user, LocalDateTime now) {
+        List<UserSubscription> activeSubscriptions =
+                subscriptionRepository.findByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE);
+
+        if (activeSubscriptions.isEmpty()) {
+            return List.of();
+        }
+
+        List<UserSubscription> expiredSubscriptions = activeSubscriptions.stream()
+                .filter(subscription -> !subscription.getEndDate().isAfter(now))
+                .toList();
+
+        if (!expiredSubscriptions.isEmpty()) {
+            expiredSubscriptions.forEach(subscription -> subscription.setStatus(SubscriptionStatus.EXPIRED));
+            subscriptionRepository.saveAll(expiredSubscriptions);
+        }
+
+        return activeSubscriptions.stream()
+                .filter(subscription -> subscription.getEndDate().isAfter(now))
+                .toList();
     }
 
     private PackageResponse toPackageResponse(SubscriptionPackage pkg) {

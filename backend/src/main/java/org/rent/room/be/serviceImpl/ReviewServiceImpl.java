@@ -125,7 +125,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         if (!review.getAuthor().getUserId().equals(userId)) {
             User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            boolean isAdmin = user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().getRoleName());
+            boolean isAdmin = hasAdminRole(user);
             if (!isAdmin) {
                 throw new AppException(ErrorCode.UNAUTHORIZED);
             }
@@ -145,7 +145,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         if (!review.getAuthor().getUserId().equals(userId)) {
             User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            boolean isAdmin = user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().getRoleName());
+            boolean isAdmin = hasAdminRole(user);
             if (!isAdmin) {
                 throw new AppException(ErrorCode.UNAUTHORIZED);
             }
@@ -153,6 +153,15 @@ public class ReviewServiceImpl implements ReviewService {
 
         review.setActive(false);
         reviewRepository.save(review);
+    }
+
+    private boolean hasAdminRole(User user) {
+        if (user.getRole() == null || user.getRole().getRoleName() == null) {
+            return false;
+        }
+
+        String roleName = user.getRole().getRoleName();
+        return "ADMIN".equalsIgnoreCase(roleName) || "ROLE_ADMIN".equalsIgnoreCase(roleName);
     }
 }
 

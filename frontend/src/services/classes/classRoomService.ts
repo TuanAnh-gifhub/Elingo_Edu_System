@@ -28,8 +28,27 @@ export interface OnlineClassAccessDto {
   classId: string;
   roomName: string;
   roomPassword: string;
+  jwt?: string;
+  tokenTtlSeconds?: number;
   onlineOpen: boolean;
   teacher: boolean;
+}
+
+export interface ClassWalletDto {
+  classId: string;
+  balance: number;
+  claimable: boolean;
+  endDate?: string;
+  claimedAt?: string;
+}
+
+export interface ClassWalletTransactionDto {
+  transactionId: string;
+  transactionType: "CLASS_WALLET_IN" | "CLASS_WALLET_OUT" | string;
+  amount: number;
+  transactionTime?: string;
+  studentName?: string;
+  description?: string;
 }
 
 export interface CreateClassRoomRequest {
@@ -138,6 +157,23 @@ export const classRoomService = {
   async getOnlineAccess(classId: string): Promise<OnlineClassAccessDto> {
     const res = await api.get(`/classes/${classId}/online-access`);
     return res.data.result as OnlineClassAccessDto;
+  },
+
+  async getClassWallet(classId: string): Promise<ClassWalletDto> {
+    const res = await api.get(`/classes/${classId}/wallet`);
+    return res.data.result as ClassWalletDto;
+  },
+
+  async claimClassWallet(classId: string): Promise<ClassWalletDto> {
+    const res = await api.post(`/classes/${classId}/wallet/claim`);
+    return res.data.result as ClassWalletDto;
+  },
+
+  async getClassWalletTransactions(
+    classId: string,
+  ): Promise<ClassWalletTransactionDto[]> {
+    const res = await api.get(`/classes/${classId}/wallet/transactions`);
+    return (res.data.result || []) as ClassWalletTransactionDto[];
   },
 
   async deleteClass(classId: string): Promise<string> {

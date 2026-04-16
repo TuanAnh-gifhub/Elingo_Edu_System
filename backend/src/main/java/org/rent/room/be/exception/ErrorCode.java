@@ -33,6 +33,8 @@ public enum ErrorCode {
     STUDENT_ALREADY_ENROLLED(4007, "Student already enrolled in this class", HttpStatus.BAD_REQUEST),
     CLASS_SELF_ENROLL_NOT_ALLOWED(4008, "Teacher cannot enroll own class", HttpStatus.BAD_REQUEST),
     CLASS_ONLINE_NOT_OPEN(4009, "Lớp học trực tuyến chưa được giáo viên mở", HttpStatus.FORBIDDEN),
+    CLASS_WALLET_EMPTY(4010, "Ví lớp hiện không có tiền để nhận", HttpStatus.BAD_REQUEST),
+    CLASS_WALLET_CLAIM_NOT_AVAILABLE(4011, "Chỉ nhận tiền sau khi lớp học đã kết thúc", HttpStatus.BAD_REQUEST),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),

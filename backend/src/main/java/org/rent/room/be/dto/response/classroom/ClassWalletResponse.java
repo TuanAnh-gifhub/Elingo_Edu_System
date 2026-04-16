@@ -3,6 +3,8 @@ package org.rent.room.be.dto.response.classroom;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -11,14 +13,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OnlineClassAccessResponse {
+public class ClassWalletResponse {
 
     UUID classId;
-    String roomName;
-    String roomPassword;
-    String jwt;
-    Long tokenTtlSeconds;
-    Boolean onlineOpen;
-    Boolean teacher;
+    BigDecimal balance;
+    boolean claimable;
+    LocalDateTime endDate;
+    LocalDateTime claimedAt;
 }
 

@@ -15,17 +15,22 @@ import { FaFilePowerpoint } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   classRoomService,
+  type ClassWalletDto,
+  type ClassWalletTransactionDto,
   type ClassRoomDto,
   type OnlineClassAccessDto,
   type UpdateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
+import {
+  enrollmentService,
+  type EnrollmentResponse,
+} from "../../../services/classes/enrollmentService";
 import {
   courseService,
   type CourseDto,
   type CreateCourseRequest,
   type UpdateCourseRequest,
 } from "../../../services/courses/courseService";
-import { userService, type UserResponse } from "../../../services/usersService";
 import {
   uploadMultipleFiles,
   uploadToCloudinary,
@@ -450,10 +455,17 @@ const TeacherClassManagePage = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingClassWallet, setLoadingClassWallet] = useState(true);
+  const [loadingClassWalletTransactions, setLoadingClassWalletTransactions] =
+    useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
+  const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
+  const [classWalletTransactions, setClassWalletTransactions] = useState<
+    ClassWalletTransactionDto[]
+  >([]);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
-  const [students, setStudents] = useState<UserResponse[]>([]);
+  const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
   const [showEditClassForm, setShowEditClassForm] = useState(false);
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
     INITIAL_EDIT_CLASS_FORM,
@@ -498,6 +510,7 @@ const TeacherClassManagePage = () => {
   const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [claimingClassWallet, setClaimingClassWallet] = useState(false);
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
@@ -550,6 +563,51 @@ const TeacherClassManagePage = () => {
     };
 
     loadClass();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWallet = async () => {
+      try {
+        setLoadingClassWallet(true);
+        const wallet = await classRoomService.getClassWallet(classId);
+        setClassWallet(wallet);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể tải ví lớp học.";
+        toast.error(message);
+      } finally {
+        setLoadingClassWallet(false);
+      }
+    };
+
+    loadClassWallet();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassWalletTransactions = async () => {
+      try {
+        setLoadingClassWalletTransactions(true);
+        const transactions =
+          await classRoomService.getClassWalletTransactions(classId);
+        setClassWalletTransactions(transactions);
+      } catch {
+        setClassWalletTransactions([]);
+      } finally {
+        setLoadingClassWalletTransactions(false);
+      }
+    };
+
+    loadClassWalletTransactions();
   }, [classId]);
 
   useEffect(() => {
@@ -611,22 +669,29 @@ const TeacherClassManagePage = () => {
   }, [classId]);
 
   useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
     const loadStudents = async () => {
       try {
         setLoadingStudents(true);
-        const response = await userService.getAllUsers(1, 100, "STUDENT", true);
-        const result = response?.data?.result;
-        const list = (result?.data || []) as UserResponse[];
-        setStudents(list);
+        const enrollments = await enrollmentService.getClassEnrollments(classId);
+        const sortedEnrollments = [...enrollments].sort((first, second) => {
+          const firstTime = new Date(first.enrollmentDate || first.createdAt || 0).getTime();
+          const secondTime = new Date(second.enrollmentDate || second.createdAt || 0).getTime();
+          return firstTime - secondTime;
+        });
+        setClassEnrollments(sortedEnrollments);
       } catch {
-        setStudents([]);
+        setClassEnrollments([]);
       } finally {
         setLoadingStudents(false);
       }
     };
 
     loadStudents();
-  }, []);
+  }, [classId]);
 
   const rating = useMemo(() => {
     if (!classInfo) {
@@ -637,13 +702,8 @@ const TeacherClassManagePage = () => {
   }, [classInfo]);
 
   const registeredStudents = useMemo(() => {
-    const total = classInfo?.currentStudents || 0;
-    if (students.length === 0 || total <= 0) {
-      return [];
-    }
-
-    return students.slice(0, total);
-  }, [students, classInfo?.currentStudents]);
+    return classEnrollments;
+  }, [classEnrollments]);
 
   const feedbackList = useMemo<ClassroomFeedback[]>(() => {
     if (!classInfo) {
@@ -654,7 +714,7 @@ const TeacherClassManagePage = () => {
       return [];
     }
 
-    return registeredStudents.slice(0, 8).map((student, index) => {
+    return registeredStudents.slice(0, 8).map((enrollment, index) => {
       const classScore = getClassRating(classInfo.classId);
       const adjusted = Math.max(
         3.2,
@@ -662,8 +722,8 @@ const TeacherClassManagePage = () => {
       );
 
       return {
-        id: `${classInfo.classId}-fb-${student.userId}`,
-        studentName: student.userName,
+        id: `${classInfo.classId}-fb-${enrollment.studentId}`,
+        studentName: enrollment.studentName || "Học sinh",
         rating: Number(adjusted.toFixed(1)),
         comment:
           index % 2 === 0
@@ -744,6 +804,7 @@ const TeacherClassManagePage = () => {
         jitsiApiRef.current = await createJitsiRoom({
           roomName: onlineClassAccess.roomName,
           roomPassword: onlineClassAccess.roomPassword,
+          jwt: onlineClassAccess.jwt,
           parentNode: jitsiContainerRef.current as HTMLElement,
           displayName: user?.userName,
           isModerator: true,
@@ -1319,6 +1380,42 @@ const TeacherClassManagePage = () => {
     }
   };
 
+  const handleClaimClassWallet = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setClaimingClassWallet(true);
+      const claimedWallet = await classRoomService.claimClassWallet(classId);
+      setClassWallet(claimedWallet);
+
+      const transactions = await classRoomService.getClassWalletTransactions(
+        classId,
+      );
+      setClassWalletTransactions(transactions);
+
+      toast.success("Nhận tiền từ ví lớp thành công.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể nhận tiền từ ví lớp.";
+      toast.error(message);
+    } finally {
+      setClaimingClassWallet(false);
+    }
+  };
+
+  const classWalletEndDate = classWallet?.endDate
+    ? new Date(classWallet.endDate)
+    : null;
+  const isClassWalletDue = classWalletEndDate
+    ? Date.now() >= classWalletEndDate.getTime()
+    : false;
+  const canClaimClassWallet =
+    isClassWalletDue && Number(classWallet?.balance || 0) > 0;
+
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
   }
@@ -1374,6 +1471,11 @@ const TeacherClassManagePage = () => {
                 {rating}/5
               </span>
             </div>
+            <div className="mt-2 text-xs text-slate-500">
+              Ví lớp: {loadingClassWallet
+                ? "Đang tải..."
+                : `${Number(classWallet?.balance || 0).toLocaleString("vi-VN")} đ`}
+            </div>
           </div>
         </div>
       </div>
@@ -1427,6 +1529,119 @@ const TeacherClassManagePage = () => {
           <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50 to-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Đánh giá trung bình</p>
             <p className="text-3xl font-bold text-slate-900 mt-2">{rating}</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Số dư ví lớp</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">
+              {loadingClassWallet
+                ? "..."
+                : Number(classWallet?.balance || 0).toLocaleString("vi-VN")}
+              <span className="ml-1 text-base font-semibold text-slate-600">đ</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              {classWallet?.endDate
+                ? `Mở nhận tiền sau: ${new Date(classWallet.endDate).toLocaleString("vi-VN")}`
+                : "Chưa có ngày kết thúc để mở nhận tiền."}
+            </p>
+            {classWallet?.claimedAt ? (
+              <p className="mt-1 text-xs text-emerald-700">
+                Đã nhận tiền lúc: {new Date(classWallet.claimedAt).toLocaleString("vi-VN")}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleClaimClassWallet}
+              disabled={
+                loadingClassWallet ||
+                claimingClassWallet ||
+                !canClaimClassWallet
+              }
+              className="mt-3 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {claimingClassWallet ? "Đang nhận tiền..." : "Nhận tiền ví lớp"}
+            </button>
+          </div>
+
+          <div className="md:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Lịch sử giao dịch ví lớp
+              </h3>
+              <span className="text-xs text-slate-500">
+                Tiền vào ví lớp / tiền đã nhận
+              </span>
+            </div>
+
+            {loadingClassWalletTransactions ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Đang tải lịch sử giao dịch...
+              </p>
+            ) : classWalletTransactions.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Chưa có giao dịch ví lớp.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-slate-500">
+                      <th className="pb-2">Thời gian</th>
+                      <th className="pb-2">Loại</th>
+                      <th className="pb-2">Số tiền</th>
+                      <th className="pb-2">Người học</th>
+                      <th className="pb-2">Mô tả</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classWalletTransactions.map((tx) => {
+                      const isInflow = tx.transactionType === "CLASS_WALLET_IN";
+                      return (
+                        <tr
+                          key={tx.transactionId}
+                          className="border-b border-slate-100"
+                        >
+                          <td className="py-3 pr-2 text-slate-600">
+                            {tx.transactionTime
+                              ? new Date(tx.transactionTime).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "-"}
+                          </td>
+                          <td className="py-3 pr-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                isInflow
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {isInflow
+                                ? "Tiền vào ví lớp"
+                                : "Tiền đã nhận"}
+                            </span>
+                          </td>
+                          <td
+                            className={`py-3 pr-2 font-semibold ${
+                              isInflow ? "text-emerald-700" : "text-amber-700"
+                            }`}
+                          >
+                            {isInflow ? "+" : "-"}
+                            {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
+                          </td>
+                          <td className="py-3 pr-2 text-slate-700">
+                            {tx.studentName || "-"}
+                          </td>
+                          <td className="py-3 text-slate-600">
+                            {tx.description || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-white to-cyan-50/60 p-5 shadow-sm space-y-4">
@@ -2522,26 +2737,30 @@ const TeacherClassManagePage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-500 border-b">
+                    <th className="pb-2">STT</th>
                     <th className="pb-2">Tên học sinh</th>
-                    <th className="pb-2">Email</th>
-                    <th className="pb-2">Số điện thoại</th>
+                    <th className="pb-2">Thời gian nhập học</th>
                     <th className="pb-2">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {registeredStudents.map((student) => (
+                  {registeredStudents.map((enrollment, index) => (
                     <tr
-                      key={student.userId}
+                      key={enrollment.enrollmentId}
                       className="border-b border-slate-100"
                     >
+                      <td className="py-3 pr-2 text-slate-900 font-medium">
+                        {index + 1}
+                      </td>
                       <td className="py-3 pr-2 text-slate-900">
-                        {student.userName}
+                        {enrollment.studentName || "Học sinh"}
                       </td>
                       <td className="py-3 pr-2 text-slate-600">
-                        {student.email}
-                      </td>
-                      <td className="py-3 pr-2 text-slate-600">
-                        {student.phone || "-"}
+                        {enrollment.enrollmentDate
+                          ? new Date(enrollment.enrollmentDate).toLocaleString("vi-VN")
+                          : enrollment.createdAt
+                            ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
+                            : "-"}
                       </td>
                       <td className="py-3">
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">

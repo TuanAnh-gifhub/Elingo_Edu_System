@@ -27,11 +27,12 @@ import {
   type QuizAttemptSummary,
 } from "../../../services/quizzes/studentQuizService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
+import type { EnrollmentResponse } from "../../../services/classes/enrollmentService";
 import RichTextContent from "../../../components/common/RichTextContent";
 import { createJitsiRoom, type JitsiApi } from "../../../utils/jitsiHelper";
 import websocketService from "../../../services/chats/websocketService";
 
-type StudentTab = "overview" | "courses" | "quizzes" | "online";
+type StudentTab = "overview" | "courses" | "quizzes" | "students" | "online";
 
 interface QuizStatusEvent {
   classId: string;
@@ -172,9 +173,11 @@ const StudentClassLearningPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
+  const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
   const [attemptsByQuizId, setAttemptsByQuizId] = useState<
     Record<string, QuizAttemptSummary[]>
   >({});
@@ -270,6 +273,31 @@ const StudentClassLearningPage = () => {
     };
 
     loadQuizzes();
+  }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadClassStudents = async () => {
+      try {
+        setLoadingStudents(true);
+        const enrollments = await enrollmentService.getClassEnrollments(classId);
+        const sorted = [...enrollments].sort((first, second) => {
+          const firstTime = new Date(first.enrollmentDate || first.createdAt || 0).getTime();
+          const secondTime = new Date(second.enrollmentDate || second.createdAt || 0).getTime();
+          return firstTime - secondTime;
+        });
+        setClassEnrollments(sorted);
+      } catch {
+        setClassEnrollments([]);
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    loadClassStudents();
   }, [classId]);
 
   const quizzesOfClass = useMemo(() => {
@@ -436,6 +464,7 @@ const StudentClassLearningPage = () => {
         jitsiApiRef.current = await createJitsiRoom({
           roomName: onlineClassAccess.roomName,
           roomPassword: onlineClassAccess.roomPassword,
+          jwt: onlineClassAccess.jwt,
           parentNode: jitsiContainerRef.current as HTMLElement,
           isModerator: false,
         });
@@ -510,6 +539,7 @@ const StudentClassLearningPage = () => {
           { key: "overview", label: "Tổng quan" },
           { key: "courses", label: "Bài học" },
           { key: "quizzes", label: "Quiz" },
+          { key: "students", label: "Học sinh" },
           { key: "online", label: "Lớp trực tuyến" },
         ].map((item) => (
           <button
@@ -731,6 +761,55 @@ const StudentClassLearningPage = () => {
                   </div>
                 </article>
               ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {activeTab === "students" ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Danh sách học sinh lớp</h2>
+          {loadingStudents ? (
+            <p className="text-slate-500 mt-3">Đang tải danh sách học sinh...</p>
+          ) : classEnrollments.length === 0 ? (
+            <p className="text-slate-500 mt-3">Chưa có học sinh nào trong lớp.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-slate-500 border-b">
+                    <th className="pb-2">STT</th>
+                    <th className="pb-2">Tên học sinh</th>
+                    <th className="pb-2">Thời gian nhập học</th>
+                    <th className="pb-2">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {classEnrollments.map((enrollment, index) => (
+                    <tr
+                      key={enrollment.enrollmentId}
+                      className="border-b border-slate-100"
+                    >
+                      <td className="py-3 pr-2 text-slate-900 font-medium">{index + 1}</td>
+                      <td className="py-3 pr-2 text-slate-900">
+                        {enrollment.studentName || "Học sinh"}
+                      </td>
+                      <td className="py-3 pr-2 text-slate-600">
+                        {enrollment.enrollmentDate
+                          ? new Date(enrollment.enrollmentDate).toLocaleString("vi-VN")
+                          : enrollment.createdAt
+                            ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
+                            : "-"}
+                      </td>
+                      <td className="py-3">
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
+                          Đang học
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </section>

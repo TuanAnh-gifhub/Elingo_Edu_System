@@ -14,5 +14,5 @@ public interface EnrollmentService {
 
     List<EnrollmentResponse> getMyEnrollments();
 
-    List<EnrollmentResponse> getEnrollmentsByClassId(UUID classId);
+    List<EnrollmentResponse> getEnrollmentsByClass(UUID classId);
 }

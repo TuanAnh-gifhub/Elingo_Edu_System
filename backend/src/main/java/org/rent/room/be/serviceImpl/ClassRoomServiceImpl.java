@@ -2,20 +2,32 @@ package org.rent.room.be.serviceImpl;
 
 import lombok.RequiredArgsConstructor;
 import org.rent.room.be.base.PageResponse;
+import org.rent.room.be.constant.WalletStatus;
+import org.rent.room.be.constant.WalletTxStatus;
+import org.rent.room.be.constant.WalletTxType;
 import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
 import org.rent.room.be.dto.response.classroom.ClassLiveStatusEventResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
 import org.rent.room.be.entity.ClassRoom;
+import org.rent.room.be.entity.Enrollment;
 import org.rent.room.be.entity.User;
+import org.rent.room.be.entity.Wallet;
+import org.rent.room.be.entity.WalletTransaction;
 import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.ClassRoomMapper;
 import org.rent.room.be.repository.ClassRoomRepository;
 import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.UserRepository;
+import org.rent.room.be.repository.WalletRepository;
+import org.rent.room.be.repository.WalletTransactionRepository;
+import org.rent.room.be.security.JitsiTokenService;
 import org.rent.room.be.service.ClassRoomService;
+import org.rent.room.be.service.WalletService;
 import org.rent.room.be.specification.ClassRoomSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -38,7 +54,11 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassRoomMapper classRoomMapper;
+    private final WalletService walletService;
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final JitsiTokenService jitsiTokenService;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ROOM_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -60,6 +80,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                 .active(true)
                 .schedule(request.getSchedule())
                 .poster(request.getPoster())
+                .classWalletBalance(BigDecimal.ZERO)
                 .onlineOpen(false)
                 .build();
 
@@ -163,6 +184,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         }
 
         if (Boolean.TRUE.equals(onlineOpen)) {
+            // Rotate room identity each time teacher opens class to invalidate old links.
             classRoom.setOnlineOpen(true);
             classRoom.setOnlineRoomCode(generateRandomCode(24));
             classRoom.setOnlineRoomPassword(generateRandomCode(12));
@@ -184,10 +206,128 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ClassWalletResponse getClassWallet(UUID classId, UUID currentTeacherId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        validateTeacherOwnership(classRoom, currentTeacherId);
+
+        return toClassWalletResponse(classRoom);
+    }
+
+    @Override
+    @Transactional
+    public ClassWalletResponse claimClassWallet(UUID classId, UUID currentTeacherId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        validateTeacherOwnership(classRoom, currentTeacherId);
+
+        LocalDateTime now = LocalDateTime.now();
+        if (classRoom.getEndDate() == null || now.isBefore(classRoom.getEndDate())) {
+            throw new AppException(ErrorCode.CLASS_WALLET_CLAIM_NOT_AVAILABLE);
+        }
+
+        BigDecimal classWalletBalance = classRoom.getClassWalletBalance() == null
+                ? BigDecimal.ZERO
+                : classRoom.getClassWalletBalance();
+        if (classWalletBalance.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new AppException(ErrorCode.CLASS_WALLET_EMPTY);
+        }
+
+        Wallet teacherWallet = walletService.getOrCreateWallet(classRoom.getTeacher());
+        if (teacherWallet.getWalletStatus() == WalletStatus.LOCKED) {
+            throw new AppException(ErrorCode.WALLET_LOCKED);
+        }
+
+        BigDecimal teacherBalanceBefore = teacherWallet.getBalance() == null
+                ? BigDecimal.ZERO
+                : teacherWallet.getBalance();
+        BigDecimal teacherBalanceAfter = teacherBalanceBefore.add(classWalletBalance);
+        teacherWallet.setBalance(teacherBalanceAfter);
+        walletRepository.save(teacherWallet);
+
+        classRoom.setClassWalletBalance(BigDecimal.ZERO);
+        classRoom.setClassWalletClaimedAt(now);
+        classRoomRepository.save(classRoom);
+
+        walletTransactionRepository.save(WalletTransaction.builder()
+                .wallet(teacherWallet)
+                .type(WalletTxType.BOOKING_INCOME)
+                .status(WalletTxStatus.COMPLETED)
+                .amount(classWalletBalance)
+                .balanceBefore(teacherBalanceBefore)
+                .balanceAfter(teacherBalanceAfter)
+                .description("Nhận tiền từ ví lớp " + classRoom.getClassName())
+                .metadata("{\"classId\":\"" + classRoom.getClassId() + "\"}")
+                .build());
+
+        return toClassWalletResponse(classRoom);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassWalletTransactionResponse> getClassWalletTransactions(UUID classId, UUID currentTeacherId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        validateTeacherOwnership(classRoom, currentTeacherId);
+
+        List<ClassWalletTransactionResponse> transactions = new ArrayList<>();
+
+        List<Enrollment> enrollments = enrollmentRepository.findByClassIdOrderByEnrollmentDateAsc(classId);
+        for (Enrollment enrollment : enrollments) {
+            BigDecimal amount = enrollment.getPaymentAmount() == null
+                    ? BigDecimal.ZERO
+                    : enrollment.getPaymentAmount();
+            transactions.add(ClassWalletTransactionResponse.builder()
+                    .transactionId(enrollment.getEnrollmentId())
+                    .transactionType("CLASS_WALLET_IN")
+                    .amount(amount)
+                    .transactionTime(enrollment.getEnrollmentDate())
+                    .studentName(enrollment.getStudent() != null ? enrollment.getStudent().getUserName() : null)
+                    .description("Học sinh nhập học - tiền vào ví lớp")
+                    .build());
+        }
+
+        walletRepository.findByUser_UserId(classRoom.getTeacher().getUserId()).ifPresent(teacherWallet -> {
+            String classIdToken = classRoom.getClassId().toString();
+            List<WalletTransaction> claimTransactions =
+                    walletTransactionRepository.findByWalletAndTypeAndMetadataContainingOrderByCreatedAtDesc(
+                            teacherWallet,
+                            WalletTxType.BOOKING_INCOME,
+                            classIdToken
+                    );
+
+            for (WalletTransaction claimTx : claimTransactions) {
+                transactions.add(ClassWalletTransactionResponse.builder()
+                        .transactionId(claimTx.getWalletTransactionId())
+                        .transactionType("CLASS_WALLET_OUT")
+                        .amount(claimTx.getAmount() == null ? BigDecimal.ZERO : claimTx.getAmount())
+                        .transactionTime(claimTx.getCreatedAt())
+                        .studentName(null)
+                        .description("Giáo viên nhận tiền từ ví lớp")
+                        .build());
+            }
+        });
+
+        transactions.sort(Comparator.comparing(
+                ClassWalletTransactionResponse::getTransactionTime,
+                Comparator.nullsLast(Comparator.reverseOrder())
+        ));
+
+        return transactions;
+    }
+
+    @Override
     @Transactional
     public OnlineClassAccessResponse getOnlineClassAccess(UUID classId, UUID currentUserId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!Boolean.TRUE.equals(classRoom.getOnlineOpen())) {
             throw new AppException(ErrorCode.CLASS_ONLINE_NOT_OPEN);
@@ -214,11 +354,14 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         }
 
         String roomName = "class-" + classRoom.getClassId() + "-" + roomCode;
+        String jitsiJwt = jitsiTokenService.generateJoinToken(currentUser, roomName, isTeacherOfClass);
 
         return OnlineClassAccessResponse.builder()
                 .classId(classRoom.getClassId())
                 .roomName(roomName)
                 .roomPassword(roomPassword)
+                .jwt(jitsiJwt)
+                .tokenTtlSeconds(jitsiTokenService.getTokenTtlSeconds())
                 .onlineOpen(true)
                 .teacher(isTeacherOfClass)
                 .build();
@@ -241,6 +384,29 @@ public class ClassRoomServiceImpl implements ClassRoomService {
             builder.append(ROOM_CHARSET.charAt(index));
         }
         return builder.toString();
+    }
+
+    private ClassWalletResponse toClassWalletResponse(ClassRoom classRoom) {
+        BigDecimal balance = classRoom.getClassWalletBalance() == null
+                ? BigDecimal.ZERO
+                : classRoom.getClassWalletBalance();
+        boolean claimable = classRoom.getEndDate() != null
+                && !LocalDateTime.now().isBefore(classRoom.getEndDate())
+                && balance.compareTo(BigDecimal.ZERO) > 0;
+
+        return ClassWalletResponse.builder()
+                .classId(classRoom.getClassId())
+                .balance(balance)
+                .claimable(claimable)
+                .endDate(classRoom.getEndDate())
+                .claimedAt(classRoom.getClassWalletClaimedAt())
+                .build();
+    }
+
+    private void validateTeacherOwnership(ClassRoom classRoom, UUID currentTeacherId) {
+        if (classRoom.getTeacher() == null || !classRoom.getTeacher().getUserId().equals(currentTeacherId)) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
     }
 }
 

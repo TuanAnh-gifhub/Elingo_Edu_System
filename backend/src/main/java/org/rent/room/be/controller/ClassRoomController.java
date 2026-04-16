@@ -10,6 +10,8 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassOnlineStatusRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
+import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
 import org.rent.room.be.security.SecurityUtils;
@@ -19,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -121,6 +124,54 @@ public class ClassRoomController {
                 ApiResponse.<ClassRoomResponse>builder()
                         .code(200)
                         .message("Update class online status successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/{classId}/wallet")
+    public ResponseEntity<ApiResponse<ClassWalletResponse>> getClassWallet(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassWalletResponse response = classRoomService.getClassWallet(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletResponse>builder()
+                        .code(200)
+                        .message("Get class wallet successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PostMapping("/{classId}/wallet/claim")
+    public ResponseEntity<ApiResponse<ClassWalletResponse>> claimClassWallet(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassWalletResponse response = classRoomService.claimClassWallet(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletResponse>builder()
+                        .code(200)
+                        .message("Claim class wallet successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/{classId}/wallet/transactions")
+    public ResponseEntity<ApiResponse<List<ClassWalletTransactionResponse>>> getClassWalletTransactions(
+            @PathVariable UUID classId
+    ) {
+        UUID currentTeacherId = SecurityUtils.requireCurrentUser().getUserId();
+        List<ClassWalletTransactionResponse> response = classRoomService.getClassWalletTransactions(classId, currentTeacherId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<ClassWalletTransactionResponse>>builder()
+                        .code(200)
+                        .message("Get class wallet transactions successfully")
                         .result(response)
                         .build()
         );

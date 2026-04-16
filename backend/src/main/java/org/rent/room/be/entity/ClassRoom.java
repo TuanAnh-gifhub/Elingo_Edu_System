@@ -62,6 +62,12 @@ public class ClassRoom extends BaseEntity {
     @Column(name = "poster", length = 1000)
     String poster;
 
+    @Column(name = "class_wallet_balance", precision = 19, scale = 2)
+    BigDecimal classWalletBalance;
+
+    @Column(name = "class_wallet_claimed_at")
+    LocalDateTime classWalletClaimedAt;
+
     @Column(name = "online_open")
     Boolean onlineOpen;
 

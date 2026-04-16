@@ -94,7 +94,7 @@ public class ReviewController {
                 .build());
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @PutMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
             @PathVariable UUID reviewId,
@@ -109,7 +109,7 @@ public class ReviewController {
                 .build());
     }
 
-    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT') or hasRole('ADMIN')")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> deleteReview(
             @PathVariable UUID reviewId

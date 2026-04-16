@@ -7,7 +7,6 @@ import {
   FiLogOut,
   FiChevronDown,
   FiCreditCard,
-  FiFileText,
   FiStar,
 } from "react-icons/fi";
 

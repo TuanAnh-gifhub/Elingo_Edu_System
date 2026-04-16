@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
+import { message } from "antd";
 import {
   FaClock,
   FaShieldAlt,
@@ -244,6 +245,19 @@ const AboutUs = ({
     }
     return (b.totalReviews || 0) - (a.totalReviews || 0);
   });
+
+  const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      messageApi.error("Vui lòng nhập email hợp lệ.");
+      return;
+    }
+
+    messageApi.success("Đăng ký nhận ưu đãi thành công.");
+    setEmail("");
+  };
 
   return (
     <div

@@ -7,7 +7,6 @@ import ParallaxBackground from "./ParallaxBackground";
 import HeroSection from "../../../components/HeroSection/HeroSection";
 import ScrambleText from "../../../components/Header/ScrambleText";
 import RoomCard from "./RoomCard";
-import Footer from "../../../components/Footer/Footer";
 import AboutUs from "../AboutUs/AboutUs";
 import {
   classRoomService,
@@ -87,21 +86,7 @@ const LandingPage = () => {
     const handleScroll = () => {
       setShowSidebar(false);
 
-      if (footerRef.current && showSidebar) {
-        const footerRect = footerRef.current.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const footerTop = footerRect.top;
-
-        // If footer is visible, limit sidebar bottom
-        if (footerTop < windowHeight) {
-          const distanceFromBottom = windowHeight - footerTop;
-          setSidebarBottom(Math.max(0, distanceFromBottom));
-        } else {
-          setSidebarBottom(null);
-        }
-      } else {
-        setSidebarBottom(null);
-      }
+      setSidebarBottom(null);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -128,7 +113,6 @@ const LandingPage = () => {
   const [decodeOfficialStores, setDecodeOfficialStores] = useState(false);
   const latestListingsRef = useRef<HTMLDivElement>(null);
   const officialStoresRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLElement>(null);
   const [sidebarBottom, setSidebarBottom] = useState<number | null>(null);
 
   const [latestListingsStart, setLatestListingsStart] = useState(0);
@@ -731,10 +715,8 @@ const LandingPage = () => {
       </div>
 
       {/* About Us Section */}
-      <AboutUs isDarkMode={isDarkMode} teacherProfiles={teacherProfiles} />
+      <AboutUs isDarkMode={isDarkMode} teacherProfiles={teacherProfiles} variant="section" />
 
-      {/* Footer - Outside of content div to avoid sidebar margin */}
-      <Footer ref={footerRef} isDarkMode={isDarkMode} />
     </div>
   );
 };

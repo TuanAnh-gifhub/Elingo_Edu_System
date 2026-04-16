@@ -12,6 +12,7 @@ import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
 import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
 import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
+import org.rent.room.be.entity.ClassFavorite;
 import org.rent.room.be.entity.ClassRoom;
 import org.rent.room.be.entity.Enrollment;
 import org.rent.room.be.entity.User;
@@ -21,6 +22,7 @@ import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.ClassRoomMapper;
 import org.rent.room.be.repository.ClassRoomRepository;
+import org.rent.room.be.repository.ClassFavoriteRepository;
 import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.repository.WalletRepository;
@@ -51,6 +53,7 @@ import java.util.UUID;
 public class ClassRoomServiceImpl implements ClassRoomService {
 
     private final ClassRoomRepository classRoomRepository;
+    private final ClassFavoriteRepository classFavoriteRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassRoomMapper classRoomMapper;
@@ -365,6 +368,57 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                 .onlineOpen(true)
                 .teacher(isTeacherOfClass)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassRoomResponse> getFavoriteClasses(UUID currentUserId) {
+        List<ClassFavorite> favorites = classFavoriteRepository.findByUser_UserIdOrderByCreatedAtDesc(currentUserId);
+
+        return favorites.stream()
+                .map(ClassFavorite::getClassRoom)
+                .filter(classRoom -> classRoom != null)
+                .map(classRoomMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public boolean addFavoriteClass(UUID classId, UUID currentUserId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        if (classFavoriteRepository.existsByUser_UserIdAndClassRoom_ClassId(currentUserId, classId)) {
+            return false;
+        }
+
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        ClassFavorite favorite = ClassFavorite.builder()
+                .user(user)
+                .classRoom(classRoom)
+                .build();
+
+        classFavoriteRepository.save(favorite);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean removeFavoriteClass(UUID classId, UUID currentUserId) {
+        if (!classFavoriteRepository.existsByUser_UserIdAndClassRoom_ClassId(currentUserId, classId)) {
+            return false;
+        }
+
+        classFavoriteRepository.deleteByUser_UserIdAndClassRoom_ClassId(currentUserId, classId);
+        return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isFavoriteClass(UUID classId, UUID currentUserId) {
+        return classFavoriteRepository.existsByUser_UserIdAndClassRoom_ClassId(currentUserId, classId);
     }
 
     @Override

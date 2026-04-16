@@ -42,6 +42,14 @@ public interface ClassRoomService {
 
     OnlineClassAccessResponse getOnlineClassAccess(UUID classId, UUID currentUserId);
 
+    List<ClassRoomResponse> getFavoriteClasses(UUID currentUserId);
+
+    boolean addFavoriteClass(UUID classId, UUID currentUserId);
+
+    boolean removeFavoriteClass(UUID classId, UUID currentUserId);
+
+    boolean isFavoriteClass(UUID classId, UUID currentUserId);
+
     void softDeleteClass(UUID classId);
 }
 

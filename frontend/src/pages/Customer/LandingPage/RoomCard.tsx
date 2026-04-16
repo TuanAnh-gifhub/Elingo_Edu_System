@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import { FaUsers, FaWifi, FaDesktop, FaLeaf, FaPalette, FaMicrophone, FaHeart, FaShare, FaBed } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { classRoomService } from "../../../services/classes/classRoomService";
+import { useAuth } from "../../../context/AuthContext";
 
 export interface RoomCardProps {
   id: string | number;
@@ -86,8 +89,34 @@ const RoomCard = ({
   showOverlay = false
 }: RoomCardProps) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const FeatureIcon = feature?.icon || FaUsers;
   const [isFavorite, setIsFavorite] = useState(false);
+  const [syncingFavorite, setSyncingFavorite] = useState(false);
+  const classId = String(id);
+
+  const isUuid = (value: string): boolean =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
+
+  useEffect(() => {
+    if (!isAuthenticated || !isUuid(classId)) {
+      setIsFavorite(false);
+      return;
+    }
+
+    const loadFavoriteStatus = async () => {
+      try {
+        const status = await classRoomService.getFavoriteClassStatus(classId);
+        setIsFavorite(status);
+      } catch {
+        setIsFavorite(false);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [classId, isAuthenticated]);
 
   const handleClick = () => {
     if (onClick) {
@@ -98,9 +127,40 @@ const RoomCard = ({
     }
   };
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
+
+    if (!isAuthenticated) {
+      toast.info("Vui lòng đăng nhập để lưu lớp học yêu thích.");
+      return;
+    }
+
+    if (!isUuid(classId)) {
+      toast.error("Không thể thêm vào yêu thích cho lớp học này.");
+      return;
+    }
+
+    if (syncingFavorite) {
+      return;
+    }
+
+    try {
+      setSyncingFavorite(true);
+
+      if (isFavorite) {
+        await classRoomService.removeFavoriteClass(classId);
+        setIsFavorite(false);
+        toast.success("Đã bỏ khỏi lớp học yêu thích.");
+      } else {
+        await classRoomService.addFavoriteClass(classId);
+        setIsFavorite(true);
+        toast.success("Đã thêm vào lớp học yêu thích.");
+      }
+    } catch {
+      toast.error("Không thể cập nhật lớp học yêu thích.");
+    } finally {
+      setSyncingFavorite(false);
+    }
   };
 
   const handleShareClick = (e: React.MouseEvent) => {
@@ -148,7 +208,8 @@ const RoomCard = ({
           {/* Heart Icon */}
           <button
             onClick={handleFavoriteClick}
-            className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-all duration-200 z-10"
+            disabled={syncingFavorite}
+            className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-all duration-200 z-10 disabled:opacity-60"
           >
             <FaHeart className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} />
           </button>

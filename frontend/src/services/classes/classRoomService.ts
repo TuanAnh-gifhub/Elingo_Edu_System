@@ -176,6 +176,26 @@ export const classRoomService = {
     return (res.data.result || []) as ClassWalletTransactionDto[];
   },
 
+  async getFavoriteClasses(): Promise<ClassRoomDto[]> {
+    const res = await api.get("/classes/favorites");
+    return (res.data.result || []) as ClassRoomDto[];
+  },
+
+  async addFavoriteClass(classId: string): Promise<boolean> {
+    const res = await api.post(`/classes/${classId}/favorite`);
+    return Boolean(res.data.result);
+  },
+
+  async removeFavoriteClass(classId: string): Promise<boolean> {
+    const res = await api.delete(`/classes/${classId}/favorite`);
+    return Boolean(res.data.result);
+  },
+
+  async getFavoriteClassStatus(classId: string): Promise<boolean> {
+    const res = await api.get(`/classes/${classId}/favorite-status`);
+    return Boolean(res.data.result);
+  },
+
   async deleteClass(classId: string): Promise<string> {
     const res = await api.delete(`/classes/${classId}`);
     return res.data.result as string;

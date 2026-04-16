@@ -95,6 +95,72 @@ public class ClassRoomController {
         );
     }
 
+            @PreAuthorize("isAuthenticated()")
+            @GetMapping("/favorites")
+            public ResponseEntity<ApiResponse<List<ClassRoomResponse>>> getFavoriteClasses() {
+                UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+                List<ClassRoomResponse> result = classRoomService.getFavoriteClasses(currentUserId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.<List<ClassRoomResponse>>builder()
+                                .code(200)
+                                .message("Get favorite classes successfully")
+                                .result(result)
+                                .build()
+                );
+            }
+
+            @PreAuthorize("isAuthenticated()")
+            @PostMapping("/{classId}/favorite")
+            public ResponseEntity<ApiResponse<Boolean>> addFavoriteClass(
+                    @PathVariable UUID classId
+            ) {
+                UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+                boolean added = classRoomService.addFavoriteClass(classId, currentUserId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.<Boolean>builder()
+                                .code(200)
+                                .message(added ? "Add favorite class successfully" : "Class already in favorites")
+                                .result(added)
+                                .build()
+                );
+            }
+
+            @PreAuthorize("isAuthenticated()")
+            @DeleteMapping("/{classId}/favorite")
+            public ResponseEntity<ApiResponse<Boolean>> removeFavoriteClass(
+                    @PathVariable UUID classId
+            ) {
+                UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+                boolean removed = classRoomService.removeFavoriteClass(classId, currentUserId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.<Boolean>builder()
+                                .code(200)
+                                .message(removed ? "Remove favorite class successfully" : "Class not in favorites")
+                                .result(removed)
+                                .build()
+                );
+            }
+
+            @PreAuthorize("isAuthenticated()")
+            @GetMapping("/{classId}/favorite-status")
+            public ResponseEntity<ApiResponse<Boolean>> getFavoriteClassStatus(
+                    @PathVariable UUID classId
+            ) {
+                UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+                boolean result = classRoomService.isFavoriteClass(classId, currentUserId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.<Boolean>builder()
+                                .code(200)
+                                .message("Get favorite class status successfully")
+                                .result(result)
+                                .build()
+                );
+            }
+
     @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/{classId}")
     public ResponseEntity<ApiResponse<ClassRoomResponse>> updateClass(

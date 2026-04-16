@@ -7,7 +7,6 @@ import {
 } from "../../../services/subscription/subscriptionService";
 import { walletService } from "../../../services/wallet/walletService";
 import ParallaxBackground from "../LandingPage/ParallaxBackground";
-import Footer from "../../../components/Footer/Footer";
 import { useAuth } from "../../../context/AuthContext";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
@@ -558,8 +557,6 @@ const SubscriptionPage = () => {
           </div>
         )}
       </div>
-
-      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 };

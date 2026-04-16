@@ -47,7 +47,8 @@ public class SecurityConfig {
             "/api/v1/files/**",
             "/users/teachers/public",
             "/packages/active",
-            "/packages/{packageId}"
+            "/packages/{packageId}",
+            "/ws/**"
     };
 
     JwtAuthenticationFilter jwtAuthenticationFilter;

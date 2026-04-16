@@ -32,6 +32,7 @@ public enum ErrorCode {
     CLASS_INACTIVE(4006, "Class is not active", HttpStatus.BAD_REQUEST),
     STUDENT_ALREADY_ENROLLED(4007, "Student already enrolled in this class", HttpStatus.BAD_REQUEST),
     CLASS_SELF_ENROLL_NOT_ALLOWED(4008, "Teacher cannot enroll own class", HttpStatus.BAD_REQUEST),
+    CLASS_ONLINE_NOT_OPEN(4009, "Lớp học trực tuyến chưa được giáo viên mở", HttpStatus.FORBIDDEN),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),
@@ -51,8 +52,11 @@ public enum ErrorCode {
     QUIZ_ACCESS_DENIED(6005, "You are not enrolled in this class or cannot access this quiz", HttpStatus.FORBIDDEN),
     INVALID_QUIZ_SUBMISSION(6006, "Invalid quiz submission: wrong question count, duplicate ids, or invalid option ids",
             HttpStatus.BAD_REQUEST),
-    QUIZ_ATTEMPTS_EXHAUSTED(6007, "You have used all allowed attempts for this quiz", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPTS_EXHAUSTED(6007, "Bạn đã sử dụng hết số làn làm bài của mình", HttpStatus.BAD_REQUEST),
     QUIZ_INVALID_MAX_ATTEMPTS(6008, "maxAttempts must be at least 1", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPT_NOT_FOUND(6009, "Quiz attempt not found", HttpStatus.NOT_FOUND),
+    QUIZ_CLOSED(6010, "Quiz hiện đang khóa, giáo viên chưa mở bài", HttpStatus.FORBIDDEN),
+    QUIZ_INVALID_DURATION(6011, "Thời gian làm bài phải từ 1 đến 300 phút", HttpStatus.BAD_REQUEST),
 
     // Question
     QUESTION_NOT_FOUND(6101, "Question not found", HttpStatus.NOT_FOUND),

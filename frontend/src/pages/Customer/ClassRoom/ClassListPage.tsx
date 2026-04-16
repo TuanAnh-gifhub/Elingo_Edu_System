@@ -9,7 +9,6 @@ import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
-import RoomCard, { type RoomCardProps } from "../LandingPage/RoomCard";
 
 const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
@@ -280,16 +279,6 @@ const ClassListPage = () => {
     }
     return classes;
   }, [activeStudentTab, classes, enrolledClassIdSet]);
-
-  const toRoomProps = (c: ClassRoomDto): RoomCardProps => ({
-    id: c.classId,
-    title: c.className,
-    location: c.schedule || "Lớp học trực tuyến",
-    capacity: `${c.currentStudents || 0}-${c.maxStudents || 0} students`,
-    price: Number(c.price || 0),
-    image: c.poster || null,
-    feature: { icon: () => null, label: c.description || "Lớp học" },
-  });
 
   const handleCreateClass = async () => {
     if (!createForm.className.trim()) {
@@ -855,19 +844,72 @@ const ClassListPage = () => {
         <div>Chưa có lớp học nào.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classesForStudentView.map((c) => (
-            <RoomCard
-              key={c.classId}
-              {...toRoomProps(c)}
-              onClick={() =>
-                navigate(
-                  enrolledClassIdSet.has(c.classId)
-                    ? `/classes/${c.classId}/learning`
-                    : `/classes/${c.classId}`,
-                )
-              }
-            />
-          ))}
+          {classesForStudentView.map((classItem) => {
+            const rating = Number(getClassRating(classItem.classId).toFixed(1));
+
+            return (
+              <button
+                key={classItem.classId}
+                type="button"
+                onClick={() =>
+                  navigate(
+                    enrolledClassIdSet.has(classItem.classId)
+                      ? `/classes/${classItem.classId}/learning`
+                      : `/classes/${classItem.classId}`,
+                  )
+                }
+                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200"
+              >
+                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                  {classItem.poster ? (
+                    <img
+                      src={classItem.poster}
+                      alt={classItem.className}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(event) => {
+                        (event.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-linear-to-br from-blue-100 via-cyan-100 to-teal-100" />
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-900/25 via-transparent to-transparent" />
+                  <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
+                    Lớp học
+                  </span>
+                </div>
+
+                <div className="p-4 md:p-5 flex flex-col justify-between gap-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 min-h-[190px]">
+                  <div>
+                    <h2 className="text-lg md:text-xl font-extrabold text-slate-900 line-clamp-2 leading-snug">
+                      {classItem.className}
+                    </h2>
+                    <p className="text-sm text-slate-600 mt-1 line-clamp-2 min-h-10">
+                      {classItem.schedule || "Lớp học trực tuyến"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-1">
+                        {renderRatingStars(rating)}
+                      </div>
+                      <span className="font-medium text-slate-700">{rating}/5</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">
+                        {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
+                      </span>
+                      <span className="text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-full px-3 py-1">
+                        {Number(classItem.price || 0).toLocaleString("vi-VN")} đ
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

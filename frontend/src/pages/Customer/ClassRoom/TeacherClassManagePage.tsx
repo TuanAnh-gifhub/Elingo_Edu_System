@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import {
   classRoomService,
   type ClassRoomDto,
+  type OnlineClassAccessDto,
   type UpdateClassRoomRequest,
 } from "../../../services/classes/classRoomService";
 import {
@@ -195,6 +196,8 @@ const MAX_POSTER_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const CLASS_POSTER_UPLOAD_FOLDER = "class-posters";
 
 const CLASS_COURSE_FILE_UPLOAD_FOLDER = "class-course-files";
+const MAX_COURSE_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+const MAX_COURSE_UPLOAD_TOTAL_BYTES = 300 * 1024 * 1024;
 
 const ALLOWED_COURSE_EXTENSIONS = new Set([
   "pdf",
@@ -231,6 +234,25 @@ const getExtension = (fileName: string): string => {
   }
 
   return fileName.slice(dotIndex + 1).toLowerCase();
+};
+
+const formatFileSizeMb = (bytes: number): string => {
+  return `${Math.round(bytes / (1024 * 1024))}MB`;
+};
+
+const isFileTooLargeError = (message?: string): boolean => {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("file quá lớn") ||
+    normalized.includes("vượt quá") ||
+    normalized.includes("payload too large") ||
+    normalized.includes("file size too large") ||
+    normalized.includes("maximum is")
+  );
 };
 
 const getFileNameFromUrl = (fileUrl: string, index: number): string => {
@@ -466,6 +488,7 @@ const TeacherClassManagePage = () => {
     useState<Set<string>>(() => new Set());
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [importingQuizId, setImportingQuizId] = useState<string | null>(null);
+  const [togglingQuizOpenId, setTogglingQuizOpenId] = useState<string | null>(null);
   const [quizImportResultByQuizId, setQuizImportResultByQuizId] = useState<
     Record<string, QuizImportResult>
   >({});
@@ -474,6 +497,8 @@ const TeacherClassManagePage = () => {
   );
   const [showOnlineClassModal, setShowOnlineClassModal] = useState(false);
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
+  const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
 
@@ -654,24 +679,74 @@ const TeacherClassManagePage = () => {
     return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
   }, [courses, quizzes]);
 
-  useEffect(() => {
-    if (activeTab === "online") {
-      setShowOnlineClassModal(true);
+  const handleStartOnlineClass = async () => {
+    if (!classId) {
+      return;
     }
-  }, [activeTab]);
+
+    try {
+      setOpeningOnlineClass(true);
+      setUpdatingOnlineStatus(true);
+
+      const updated = await classRoomService.updateOnlineStatus(classId, {
+        onlineOpen: true,
+      });
+      setClassInfo(updated);
+
+      const access = await classRoomService.getOnlineAccess(classId);
+      setOnlineClassAccess(access);
+      setShowOnlineClassModal(true);
+      toast.success("Đã mở lớp học trực tuyến.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể mở lớp học trực tuyến.";
+      toast.error(message);
+    } finally {
+      setUpdatingOnlineStatus(false);
+      setOpeningOnlineClass(false);
+    }
+  };
+
+  const handleStopOnlineClass = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setUpdatingOnlineStatus(true);
+      const updated = await classRoomService.updateOnlineStatus(classId, {
+        onlineOpen: false,
+      });
+      setClassInfo(updated);
+      setShowOnlineClassModal(false);
+      setOnlineClassAccess(null);
+      toast.success("Đã đóng lớp học trực tuyến.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể đóng lớp học trực tuyến.";
+      toast.error(message);
+    } finally {
+      setUpdatingOnlineStatus(false);
+    }
+  };
 
   useEffect(() => {
-    if (!showOnlineClassModal || !classId || !jitsiContainerRef.current) {
+    if (!showOnlineClassModal || !onlineClassAccess || !jitsiContainerRef.current) {
       return;
     }
 
     const mountJitsi = async () => {
       try {
-        setOpeningOnlineClass(true);
         jitsiApiRef.current = await createJitsiRoom({
-          classId,
+          roomName: onlineClassAccess.roomName,
+          roomPassword: onlineClassAccess.roomPassword,
           parentNode: jitsiContainerRef.current as HTMLElement,
           displayName: user?.userName,
+          isModerator: true,
         });
       } catch (error) {
         const message =
@@ -696,7 +771,7 @@ const TeacherClassManagePage = () => {
         jitsiContainerRef.current.innerHTML = "";
       }
     };
-  }, [showOnlineClassModal, classId, user?.userName]);
+  }, [showOnlineClassModal, onlineClassAccess, user?.userName]);
 
   const getQuizzesByCourseId = (courseId: string) => {
     return quizzesOfClass.filter((quiz) => quiz.courseId === courseId);
@@ -756,6 +831,24 @@ const TeacherClassManagePage = () => {
       return;
     }
 
+    const oversizedFile = files.find(
+      (file) => file.size > MAX_COURSE_FILE_SIZE_BYTES,
+    );
+    if (oversizedFile) {
+      toast.error(
+        `File ${oversizedFile.name} vượt quá ${formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)} mỗi file.`,
+      );
+      return;
+    }
+
+    const selectedTotalBytes = files.reduce((total, file) => total + file.size, 0);
+    if (selectedTotalBytes > MAX_COURSE_UPLOAD_TOTAL_BYTES) {
+      toast.error(
+        `Tổng dung lượng file đang chọn vượt quá ${formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)} mỗi lần upload.`,
+      );
+      return;
+    }
+
     try {
       setUploadingCourseFiles(true);
 
@@ -768,12 +861,22 @@ const TeacherClassManagePage = () => {
         .map((result) => result.data.url);
 
       const failedCount = results.length - successUrls.length;
+      const failedResults = results.filter((result) => !result.success);
+      const hasTooLargeError = failedResults.some((result) =>
+        isFileTooLargeError(result.error),
+      );
 
       if (successUrls.length > 0) {
         setNewCourseForm((prev) => ({
           ...prev,
           fileUrls: [...prev.fileUrls, ...successUrls],
         }));
+      }
+
+      if (hasTooLargeError) {
+        toast.error(
+          "Có file quá lớn nên không thể upload. Vui lòng giảm dung lượng file hoặc chia nhỏ file.",
+        );
       }
 
       if (failedCount > 0) {
@@ -809,6 +912,24 @@ const TeacherClassManagePage = () => {
       return;
     }
 
+    const oversizedFile = files.find(
+      (file) => file.size > MAX_COURSE_FILE_SIZE_BYTES,
+    );
+    if (oversizedFile) {
+      toast.error(
+        `File ${oversizedFile.name} vượt quá ${formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)} mỗi file.`,
+      );
+      return;
+    }
+
+    const selectedTotalBytes = files.reduce((total, file) => total + file.size, 0);
+    if (selectedTotalBytes > MAX_COURSE_UPLOAD_TOTAL_BYTES) {
+      toast.error(
+        `Tổng dung lượng file đang chọn vượt quá ${formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)} mỗi lần upload.`,
+      );
+      return;
+    }
+
     try {
       setUploadingEditCourseFiles(true);
 
@@ -821,12 +942,22 @@ const TeacherClassManagePage = () => {
         .map((result) => result.data.url);
 
       const failedCount = results.length - successUrls.length;
+      const failedResults = results.filter((result) => !result.success);
+      const hasTooLargeError = failedResults.some((result) =>
+        isFileTooLargeError(result.error),
+      );
 
       if (successUrls.length > 0) {
         setEditCourseForm((prev) => ({
           ...prev,
           fileUrls: [...prev.fileUrls, ...successUrls],
         }));
+      }
+
+      if (hasTooLargeError) {
+        toast.error(
+          "Có file quá lớn nên không thể upload. Vui lòng giảm dung lượng file hoặc chia nhỏ file.",
+        );
       }
 
       if (failedCount > 0) {
@@ -1153,6 +1284,38 @@ const TeacherClassManagePage = () => {
       toast.error(message);
     } finally {
       setIsUpdatingClass(false);
+    }
+  };
+
+  const handleToggleQuizOpen = async (quiz: QuizDto) => {
+    try {
+      setTogglingQuizOpenId(quiz.quizId);
+
+      const updated = await quizService.updateQuiz(quiz.quizId, {
+        title: quiz.title?.trim() || "Quiz",
+        description: quiz.description || "",
+        maxAttempts: Number(quiz.maxAttempts) || 1,
+        durationMinutes: Number(quiz.durationMinutes) || 30,
+        isOpen: !Boolean(quiz.isOpen),
+      });
+
+      setQuizzes((prev) =>
+        prev.map((item) => (item.quizId === quiz.quizId ? updated : item)),
+      );
+
+      toast.success(
+        updated.isOpen
+          ? "Đã mở quiz cho học sinh làm bài."
+          : "Đã đóng quiz, học sinh tạm thời không thể làm bài.",
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật trạng thái mở/đóng quiz.";
+      toast.error(message);
+    } finally {
+      setTogglingQuizOpenId(null);
     }
   };
 
@@ -1601,7 +1764,9 @@ const TeacherClassManagePage = () => {
                     </p>
                     <p className="text-xs text-slate-500">
                       Hỗ trợ: Word, Excel, PowerPoint, Video, Âm thanh, Hình
-                      ảnh, PDF
+                      ảnh, PDF. Tối đa {formatFileSizeMb(MAX_COURSE_FILE_SIZE_BYTES)}/file,
+                      {" "}
+                      {formatFileSizeMb(MAX_COURSE_UPLOAD_TOTAL_BYTES)}/lần upload.
                     </p>
                   </div>
 
@@ -2302,6 +2467,35 @@ const TeacherClassManagePage = () => {
                         ) : null}
                       </div>
                     ) : null}
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          quiz.isOpen
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {quiz.isOpen ? "Quiz đang mở" : "Quiz đang khóa"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleQuizOpen(quiz)}
+                        disabled={togglingQuizOpenId === quiz.quizId}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold border disabled:opacity-60 ${
+                          quiz.isOpen
+                            ? "border-rose-300 text-rose-700 hover:bg-rose-50"
+                            : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                      >
+                        {togglingQuizOpenId === quiz.quizId
+                          ? "Đang cập nhật..."
+                          : quiz.isOpen
+                            ? "Đóng quiz"
+                            : "Mở quiz"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2369,15 +2563,35 @@ const TeacherClassManagePage = () => {
             Lớp học trực tuyến
           </h2>
           <p className="text-sm text-slate-600">
-            Bấm mở phòng học trực tuyến để bắt đầu buổi học Jitsi.
+            Chỉ giáo viên sở hữu lớp mới có thể mở lớp. Học sinh chỉ tham gia được khi lớp đang mở.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowOnlineClassModal(true)}
-            className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleStartOnlineClass}
+              disabled={openingOnlineClass || updatingOnlineStatus}
+              className="rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-105 disabled:opacity-60"
+            >
+              {openingOnlineClass ? "Đang mở lớp..." : "Mở lớp học trực tuyến"}
+            </button>
+            <button
+              type="button"
+              onClick={handleStopOnlineClass}
+              disabled={!classInfo.onlineOpen || updatingOnlineStatus}
+              className="rounded-xl border border-rose-300 text-rose-700 px-4 py-2 text-sm font-semibold hover:bg-rose-50 disabled:opacity-60"
+            >
+              Đóng lớp học trực tuyến
+            </button>
+          </div>
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+              classInfo.onlineOpen
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-600"
+            }`}
           >
-            Mở lớp học trực tuyến
-          </button>
+            {classInfo.onlineOpen ? "Lớp đang mở" : "Lớp đang đóng"}
+          </span>
         </section>
       )}
 
@@ -2430,7 +2644,7 @@ const TeacherClassManagePage = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowOnlineClassModal(false)}
+                onClick={handleStopOnlineClass}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700"
               >
                 Đóng

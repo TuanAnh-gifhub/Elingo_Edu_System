@@ -209,12 +209,12 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ isDarkMode }, ref) => {
               <li className="flex items-center gap-3">
                 <FiMail className="text-[#4da6ff] text-lg shrink-0" />
                 <a
-                  href="mailto:support@elingo.vn"
+                  href="mailto:elingoeducationapp@gmail.com"
                   className={`text-sm hover:text-[#4da6ff] ${
                     isDarkMode ? "text-slate-300" : "text-slate-600"
                   }`}
                 >
-                  support@elingo.vn
+                  support@elingoeducationapp.vn
                 </a>
               </li>
               <li className="flex items-center gap-3">

@@ -2,14 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import WalletCard from "./WalletCard";
 import WalletHistory from "./WalletHistory";
-import WalletPromotion from "./WalletPromotion";
 import ParallaxBackground from "../LandingPage/ParallaxBackground";
 import {
   FaCoins,
   FaMobileAlt,
-  FaGift,
   FaHistory,
-  FaHeadphonesAlt,
   FaChartLine,
 } from "react-icons/fa";
 import {
@@ -25,10 +22,8 @@ import { userService, type UserResponse } from "../../../services/usersService";
 type WalletFeature =
   | "overview"
   | "history"
-  | "promotion"
   | "recharge"
   | "withdraw"
-  | "help"
   | "revenue";
 
 type ErrorWithResponse = { response?: { data?: { message?: string } } };
@@ -179,11 +174,9 @@ const WalletPage = () => {
     // Xác định tính năng hiện tại dựa trên URL
     const getCurrentFeature = (): WalletFeature => {
         const path = location.pathname;
-        if (path.includes("/promotion")) return "promotion";
         if (path.includes("/history")) return "history";
         if (path.includes("/recharge")) return "recharge";
         if (path.includes("/withdraw")) return "withdraw";
-        if (path.includes("/help")) return "help";
         if (path.includes("/revenue")) return "revenue";
         return "overview";
     };
@@ -212,16 +205,6 @@ const WalletPage = () => {
             },
         },
         {
-            icon: FaGift,
-            label: "Đổi mã khuyến mãi",
-            color: "text-green-500",
-            bgColor: "bg-green-50",
-            feature: "promotion" as WalletFeature,
-            onClick: () => {
-                navigate("/wallet/promotion");
-            },
-        },
-        {
             icon: FaHistory,
             label: "Lịch sử giao dịch",
             color: "text-gray-500",
@@ -229,16 +212,6 @@ const WalletPage = () => {
             feature: "history" as WalletFeature,
             onClick: () => {
                 navigate("/wallet/history");
-            },
-        },
-        {
-            icon: FaHeadphonesAlt,
-            label: "Trợ giúp",
-            color: "text-gray-700",
-            bgColor: "bg-gray-50",
-            feature: "help" as WalletFeature,
-            onClick: () => {
-                navigate("/wallet/help");
             },
         },
         ...(isOwner
@@ -331,8 +304,6 @@ const WalletPage = () => {
     // Render tính năng dựa trên activeFeature
     const renderFeature = () => {
         switch (activeFeature) {
-            case "promotion":
-                return <WalletPromotion isDarkMode={isDarkMode} />;
             case "history":
                 return (
                     <div>
@@ -523,14 +494,6 @@ const WalletPage = () => {
                                 )}
                             </div>
                         </div>
-                    </div>
-                );
-            case "help":
-                return (
-                    <div className={`${isDarkMode ? 'bg-[#2d7fcb] border-[#4da6ff]/30' : 'bg-white border-gray-200'} rounded-xl border shadow-sm p-8 text-center`}>
-                        <FaHeadphonesAlt className={`${isDarkMode ? 'text-[#6bb5ff]' : 'text-[#4da6ff]'} text-5xl mx-auto mb-4`} />
-                        <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Trợ giúp</h3>
-                        <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>Tính năng đang được phát triển</p>
                     </div>
                 );
             case "revenue":

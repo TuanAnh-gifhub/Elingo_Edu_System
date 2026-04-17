@@ -89,7 +89,7 @@ const MessageInput = ({
 
   return (
     <div
-      className={`${isDarkMode ? "bg-gray-800" : "bg-white"} px-4 py-3 flex-shrink-0`}
+      className={`${isDarkMode ? "bg-gray-800" : "bg-white"} px-3 py-2.5 flex-shrink-0`}
     >
       {/* File Preview */}
       <FilePreview
@@ -101,12 +101,12 @@ const MessageInput = ({
       />
 
       {/* Quick Reply Bubbles */}
-      <div className="flex gap-2 mb-3 overflow-x-auto quick-replies">
+      <div className="flex gap-1.5 mb-2.5 overflow-x-auto quick-replies">
         {quickReplies.map((reply, index) => (
           <button
             key={index}
             onClick={() => handleQuickReply(reply)}
-            className={`flex-shrink-0 px-3 py-2 text-sm rounded-full transition-colors ${
+            className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-full leading-tight transition-colors ${
               isDarkMode
                 ? "bg-gray-700 text-white hover:bg-gray-600"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -118,7 +118,7 @@ const MessageInput = ({
       </div>
 
       {/* Input Field */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Emoji Picker */}
         <div className="relative">
           <button
@@ -144,7 +144,7 @@ const MessageInput = ({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className={`w-full px-4 py-3 rounded-full focus:ring-2 focus:ring-[#4da6ff] outline-none transition-colors ${
+            className={`w-full px-4 py-2.5 text-sm rounded-full focus:ring-2 focus:ring-[#4da6ff] outline-none transition-colors ${
               isDarkMode
                 ? "bg-gray-700 text-white placeholder-gray-400 border border-gray-600 hover:border-[#4da6ff] focus:border-[#4da6ff]"
                 : "bg-white text-gray-900 placeholder-gray-500 border border-gray-300 hover:border-[#4da6ff] focus:border-[#4da6ff]"

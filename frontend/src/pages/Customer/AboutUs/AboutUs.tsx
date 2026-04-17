@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef, type FormEvent } from "react";
-import { message } from "antd";
+import { useEffect, useState, useRef } from "react";
 import {
   FaClock,
   FaShieldAlt,
@@ -33,9 +32,7 @@ const AboutUs = ({
   variant = "page", // Lấy thêm variant từ Develop
 }: AboutUsProps) => {
   // Lấy các State phục vụ tính năng từ nhánh Develop
-  const [messageApi, contextHolder] = message.useMessage();
   const [isVisible, setIsVisible] = useState(true);
-  const [email, setEmail] = useState("");
   const [selectedTeacher, setSelectedTeacher] =
     useState<TeacherProfileDto | null>(null);
   const [selectedCertificateUrl, setSelectedCertificateUrl] = useState<
@@ -291,17 +288,14 @@ const AboutUs = ({
     return cleanUrl.endsWith(".pdf");
   };
 
-  const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const getTeacherAvatarFallback = (teacherName?: string) => {
+    const safeName = teacherName?.trim() || "Teacher";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=4da6ff&color=fff&size=128`;
+  };
 
-    const normalizedEmail = email.trim();
-    if (!normalizedEmail) {
-      messageApi.error("Vui lòng nhập email hợp lệ.");
-      return;
-    }
-
-    messageApi.success("Đăng ký nhận ưu đãi thành công.");
-    setEmail("");
+  const getTeacherAvatarSrc = (avatarUrl?: string | null, teacherName?: string) => {
+    const normalizedAvatarUrl = avatarUrl?.trim();
+    return normalizedAvatarUrl || getTeacherAvatarFallback(teacherName);
   };
 
   return (
@@ -905,62 +899,6 @@ const AboutUs = ({
           </motion.div>
         )}
 
-        {/* Section 4: Đăng Ký Nhận Ưu Đãi */}
-        <motion.div
-          initial={{ opacity: 1, y: 0 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mb-20 mt-20"
-        >
-          <div className="relative rounded-2xl overflow-hidden bg-linear-to-b from-blue-500 to-blue-700 p-8 md:p-12">
-            {/* Decorative circles */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
-
-            <div className="relative z-10 text-center">
-              {/* Envelope Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                  <FaEnvelope className="text-white text-3xl" />
-                </div>
-              </div>
-
-              {/* Title */}
-              <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
-                Đăng Ký Nhận Ưu Đãi
-              </h2>
-
-              {/* Subtitle */}
-              <p className="text-sm md:text-base text-white/90 mb-8 max-w-2xl mx-auto">
-                Nhận thông tin và các phòng học mới và ưu đãi đặc biệt ngay
-                trong email của bạn
-              </p>
-
-              {/* Email Form */}
-              {contextHolder}
-              <form
-                onSubmit={handleSubscribe}
-                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Nhập email của bạn..."
-                  className="flex-1 px-4 py-3 rounded-lg border-2 border-blue-300 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-gray-700 placeholder-gray-400"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-lg whitespace-nowrap"
-                >
-                  Đăng ký
-                </button>
-              </form>
-            </div>
-          </div>
-        </motion.div>
-
         {selectedTeacher && (
           <div
             className="fixed inset-0 z-100 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
@@ -1009,9 +947,21 @@ const AboutUs = ({
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <img
-                      src={selectedTeacher.avatar}
+                      src={getTeacherAvatarSrc(
+                        selectedTeacher.avatar,
+                        selectedTeacher.teacherName,
+                      )}
                       alt={selectedTeacher.teacherName}
                       className="w-12 h-12 rounded-full object-cover border border-sky-200"
+                      onError={(event) => {
+                        const fallbackUrl = getTeacherAvatarFallback(
+                          selectedTeacher.teacherName,
+                        );
+                        if (event.currentTarget.src !== fallbackUrl) {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = fallbackUrl;
+                        }
+                      }}
                     />
                     <div>
                       <p

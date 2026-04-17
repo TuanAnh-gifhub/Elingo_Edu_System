@@ -3220,7 +3220,7 @@ const TeacherClassManagePage = () => {
       )}
 
       {showOnlineClassModal ? (
-        <div className="fixed inset-0 z-50 bg-black/40 p-4 flex items-center justify-center">
+        <div className="fixed inset-0 z-[1200] bg-black/40 p-4 flex items-center justify-center">
           <div className="w-full max-w-6xl rounded-2xl bg-white shadow-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
               <h3 className="text-sm font-semibold text-slate-900">

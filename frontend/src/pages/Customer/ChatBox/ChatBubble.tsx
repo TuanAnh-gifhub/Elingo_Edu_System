@@ -94,7 +94,7 @@ const ChatBubble = () => {
 
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 z-50 bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden border ${isMinimized ? "w-72 h-14" : "w-[340px] h-[520px]"}`}
+          className={`fixed bottom-6 right-6 z-50 bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden border ${isMinimized ? "w-72 h-14" : "w-[330px] h-[500px] max-h-[calc(100vh-110px)]"}`}
         >
           <div className="px-4 py-3 bg-blue-600 text-white flex justify-between items-center">
             <div className="flex items-center gap-2">

@@ -16,6 +16,18 @@ export interface UserResponse {
   emailVerified?: boolean;
 }
 
+export interface PublicUserProfileResponse {
+  userId: string;
+  userName: string;
+  role?: string;
+  gender?: string;
+  joinedAt?: string;
+  bio?: string;
+  expertise?: string;
+  experience?: string;
+  certificateCount?: number;
+}
+
 // 2. Định nghĩa Wrapper (ApiResponse)
 export interface ApiResponse<T> {
   code: number;
@@ -60,6 +72,12 @@ export const userService = {
 
   getActiveTeachersCount: () => {
     return api.get<any, ApiResponse<number>>("/users/teachers/active/count");
+  },
+
+  getPublicProfile: (userId: string) => {
+    return api.get<any, ApiResponse<PublicUserProfileResponse>>(
+      `/users/public/${userId}`,
+    );
   },
 
   getAllUsers: (

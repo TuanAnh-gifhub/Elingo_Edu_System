@@ -4,6 +4,7 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.auth.ResetPasswordRequest;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.request.user.UpdateUserRequest;
+import org.rent.room.be.dto.response.PublicUserProfileResponse;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.dto.response.teacher.TeacherProfileResponse;
 import org.rent.room.be.entity.User;
@@ -17,6 +18,8 @@ public interface UserService {
     UserResponse createUser(CreateUsersRequest users);
 
     UserResponse getProfileUser();
+
+    PublicUserProfileResponse getPublicProfile(UUID userId);
 
     PageResponse<UserResponse> getAllUsers(int page, int size, String role, Boolean active, String keyword);
 

@@ -13,6 +13,8 @@ public interface TeacherVerificationService {
 
     TeacherVerificationResponse getMyRequest();
 
+    List<String> getMyCertificates();
+
     List<TeacherVerificationResponse> getAllRequests();
 
     TeacherVerificationResponse getRequestById(UUID id);

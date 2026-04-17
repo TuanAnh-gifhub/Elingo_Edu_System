@@ -1,4 +1,4 @@
-package org.rent.room.be.dto.response.teacher;
+package org.rent.room.be.dto.response;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -17,15 +17,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TeacherProfileResponse {
-    UUID teacherId;
-    String teacherName;
-    String avatar;
-    double averageRating;
-    long totalReviews;
-    List<String> certificateFiles;
+public class PublicUserProfileResponse {
+    UUID userId;
+    String userName;
+    String role;
+    String gender;
+    LocalDateTime joinedAt;
     String bio;
     String expertise;
     String experience;
+    int certificateCount;
 }
-

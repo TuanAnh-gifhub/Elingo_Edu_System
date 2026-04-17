@@ -27,22 +27,28 @@ interface AboutUsProps {
   variant?: "section" | "page";
 }
 
-const AboutUs = ({ 
-  isDarkMode = false, 
-  teacherProfiles = [], 
-  variant = "page" // Lấy thêm variant từ Develop
+const AboutUs = ({
+  isDarkMode = false,
+  teacherProfiles = [],
+  variant = "page", // Lấy thêm variant từ Develop
 }: AboutUsProps) => {
   // Lấy các State phục vụ tính năng từ nhánh Develop
   const [messageApi, contextHolder] = message.useMessage();
   const [isVisible, setIsVisible] = useState(true);
   const [email, setEmail] = useState("");
-  
+  const [selectedTeacher, setSelectedTeacher] =
+    useState<TeacherProfileDto | null>(null);
+  const [selectedCertificateUrl, setSelectedCertificateUrl] = useState<
+    string | null
+  >(null);
+
   // Logic xử lý Dark Mode nội bộ từ Develop (rất hữu ích để lưu cấu hình người dùng)
   const [internalDarkMode, setInternalDarkMode] = useState(() => {
     return localStorage.getItem("landing_dark_mode") === "true";
   });
   const aboutUsRef = useRef<HTMLDivElement>(null);
-  const resolvedDarkMode = typeof isDarkMode === "boolean" ? isDarkMode : internalDarkMode;
+  const resolvedDarkMode =
+    typeof isDarkMode === "boolean" ? isDarkMode : internalDarkMode;
 
   useEffect(() => {
     const handleDarkModeChange = (event: Event) => {
@@ -51,7 +57,8 @@ const AboutUs = ({
     };
 
     window.addEventListener("darkModeChanged", handleDarkModeChange);
-    return () => window.removeEventListener("darkModeChanged", handleDarkModeChange);
+    return () =>
+      window.removeEventListener("darkModeChanged", handleDarkModeChange);
   }, []);
 
   useEffect(() => {
@@ -94,7 +101,8 @@ const AboutUs = ({
     {
       icon: FaCreditCard,
       title: "Thanh Toán Linh Hoạt",
-      description: "Hỗ trợ nhiều hình thức thanh toán tiện lợi và an toàn cho học viên và giáo viên",
+      description:
+        "Hỗ trợ nhiều hình thức thanh toán tiện lợi và an toàn cho học viên và giáo viên",
     },
     {
       icon: FaHeadset,
@@ -246,6 +254,43 @@ const AboutUs = ({
     return (b.totalReviews || 0) - (a.totalReviews || 0);
   });
 
+  useEffect(() => {
+    if (!selectedTeacher) {
+      return;
+    }
+
+    const nextCertificates = selectedTeacher.certificateFiles || [];
+    setSelectedCertificateUrl(
+      nextCertificates.length > 0 ? nextCertificates[0] : null,
+    );
+  }, [selectedTeacher]);
+
+  useEffect(() => {
+    if (!selectedTeacher) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedTeacher(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedTeacher]);
+
+  const isPdfFile = (url: string) => {
+    const cleanUrl = url.split("?")[0].toLowerCase();
+    return cleanUrl.endsWith(".pdf");
+  };
+
   const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -278,13 +323,21 @@ const AboutUs = ({
           >
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
               <div className="max-w-2xl">
-                <p className="text-sm font-semibold text-[#4da6ff] mb-2">Về Elingo</p>
-                <h1 className={`text-2xl md:text-3xl font-bold mb-3 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}>
-                  Nền tảng kết nối học viên và giáo viên theo tiêu chuẩn chuyên nghiệp
+                <p className="text-sm font-semibold text-[#4da6ff] mb-2">
+                  Về Elingo
+                </p>
+                <h1
+                  className={`text-2xl md:text-3xl font-bold mb-3 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}
+                >
+                  Nền tảng kết nối học viên và giáo viên theo tiêu chuẩn chuyên
+                  nghiệp
                 </h1>
-                <p className={`text-sm md:text-base leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}>
-                  Elingo được xây dựng với mục tiêu số hóa trải nghiệm dạy và học, giúp giáo viên mở lớp nhanh,
-                  học viên đăng ký minh bạch và toàn bộ quá trình vận hành được theo dõi tập trung.
+                <p
+                  className={`text-sm md:text-base leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}
+                >
+                  Elingo được xây dựng với mục tiêu số hóa trải nghiệm dạy và
+                  học, giúp giáo viên mở lớp nhanh, học viên đăng ký minh bạch
+                  và toàn bộ quá trình vận hành được theo dõi tập trung.
                 </p>
                 <div className="flex items-center gap-3 mt-4">
                   <a
@@ -325,10 +378,14 @@ const AboutUs = ({
                           <Icon className="text-sm" />
                         </div>
                         <div>
-                          <p className={`text-xs mb-1 ${resolvedDarkMode ? "text-gray-400" : "text-slate-500"}`}>
+                          <p
+                            className={`text-xs mb-1 ${resolvedDarkMode ? "text-gray-400" : "text-slate-500"}`}
+                          >
                             {item.label}
                           </p>
-                          <p className={`text-sm font-medium ${resolvedDarkMode ? "text-white" : "text-slate-800"}`}>
+                          <p
+                            className={`text-sm font-medium ${resolvedDarkMode ? "text-white" : "text-slate-800"}`}
+                          >
                             {item.value}
                           </p>
                         </div>
@@ -358,10 +415,14 @@ const AboutUs = ({
                       : "bg-white border-slate-200"
                   }`}
                 >
-                  <h3 className={`text-lg font-bold mb-3 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <h3
+                    className={`text-lg font-bold mb-3 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}
+                  >
                     {pillar.title}
                   </h3>
-                  <p className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}>
+                  <p
+                    className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}
+                  >
                     {pillar.description}
                   </p>
                 </div>
@@ -392,27 +453,37 @@ const AboutUs = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {sortedTeacherProfiles.map((teacher, index) => {
-                const safeRating = Math.max(0, Math.min(5, Number(teacher.averageRating || 0)));
+                const safeRating = Math.max(
+                  0,
+                  Math.min(5, Number(teacher.averageRating || 0)),
+                );
                 const filledStars = Math.round(safeRating);
+                const certificateFiles = teacher.certificateFiles || [];
+                const bio = teacher.bio?.trim() || "Chưa cập nhật giới thiệu";
+                const expertise = teacher.expertise?.trim();
+                const experience = teacher.experience?.trim();
+                const avatarLetter = (teacher.teacherName || "T")
+                  .trim()
+                  .charAt(0)
+                  .toUpperCase();
                 return (
                   <motion.div
                     key={teacher.teacherId}
                     initial={{ opacity: 1, y: 0 }}
-                    animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                    animate={
+                      isVisible ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }
+                    }
                     transition={{ duration: 0.5, delay: index * 0.08 }}
-                    className={`rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+                    className={`rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col ${
                       resolvedDarkMode
                         ? "bg-gray-800/90 backdrop-blur-sm border border-gray-700"
                         : "bg-white/95 backdrop-blur-sm border border-gray-100"
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <img
-                        src={teacher.avatar}
-                        alt={teacher.teacherName}
-                        className="w-12 h-12 rounded-full object-cover border border-sky-200"
-                        loading="lazy"
-                      />
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#4da6ff] to-[#2463eb] text-white font-bold flex items-center justify-center border border-sky-200 shrink-0">
+                        {avatarLetter}
+                      </div>
                       <div className="min-w-0">
                         <h3
                           className={`text-sm font-bold truncate ${
@@ -442,6 +513,69 @@ const AboutUs = ({
                     <p className="text-xs text-slate-600">
                       {safeRating.toFixed(1)}/5.0
                     </p>
+
+                    <p
+                      className={`mt-2 text-xs leading-relaxed line-clamp-2 min-h-10 ${resolvedDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                    >
+                      {bio}
+                    </p>
+
+                    <p
+                      className={`mt-2 text-xs leading-relaxed line-clamp-1 ${resolvedDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                    >
+                      Kỹ năng: {expertise || "Chưa cập nhật"}
+                    </p>
+                    <p
+                      className={`mt-1 text-xs leading-relaxed line-clamp-1 ${resolvedDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                    >
+                      Kinh nghiệm: {experience || "Chưa cập nhật"}
+                    </p>
+
+                    <div className="mt-3 pt-3 border-t border-slate-200/70 min-h-24">
+                      <p
+                        className={`text-xs font-semibold mb-2 ${resolvedDarkMode ? "text-slate-200" : "text-slate-700"}`}
+                      >
+                        Chứng chỉ: {certificateFiles.length}
+                      </p>
+                      {certificateFiles.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {certificateFiles
+                            .slice(0, 2)
+                            .map((certUrl, certIndex) => (
+                              <a
+                                key={`${teacher.teacherId}-cert-${certIndex}`}
+                                href={certUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] px-2 py-1 rounded-md bg-[#4da6ff]/10 text-[#256fb8] hover:bg-[#4da6ff]/20 transition-colors"
+                              >
+                                Xem chứng chỉ {certIndex + 1}
+                              </a>
+                            ))}
+                          {certificateFiles.length > 2 && (
+                            <span
+                              className={`text-[11px] px-2 py-1 rounded-md ${resolvedDarkMode ? "bg-slate-700 text-slate-200" : "bg-slate-100 text-slate-600"}`}
+                            >
+                              +{certificateFiles.length - 2} chứng chỉ khác
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p
+                          className={`text-[11px] ${resolvedDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                        >
+                          Chưa cập nhật chứng chỉ
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeacher(teacher)}
+                      className="mt-auto w-full rounded-lg border border-[#4da6ff]/40 bg-[#4da6ff]/10 text-[#2f7ec9] text-xs font-semibold py-2 hover:bg-[#4da6ff]/20 transition-colors"
+                    >
+                      Xem hồ sơ giáo viên
+                    </button>
                   </motion.div>
                 );
               })}
@@ -465,7 +599,8 @@ const AboutUs = ({
                 resolvedDarkMode ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              Chúng tôi cam kết mang đến trải nghiệm kết nối giáo viên và học viên tốt nhất
+              Chúng tôi cam kết mang đến trải nghiệm kết nối giáo viên và học
+              viên tốt nhất
             </p>
           </div>
 
@@ -609,7 +744,8 @@ const AboutUs = ({
                 resolvedDarkMode ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              Hàng nghìn học viên và giáo viên hài lòng đã sử dụng nền tảng của chúng tôi
+              Hàng nghìn học viên và giáo viên hài lòng đã sử dụng nền tảng của
+              chúng tôi
             </p>
           </div>
 
@@ -693,8 +829,11 @@ const AboutUs = ({
               <h2 className="text-xl md:text-2xl font-bold mb-3 text-[#4da6ff]">
                 Cam Kết Chất Lượng Dịch Vụ
               </h2>
-              <p className={`text-sm md:text-base ${resolvedDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-                Các nguyên tắc vận hành mà Elingo theo đuổi để đảm bảo trải nghiệm ổn định và chuyên nghiệp.
+              <p
+                className={`text-sm md:text-base ${resolvedDarkMode ? "text-gray-300" : "text-gray-600"}`}
+              >
+                Các nguyên tắc vận hành mà Elingo theo đuổi để đảm bảo trải
+                nghiệm ổn định và chuyên nghiệp.
               </p>
             </div>
 
@@ -711,7 +850,9 @@ const AboutUs = ({
                   <div className="w-7 h-7 rounded-full bg-[#4da6ff]/15 text-[#4da6ff] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                     {index + 1}
                   </div>
-                  <p className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-700"}`}>
+                  <p
+                    className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-700"}`}
+                  >
                     {commitment}
                   </p>
                 </div>
@@ -731,7 +872,9 @@ const AboutUs = ({
               <h2 className="text-xl md:text-2xl font-bold mb-3 text-[#4da6ff]">
                 Câu Hỏi Thường Gặp
               </h2>
-              <p className={`text-sm md:text-base ${resolvedDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+              <p
+                className={`text-sm md:text-base ${resolvedDarkMode ? "text-gray-300" : "text-gray-600"}`}
+              >
                 Một số thông tin nhanh giúp bạn hiểu rõ cách Elingo vận hành.
               </p>
             </div>
@@ -746,10 +889,14 @@ const AboutUs = ({
                       : "bg-white border-slate-200"
                   }`}
                 >
-                  <h3 className={`text-base font-semibold mb-2 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <h3
+                    className={`text-base font-semibold mb-2 ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}
+                  >
                     {faq.question}
                   </h3>
-                  <p className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}>
+                  <p
+                    className={`text-sm leading-relaxed ${resolvedDarkMode ? "text-gray-300" : "text-slate-600"}`}
+                  >
                     {faq.answer}
                   </p>
                 </div>
@@ -813,6 +960,197 @@ const AboutUs = ({
             </div>
           </div>
         </motion.div>
+
+        {selectedTeacher && (
+          <div
+            className="fixed inset-0 z-100 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedTeacher(null)}
+          >
+            <div
+              className={`w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border ${
+                resolvedDarkMode
+                  ? "bg-slate-900 border-slate-700"
+                  : "bg-white border-slate-200"
+              }`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div
+                className={`px-5 py-4 border-b flex items-center justify-between ${resolvedDarkMode ? "border-slate-700" : "border-slate-200"}`}
+              >
+                <div>
+                  <h3
+                    className={`text-lg font-bold ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}
+                  >
+                    Hồ sơ giáo viên
+                  </h3>
+                  <p
+                    className={`text-sm ${resolvedDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                  >
+                    {selectedTeacher.teacherName}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeacher(null)}
+                  className={`w-9 h-9 rounded-lg text-xl leading-none ${
+                    resolvedDarkMode
+                      ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                  aria-label="Đóng modal"
+                >
+                  x
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-5">
+                <div
+                  className={`lg:col-span-2 border-r p-5 overflow-y-auto max-h-[72vh] ${resolvedDarkMode ? "border-slate-700" : "border-slate-200"}`}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <img
+                      src={selectedTeacher.avatar}
+                      alt={selectedTeacher.teacherName}
+                      className="w-12 h-12 rounded-full object-cover border border-sky-200"
+                    />
+                    <div>
+                      <p
+                        className={`font-semibold ${resolvedDarkMode ? "text-white" : "text-slate-900"}`}
+                      >
+                        {selectedTeacher.teacherName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {selectedTeacher.totalReviews || 0} đánh giá
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 space-y-3">
+                    <div>
+                      <p
+                        className={`text-xs mb-1 ${resolvedDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                      >
+                        Giới thiệu
+                      </p>
+                      <p
+                        className={`text-sm whitespace-pre-line ${resolvedDarkMode ? "text-slate-200" : "text-slate-700"}`}
+                      >
+                        {selectedTeacher.bio?.trim() || "Chưa cập nhật"}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        className={`text-xs mb-1 ${resolvedDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                      >
+                        Kỹ năng
+                      </p>
+                      <p
+                        className={`text-sm whitespace-pre-line ${resolvedDarkMode ? "text-slate-200" : "text-slate-700"}`}
+                      >
+                        {selectedTeacher.expertise?.trim() || "Chưa cập nhật"}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        className={`text-xs mb-1 ${resolvedDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                      >
+                        Kinh nghiệm
+                      </p>
+                      <p
+                        className={`text-sm whitespace-pre-line ${resolvedDarkMode ? "text-slate-200" : "text-slate-700"}`}
+                      >
+                        {selectedTeacher.experience?.trim() || "Chưa cập nhật"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <p
+                      className={`text-sm font-semibold mb-2 ${resolvedDarkMode ? "text-slate-100" : "text-slate-800"}`}
+                    >
+                      Danh sách chứng chỉ
+                    </p>
+                    <div className="space-y-2">
+                      {(selectedTeacher.certificateFiles || []).length > 0 ? (
+                        (selectedTeacher.certificateFiles || []).map(
+                          (certUrl, certIndex) => (
+                            <button
+                              key={`${selectedTeacher.teacherId}-modal-cert-${certIndex}`}
+                              type="button"
+                              onClick={() => setSelectedCertificateUrl(certUrl)}
+                              className={`w-full text-left rounded-lg border px-3 py-2 text-xs transition-colors ${
+                                selectedCertificateUrl === certUrl
+                                  ? "border-[#4da6ff] bg-[#4da6ff]/15 text-[#2f7ec9]"
+                                  : resolvedDarkMode
+                                    ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                                    : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              Chứng chỉ {certIndex + 1}
+                            </button>
+                          ),
+                        )
+                      ) : (
+                        <p
+                          className={`text-xs ${resolvedDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                        >
+                          Giáo viên chưa cập nhật chứng chỉ.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-3 p-5 overflow-y-auto max-h-[72vh]">
+                  <p
+                    className={`text-sm font-semibold mb-3 ${resolvedDarkMode ? "text-slate-100" : "text-slate-800"}`}
+                  >
+                    Xem trước chứng chỉ
+                  </p>
+
+                  {selectedCertificateUrl ? (
+                    <div
+                      className={`rounded-xl border overflow-hidden ${resolvedDarkMode ? "border-slate-700" : "border-slate-200"}`}
+                    >
+                      {isPdfFile(selectedCertificateUrl) ? (
+                        <iframe
+                          title="Certificate Preview"
+                          src={selectedCertificateUrl}
+                          className="w-full h-[62vh]"
+                        />
+                      ) : (
+                        <div className="bg-slate-100">
+                          <img
+                            src={selectedCertificateUrl}
+                            alt="Teacher Certificate"
+                            className="w-full max-h-[62vh] object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className={`rounded-xl border px-4 py-10 text-center text-sm ${resolvedDarkMode ? "border-slate-700 text-slate-400" : "border-slate-200 text-slate-500"}`}
+                    >
+                      Chọn một chứng chỉ để xem chi tiết.
+                    </div>
+                  )}
+
+                  {selectedCertificateUrl && (
+                    <a
+                      href={selectedCertificateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex mt-3 text-sm font-medium text-[#2f7ec9] hover:underline"
+                    >
+                      Mở file trong tab mới
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

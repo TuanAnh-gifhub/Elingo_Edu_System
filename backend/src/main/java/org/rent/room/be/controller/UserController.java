@@ -9,6 +9,7 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.user.CreateUsersRequest;
 import org.rent.room.be.dto.request.user.UpdateUserRequest;
 import org.rent.room.be.dto.request.user.UpdateUserStatusRequest;
+import org.rent.room.be.dto.response.PublicUserProfileResponse;
 import org.rent.room.be.dto.response.UserResponse;
 import org.rent.room.be.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +51,19 @@ public class UserController {
         );
     }
 
+            @GetMapping("/public/{userId}")
+            public ResponseEntity<ApiResponse<PublicUserProfileResponse>> getPublicProfile(
+                    @PathVariable UUID userId
+            ) {
+                return ResponseEntity.ok(
+                        ApiResponse.<PublicUserProfileResponse>builder()
+                                .code(200)
+                                .message("Get public user profile successfully")
+                                .result(userService.getPublicProfile(userId))
+                                .build()
+                );
+            }
+
     @GetMapping("/teachers/active/count")
     public ResponseEntity<ApiResponse<Long>> getActiveTeachersCount() {
         return ResponseEntity.ok(
@@ -60,6 +74,19 @@ public class UserController {
                         .build()
         );
     }
+
+        @GetMapping("/teachers/public")
+        public ResponseEntity<ApiResponse<java.util.List<org.rent.room.be.dto.response.teacher.TeacherProfileResponse>>> getPublicTeachers(
+                        @RequestParam(defaultValue = "8") int limit
+        ) {
+                return ResponseEntity.ok(
+                                ApiResponse.<java.util.List<org.rent.room.be.dto.response.teacher.TeacherProfileResponse>>builder()
+                                                .code(200)
+                                                .message("Get public teachers successfully")
+                                                .result(userService.getTopTeachers(limit))
+                                                .build()
+                );
+        }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

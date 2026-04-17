@@ -66,6 +66,49 @@ body[data-theme="dark"] .admin-sider .ant-layout-sider-children {
   background-color: #1e3a8a !important; /* blue-900 */
 }
 
+/* Customer theme (scoped by RootLayout wrapper) */
+.customer-theme-light {
+  color-scheme: light;
+  background-color: #f5f7fa;
+  color: #0f172a;
+}
+
+.customer-theme-dark {
+  color-scheme: dark;
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.customer-theme-dark main {
+  background-color: #0b1220;
+}
+
+.customer-theme-dark :is(.bg-white, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100) {
+  background-color: #0f172a !important;
+}
+
+.customer-theme-dark :is(.text-slate-900, .text-gray-900, .text-slate-800, .text-gray-800, .text-black) {
+  color: #f8fafc !important;
+}
+
+.customer-theme-dark :is(.text-slate-700, .text-slate-600, .text-slate-500, .text-gray-700, .text-gray-600, .text-gray-500) {
+  color: #cbd5e1 !important;
+}
+
+.customer-theme-dark :is(.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300) {
+  border-color: #334155 !important;
+}
+
+.customer-theme-dark :is(input, select, textarea) {
+  background-color: #0b1220;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.customer-theme-dark :is(input, textarea)::placeholder {
+  color: #94a3b8;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;

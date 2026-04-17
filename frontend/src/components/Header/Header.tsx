@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import LoginPage from "../../pages/Customer/LoginPage/LoginPage";
 import ScrambleText from "./ScrambleText";
 import UserMenu from "./UserMenu";
+import { useCustomerDarkMode } from "../../hooks/useCustomerDarkMode";
 
 // --- QUAN TRỌNG: Import Hook từ AuthContext ---
 import { useAuth } from "../../context/AuthContext";
@@ -73,9 +74,7 @@ const Header = () => {
   );
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("landing_dark_mode") === "true";
-  });
+  const { isDarkMode, toggleDarkMode } = useCustomerDarkMode();
 
   const headerRef = useRef<HTMLElement>(null);
   const headerHeightClass = "md:h-16 py-1";
@@ -363,21 +362,7 @@ const Header = () => {
                   <>
                     {/* Dark Mode */}
                     <button
-                      onClick={() => {
-                        setIsDarkMode((prev) => {
-                          const newValue = !prev;
-                          localStorage.setItem(
-                            "landing_dark_mode",
-                            String(newValue),
-                          );
-                          window.dispatchEvent(
-                            new CustomEvent("darkModeChanged", {
-                              detail: { isDarkMode: newValue },
-                            }),
-                          );
-                          return newValue;
-                        });
-                      }}
+                      onClick={toggleDarkMode}
                       className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none ${
                         isHeaderTransparent
                           ? "bg-white/10 hover:bg-white/15"

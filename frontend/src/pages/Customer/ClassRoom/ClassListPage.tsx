@@ -10,6 +10,7 @@ import { reviewService } from "../../../services/reviews/reviewService";
 import chatService from "../../../services/chats/chatService";
 import { uploadToCloudinary } from "../../../services/upload/uploadService";
 import { useAuth } from "../../../context/AuthContext";
+import { useCustomerDarkMode } from "../../../hooks/useCustomerDarkMode";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -211,6 +212,7 @@ const ClassListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const posterInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const { isDarkMode } = useCustomerDarkMode();
   const currentUserId = user?.userId || null;
   const isTeacher = isTeacherRole(user?.role);
   const isAdmin = isAdminRole(user?.role);
@@ -692,7 +694,7 @@ const ClassListPage = () => {
   if (canToggleClassView && roleViewMode === "teacher") {
     if (loading) {
       return (
-        <div className="min-h-screen p-6 flex flex-col items-center justify-center gap-4 text-slate-700">
+        <div className={`min-h-screen p-6 flex flex-col items-center justify-center gap-4 ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}>
           <span
             aria-hidden="true"
             className="inline-block h-7 w-7 animate-spin rounded-full border-[3px] border-[#4da6ff]/30 border-t-[#4da6ff]"
@@ -706,14 +708,22 @@ const ClassListPage = () => {
     return (
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         {canToggleClassView ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-2 flex flex-wrap gap-2 shadow-sm">
+          <div
+            className={`rounded-2xl p-2 flex flex-wrap gap-2 shadow-sm border ${
+              isDarkMode
+                ? "border-cyan-500/40 bg-slate-900/80 backdrop-blur"
+                : "border-slate-200 bg-white"
+            }`}
+          >
             <button
               type="button"
               onClick={() => setRoleViewMode("teacher")}
               className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
                 roleViewMode === "teacher"
                   ? "bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow"
-                  : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+                  : isDarkMode
+                    ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                    : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
               }`}
             >
               Teacher Studio
@@ -721,23 +731,39 @@ const ClassListPage = () => {
             <button
               type="button"
               onClick={() => setRoleViewMode("student")}
-              className="rounded-xl px-4 py-2 text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-cyan-100"
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                isDarkMode
+                  ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                  : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+              }`}
             >
               Danh sách lớp học
             </button>
           </div>
         ) : null}
 
-        <div className="rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50 p-6 md:p-8 shadow-sm">
+        <div
+          className={`rounded-3xl border p-6 md:p-8 shadow-sm ${
+            isDarkMode
+              ? "border-cyan-400/40 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 shadow-cyan-500/10"
+              : "border-sky-100 bg-linear-to-r from-sky-50 via-cyan-50 to-blue-50"
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
-              <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 mb-3">
+              <span
+                className={`inline-flex items-center rounded-full text-xs font-semibold px-3 py-1 mb-3 ${
+                  isDarkMode
+                    ? "bg-cyan-500/20 text-cyan-200"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
                 Teacher Studio
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+              <h1 className={`text-2xl md:text-3xl font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 Lớp học của giáo viên
               </h1>
-              <p className="text-slate-600 mt-1">
+              <p className={`mt-1 ${isDarkMode ? "text-slate-200" : "text-slate-600"}`}>
                 Nhấn vào từng lớp để vào trang quản lý khóa học, học sinh và
                 feedback.
               </p>
@@ -754,7 +780,7 @@ const ClassListPage = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className={`text-sm mt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
               Tổng số lớp hiện có: {classesForTeacher.length}
             </p>
           </div>
@@ -986,7 +1012,13 @@ const ClassListPage = () => {
         )}
 
         {classesForTeacher.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-cyan-300 bg-cyan-50/40 p-8 text-center text-slate-500">
+          <div
+            className={`rounded-2xl border border-dashed p-8 text-center ${
+              isDarkMode
+                ? "border-cyan-400/40 bg-slate-900/70 text-slate-300"
+                : "border-cyan-300 bg-cyan-50/40 text-slate-500"
+            }`}
+          >
             Bạn chưa có lớp học nào.
           </div>
         ) : (
@@ -1004,9 +1036,13 @@ const ClassListPage = () => {
                   onClick={() =>
                     navigate(`/classes/${classItem.classId}/manage`)
                   }
-                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.75fr_0.5fr_1fr_0.75fr] h-[30rem]"
+                  className={`group text-left rounded-3xl border overflow-hidden hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.75fr_0.5fr_1fr_0.75fr] h-[30rem] ${
+                    isDarkMode
+                      ? "border-cyan-500/40 bg-slate-900 shadow-md shadow-slate-950/60 hover:shadow-cyan-500/20"
+                      : "border-sky-100 bg-white shadow-sm hover:shadow-2xl"
+                  }`}
                 >
-                  <div className="relative h-full w-full overflow-hidden bg-slate-100">
+                  <div className={`relative h-full w-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                     {classItem.poster ? (
                       <img
                         src={classItem.poster}
@@ -1021,7 +1057,13 @@ const ClassListPage = () => {
                       <div className="h-full w-full bg-linear-to-br from-blue-100 via-cyan-100 to-teal-100" />
                     )}
                     <div className="absolute inset-0 bg-linear-to-t from-slate-900/25 via-transparent to-transparent" />
-                    <span className="absolute top-3 left-3 inline-flex rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
+                    <span
+                      className={`absolute top-3 left-3 inline-flex rounded-full backdrop-blur px-2.5 py-1 text-[11px] font-semibold ${
+                        isDarkMode
+                          ? "bg-slate-900/85 text-cyan-200"
+                          : "bg-white/90 text-cyan-700"
+                      }`}
+                    >
                       Lớp học
                     </span>
                     {ended ? (
@@ -1031,35 +1073,53 @@ const ClassListPage = () => {
                     ) : null}
                   </div>
 
-                  <div className="px-4 md:px-5 py-2 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
-                    <h2 className="text-sm md:text-base font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-10">
+                  <div
+                    className={`px-4 md:px-5 py-2 border-t ${
+                      isDarkMode
+                        ? "bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 border-cyan-500/20"
+                        : "bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-slate-100/80"
+                    }`}
+                  >
+                    <h2 className={`text-sm md:text-base font-extrabold line-clamp-2 leading-snug min-h-10 ${isDarkMode ? "text-slate-100" : "text-slate-900"}`}>
                       {classItem.className}
                     </h2>
                   </div>
 
-                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-[15px] text-slate-600 overflow-hidden">
+                  <div
+                    className={`px-4 md:px-5 py-3 border-t space-y-1.5 text-[15px] overflow-hidden ${
+                      isDarkMode
+                        ? "bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 border-cyan-500/20 text-slate-200"
+                        : "bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-slate-100/80 text-slate-600"
+                    }`}
+                  >
                     <p className="line-clamp-2">
                       {classItem.schedule || "Lớp học trực tuyến"}
                     </p>
-                    <p className="text-sm text-slate-500 line-clamp-1">
+                    <p className={`text-sm line-clamp-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
                       Bắt đầu: {formatClassDateTime(classItem.startDate)}
                     </p>
-                    <p className="text-sm text-slate-500 line-clamp-1">
+                    <p className={`text-sm line-clamp-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
                       Kết thúc: {formatClassDateTime(classItem.endDate)}
                     </p>
                     <div className="flex items-center gap-2 text-sm">
                       <div className="flex items-center gap-1">
                         {renderRatingStars(rating)}
                       </div>
-                      <span className="font-medium text-slate-700">
+                      <span className={`font-medium ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}>
                         {totalReviews > 0 ? `${rating}/5 (${totalReviews})` : "Chưa có đánh giá"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="px-3 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                  <div
+                    className={`px-3 md:px-5 py-3 border-t ${
+                      isDarkMode
+                        ? "bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 border-cyan-500/20"
+                        : "bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-slate-100/80"
+                    }`}
+                  >
                     <div className="flex items-center gap-2 flex-nowrap h-full">
-                      <span className="min-w-0 flex-1 truncate text-sm text-slate-600 text-left">
+                      <span className={`min-w-0 flex-1 truncate text-sm text-left ${isDarkMode ? "text-slate-200" : "text-slate-600"}`}>
                         {classItem.currentStudents ?? 0}/{classItem.maxStudents ?? 0} học sinh
                       </span>
                       <span className="ml-auto inline-flex h-8 items-center text-white font-semibold bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg px-3 text-xs whitespace-nowrap shrink-0">

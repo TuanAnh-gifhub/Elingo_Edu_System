@@ -1,10 +1,13 @@
 import { RouterProvider } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { router } from "./routes/Router";
+import { useCustomerDarkMode } from "./hooks/useCustomerDarkMode";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
 function App() {
+  const { isDarkMode } = useCustomerDarkMode();
+
   return (
     <>
       <RouterProvider router={router} />
@@ -18,7 +21,7 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme={isDarkMode ? "dark" : "light"}
       />
     </>
   );

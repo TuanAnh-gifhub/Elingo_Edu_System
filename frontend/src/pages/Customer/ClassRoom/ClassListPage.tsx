@@ -1004,7 +1004,7 @@ const ClassListPage = () => {
                   onClick={() =>
                     navigate(`/classes/${classItem.classId}/manage`)
                   }
-                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.45fr_0.75fr_1fr_0.8fr] h-[30rem]"
+                  className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.75fr_0.5fr_1fr_0.75fr] h-[30rem]"
                 >
                   <div className="relative h-full w-full overflow-hidden bg-slate-100">
                     {classItem.poster ? (
@@ -1031,23 +1031,23 @@ const ClassListPage = () => {
                     ) : null}
                   </div>
 
-                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
-                    <h2 className="text-base md:text-lg font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-14">
+                  <div className="px-4 md:px-5 py-2 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                    <h2 className="text-sm md:text-base font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-10">
                       {classItem.className}
                     </h2>
                   </div>
 
-                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-sm text-slate-600 overflow-hidden">
+                  <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-[15px] text-slate-600 overflow-hidden">
                     <p className="line-clamp-2">
                       {classItem.schedule || "Lớp học trực tuyến"}
                     </p>
-                    <p className="text-xs text-slate-500 line-clamp-1">
+                    <p className="text-sm text-slate-500 line-clamp-1">
                       Bắt đầu: {formatClassDateTime(classItem.startDate)}
                     </p>
-                    <p className="text-xs text-slate-500 line-clamp-1">
+                    <p className="text-sm text-slate-500 line-clamp-1">
                       Kết thúc: {formatClassDateTime(classItem.endDate)}
                     </p>
-                    <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-sm">
                       <div className="flex items-center gap-1">
                         {renderRatingStars(rating)}
                       </div>
@@ -1176,7 +1176,7 @@ const ClassListPage = () => {
                 }}
                 role="button"
                 tabIndex={0}
-                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.45fr_0.75fr_1fr_0.8fr] h-[30rem]"
+                className="group text-left rounded-3xl border border-sky-100 bg-white overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 grid grid-rows-[1.75fr_0.5fr_1fr_0.75fr] h-[30rem]"
               >
                 <div className="relative h-full w-full overflow-hidden bg-slate-100">
                   {classItem.poster ? (
@@ -1202,23 +1202,23 @@ const ClassListPage = () => {
                   ) : null}
                 </div>
 
-                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
-                  <h2 className="text-base md:text-lg font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-14">
+                <div className="px-4 md:px-5 py-2 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80">
+                  <h2 className="text-sm md:text-base font-extrabold text-slate-900 line-clamp-2 leading-snug min-h-10">
                     {classItem.className}
                   </h2>
                 </div>
 
-                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-sm text-slate-600 overflow-hidden">
+                <div className="px-4 md:px-5 py-3 bg-linear-to-br from-white via-sky-50/40 to-cyan-50/50 border-t border-slate-100/80 space-y-1.5 text-[15px] text-slate-600 overflow-hidden">
                   <p className="line-clamp-2">
                     {classItem.schedule || "Lớp học trực tuyến"}
                   </p>
-                  <p className="text-xs text-slate-500 line-clamp-1">
+                  <p className="text-sm text-slate-500 line-clamp-1">
                     Bắt đầu: {formatClassDateTime(classItem.startDate)}
                   </p>
-                  <p className="text-xs text-slate-500 line-clamp-1">
+                  <p className="text-sm text-slate-500 line-clamp-1">
                     Kết thúc: {formatClassDateTime(classItem.endDate)}
                   </p>
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-sm">
                     <div className="flex items-center gap-1">
                       {renderRatingStars(rating)}
                     </div>

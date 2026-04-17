@@ -69,7 +69,7 @@ const MessageList = ({
 
   return (
     <div
-      className={`flex-1 overflow-y-auto px-1.5 py-4 space-y-4 ${
+      className={`flex-1 overflow-y-auto px-1.5 py-3 space-y-3 ${
         isDarkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
@@ -79,7 +79,7 @@ const MessageList = ({
         return (
           <div
             key={groupIndex}
-            className={`flex ${isMe ? "flex-row-reverse" : "flex-row"} items-end gap-2 mb-2`}
+            className={`flex ${isMe ? "flex-row-reverse" : "flex-row"} items-end gap-2 mb-1.5`}
           >
             {!isMe && (
               <div className="flex-shrink-0 mb-5">
@@ -139,7 +139,7 @@ const MessageList = ({
                         } ${
                           isMediaOnly
                             ? "p-0 bg-transparent shadow-none" // Ẩn nền nếu chỉ có ảnh
-                            : `px-3 py-1.5 shadow-sm ${borderRadiusClass} ${
+                            : `px-2.5 py-1.5 shadow-sm ${borderRadiusClass} ${
                                 isMe
                                   ? "bg-blue-600 text-white"
                                   : isDarkMode
@@ -169,7 +169,7 @@ const MessageList = ({
 
                         {/* CHỈ RENDER TEXT NẾU CÓ TEXT THẬT SỰ */}
                         {hasText && (
-                          <p className="whitespace-pre-wrap leading-tight text-sm">
+                          <p className="whitespace-pre-wrap leading-snug text-[13px]">
                             {actualText}
                           </p>
                         )}

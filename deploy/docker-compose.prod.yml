@@ -1,0 +1,50 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: elingo-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: elingo-frontend
+    restart: unless-stopped
+    # Keep SPA routing support in production
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: elingo-backend
+    restart: unless-stopped
+    env_file:
+      - ./deploy/.env.backend
+    depends_on:
+      - ollama
+
+  # AI runtime (optional but recommended for Class AI features)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: elingo-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  caddy_data:
+  caddy_config:
+  ollama_data:
+

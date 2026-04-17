@@ -11,7 +11,7 @@
     <groupId>org.rent.room</groupId>
     <artifactId>BE</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>BE</name>np
+    <name>BE</name>
     <description>BE</description>
     <url/>
     <licenses>
@@ -125,11 +125,6 @@
             <groupId>vn.payos</groupId>
             <artifactId>payos-java</artifactId>
             <version>2.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-            <version>4.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

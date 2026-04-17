@@ -68,6 +68,15 @@ interface ClassLiveStatusEvent {
   onlineOpen: boolean;
 }
 
+type ErrorWithResponse = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+};
+
 type LessonCardColorVariant = {
   card: string;
   badge: string;
@@ -304,6 +313,7 @@ const StudentClassLearningPage = () => {
   const [openingOnlineClass, setOpeningOnlineClass] = useState(false);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [canUseMeetingRecording, setCanUseMeetingRecording] = useState(false);
+  const [canUseClassAi, setCanUseClassAi] = useState(false);
   const [recordings, setRecordings] = useState<MeetingRecordingDto[]>([]);
   const [loadingRecordings, setLoadingRecordings] = useState(false);
   const [recordingSearch, setRecordingSearch] = useState("");
@@ -364,8 +374,10 @@ const StudentClassLearningPage = () => {
           ? active.status === "ACTIVE" && hasActiveSubscription(active.endDate)
           : false;
         setCanUseMeetingRecording(canRecord);
+        setCanUseClassAi(canRecord);
       } catch {
         setCanUseMeetingRecording(false);
+        setCanUseClassAi(false);
       } finally {
         setLoadingSubscription(false);
       }
@@ -536,7 +548,10 @@ const StudentClassLearningPage = () => {
   }, [classId]);
 
   useEffect(() => {
-    if (!classId || !classInfo) {
+    if (!classId || !classInfo || !canUseClassAi) {
+      if (!canUseClassAi) {
+        setAiMessages([{ role: "assistant", content: DEFAULT_AI_MESSAGE }]);
+      }
       return;
     }
 
@@ -571,13 +586,17 @@ const StudentClassLearningPage = () => {
         }
 
         setAiMessages([{ role: "assistant", content: DEFAULT_AI_MESSAGE }]);
-      } catch {
-        setAiMessages([{ role: "assistant", content: DEFAULT_AI_MESSAGE }]);
+      } catch (error) {
+        const err = error as ErrorWithResponse;
+        const message =
+          err?.response?.data?.message ||
+          "Bạn cần phải mua gói để sử dụng AI trợ giảng.";
+        setAiMessages([{ role: "assistant", content: message }]);
       }
     };
 
     void loadAiHistory();
-  }, [classId, classInfo]);
+  }, [classId, classInfo, canUseClassAi]);
 
   const quizzesOfClass = useMemo(() => {
     const courseIds = new Set(courses.map((course) => course.courseId));
@@ -762,6 +781,12 @@ const StudentClassLearningPage = () => {
       return;
     }
 
+    if (!canUseClassAi) {
+      toast.warning("Bạn cần phải mua gói để sử dụng AI trợ giảng.");
+      navigate("/subscription");
+      return;
+    }
+
     setAiMessages((prev) => [...prev, { role: "user", content: message }]);
     setAiInput("");
 
@@ -778,10 +803,12 @@ const StudentClassLearningPage = () => {
         },
       ]);
     } catch (error) {
+      const err = error as ErrorWithResponse;
       const messageError =
-        error instanceof Error
+        err?.response?.data?.message ||
+        (error instanceof Error
           ? error.message
-          : "AI local đang tạm thời không khả dụng. Bạn thử lại sau.";
+          : "AI local đang tạm thời không khả dụng. Bạn thử lại sau.");
       setAiMessages((prev) => [...prev, { role: "assistant", content: messageError }]);
     } finally {
       setAiLoading(false);
@@ -905,16 +932,26 @@ const StudentClassLearningPage = () => {
           { key: "quizzes", label: "Quiz" },
           { key: "students", label: "Học sinh" },
           { key: "online", label: "Lớp trực tuyến" },
-          { key: "ai", label: "AI trợ giảng" },
+          { key: "ai", label: canUseClassAi ? "AI trợ giảng" : "AI trợ giảng (cần gói)" },
         ].map((item) => (
           <button
             key={item.key}
             type="button"
-            onClick={() => setActiveTab(item.key as StudentTab)}
+            onClick={() => {
+              if (item.key === "ai" && !canUseClassAi) {
+                toast.info("Bạn cần phải mua gói để dùng AI trợ giảng.");
+                navigate("/subscription");
+                return;
+              }
+              setActiveTab(item.key as StudentTab);
+            }}
+            disabled={item.key === "ai" && !canUseClassAi}
             className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
               activeTab === item.key
                 ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow"
-                : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
+                : item.key === "ai" && !canUseClassAi
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-slate-100 text-slate-600 hover:bg-cyan-100"
             }`}
           >
             {item.label}
@@ -1302,6 +1339,21 @@ const StudentClassLearningPage = () => {
 
       {activeTab === "ai" ? (
         <section className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50/70 via-white to-cyan-50/70 p-5 md:p-6 shadow-sm space-y-4">
+          {!canUseClassAi ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 space-y-3">
+              <p>Bạn cần phải mua gói để sử dụng AI trợ giảng.</p>
+              <button
+                type="button"
+                onClick={() => navigate("/subscription")}
+                className="rounded-md border border-amber-300 bg-white px-3 py-1.5 font-semibold text-amber-700 hover:bg-amber-100"
+              >
+                Mua gói ngay
+              </button>
+            </div>
+          ) : null}
+
+          {canUseClassAi ? (
+            <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">AI trợ giảng</h2>
@@ -1379,6 +1431,8 @@ const StudentClassLearningPage = () => {
               </button>
             </div>
           </div>
+            </>
+          ) : null}
         </section>
       ) : null}
 

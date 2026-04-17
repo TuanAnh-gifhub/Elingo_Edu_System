@@ -37,6 +37,7 @@ public enum ErrorCode {
     CLASS_WALLET_CLAIM_NOT_AVAILABLE(4011, "Chỉ nhận tiền sau khi lớp học đã kết thúc", HttpStatus.BAD_REQUEST),
     CLASS_AI_ACCESS_DENIED(4012, "Bạn không có quyền dùng AI trợ giảng của lớp này", HttpStatus.FORBIDDEN),
     CLASS_AI_UNAVAILABLE(4013, "AI trợ giảng hiện tạm thời không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
+    CLASS_AI_SUBSCRIPTION_REQUIRED(4014, "Bạn cần phải mua gói để sử dụng AI trợ giảng", HttpStatus.FORBIDDEN),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),

@@ -26,10 +26,13 @@ export interface MessageResponse {
 
 export interface ConversationResponse {
   conversationId: string | null;
+  conversationTitle?: string;
+  conversationType?: "DIRECT" | "CLASS_GROUP";
+  classId?: string;
   lastMessage: string;
   lastSenderName: string;
-  user1: UserChatResponse;
-  user2: UserChatResponse;
+  user1?: UserChatResponse;
+  user2?: UserChatResponse;
   updatedAt: string;
   isRead?: boolean;
 }

@@ -54,6 +54,8 @@ const ChatBubble = () => {
       } else {
         chatLogic.setSelectedChat({
           conversationId: conversationId || null,
+          conversationType: "DIRECT",
+          conversationTitle: null,
           user1: { userId: currentUserId!, userName: user?.userName || "" },
           user2: { userId, userName },
           otherPerson: { userId, userName },
@@ -109,8 +111,10 @@ const ChatBubble = () => {
               <span className="font-semibold truncate max-w-[180px]">
                 {showChatList
                   ? "Đoạn chat"
-                  : chatLogic.selectedChat?.otherPerson?.userName ||
-                    "Người dùng"}
+                  : chatLogic.selectedChat?.conversationType === "CLASS_GROUP"
+                    ? chatLogic.selectedChat?.conversationTitle || "Nhóm lớp"
+                    : chatLogic.selectedChat?.otherPerson?.userName ||
+                      "Người dùng"}
               </span>
             </div>
             <div className="flex gap-2">
@@ -164,6 +168,7 @@ const ChatBubble = () => {
                     messages={chatLogic.messages}
                     messagesEndRef={chatLogic.messagesEndRef}
                     currentUserId={currentUserId}
+                    conversationType={chatLogic.selectedChat?.conversationType}
                   />
                   <MessageInput
                     {...chatLogic}

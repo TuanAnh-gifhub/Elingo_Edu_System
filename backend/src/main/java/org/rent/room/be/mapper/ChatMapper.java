@@ -12,6 +12,7 @@ public interface ChatMapper {
 
     @Mapping(target = "user1", source = "user1")
     @Mapping(target = "user2", source = "user2")
+    @Mapping(target = "classId", source = "classRoom.classId")
     ConversationResponse toConversationResponse(Conversation conversation);
 
     @Mapping(target = "messageId", source = "messageId")

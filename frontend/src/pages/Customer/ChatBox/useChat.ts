@@ -42,10 +42,14 @@ export const useChat = (
       const res = await chatService.getUserConversations(currentUserId);
       if (res.result && Array.isArray(res.result)) {
         const mapped = res.result.map((c: any) => {
-          const other = c.user1?.userId === currentUserId ? c.user2 : c.user1;
+          const isGroup = c.conversationType === "CLASS_GROUP";
+          const other =
+            !isGroup && c.user1?.userId === currentUserId ? c.user2 : c.user1;
           return {
             ...c,
-            otherPerson: { userId: other.userId, userName: other.userName },
+            otherPerson: other
+              ? { userId: other.userId, userName: other.userName }
+              : null,
           };
         });
 
@@ -315,18 +319,22 @@ export const useChat = (
     if (!newMessage.trim() && selectedFiles.length === 0) return;
     if (!selectedChat || !currentUserId) return;
 
+    const isGroup = selectedChat.conversationType === "CLASS_GROUP";
     const recipientId = selectedChat.otherPerson?.userId;
-    if (!recipientId) return;
 
     const targetConversationId =
       currentConversationIdRef.current || selectedChat.conversationId;
+
+    if (!isGroup && !recipientId) {
+      return;
+    }
 
     if (selectedFiles.length > 0 && selectedFiles[0]) {
       try {
         const formData = new FormData();
         const messageData = {
           content: newMessage.trim(),
-          recipientId,
+          recipientId: isGroup ? null : recipientId,
           conversationId: targetConversationId,
         };
         formData.append(
@@ -347,7 +355,7 @@ export const useChat = (
       const content = newMessage.trim();
       websocketService.send("/app/chat", {
         senderId: currentUserId,
-        recipientId,
+        recipientId: isGroup ? null : recipientId,
         content,
         conversationId: targetConversationId,
       });

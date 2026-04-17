@@ -20,6 +20,8 @@ public interface ClassMeetingRecordingRepository extends JpaRepository<ClassMeet
             String roomName,
             String provider
     );
+
+    void deleteByClassRoom_ClassId(UUID classId);
 }
 
 

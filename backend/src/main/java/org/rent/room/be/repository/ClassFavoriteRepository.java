@@ -18,4 +18,6 @@ public interface ClassFavoriteRepository extends JpaRepository<ClassFavorite, UU
     boolean existsByUser_UserIdAndClassRoom_ClassId(UUID userId, UUID classId);
 
     void deleteByUser_UserIdAndClassRoom_ClassId(UUID userId, UUID classId);
+
+    void deleteByClassRoom_ClassId(UUID classId);
 }

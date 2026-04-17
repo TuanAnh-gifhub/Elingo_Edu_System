@@ -51,6 +51,11 @@ import {
   type MeetingRecordingDto,
 } from "../../../services/recordings/meetingRecordingService";
 import { createJitsiRoom, type JitsiApi } from "../../../utils/jitsiHelper";
+import {
+  reviewService,
+  type ReviewDto,
+  type ReviewSummaryDto,
+} from "../../../services/reviews/reviewService";
 
 type TeacherTab =
   | "overview"
@@ -362,13 +367,6 @@ const getFileIcon = (
   }
 };
 
-const getClassRating = (classId: string): number => {
-  const hash = classId
-    .split("")
-    .reduce((total, char) => total + char.charCodeAt(0), 0);
-  return 3.5 + (hash % 16) * 0.1;
-};
-
 const renderRatingStars = (rating: number) => {
   const stars = [];
   const fullStars = Math.floor(rating);
@@ -505,8 +503,12 @@ const TeacherClassManagePage = () => {
   const [loadingClassWallet, setLoadingClassWallet] = useState(true);
   const [loadingClassWalletTransactions, setLoadingClassWalletTransactions] =
     useState(true);
+  const [loadingFeedback, setLoadingFeedback] = useState(true);
   const [classInfo, setClassInfo] = useState<ClassRoomDto | null>(null);
   const [classWallet, setClassWallet] = useState<ClassWalletDto | null>(null);
+  const [reviewSummary, setReviewSummary] =
+    useState<ReviewSummaryDto | null>(null);
+  const [classReviews, setClassReviews] = useState<ReviewDto[]>([]);
   const [classWalletTransactions, setClassWalletTransactions] = useState<
     ClassWalletTransactionDto[]
   >([]);
@@ -569,6 +571,8 @@ const TeacherClassManagePage = () => {
   const [teacherRecordings, setTeacherRecordings] = useState<MeetingRecordingDto[]>([]);
   const [loadingTeacherRecordings, setLoadingTeacherRecordings] = useState(false);
   const [claimingClassWallet, setClaimingClassWallet] = useState(false);
+  const [deletingClass, setDeletingClass] = useState(false);
+  const [showDeleteClassModal, setShowDeleteClassModal] = useState(false);
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
@@ -790,13 +794,38 @@ const TeacherClassManagePage = () => {
     void loadScoreMatrix();
   }, [classId]);
 
-  const rating = useMemo(() => {
-    if (!classInfo) {
-      return 0;
+  useEffect(() => {
+    if (!classId) {
+      return;
     }
 
-    return Number(getClassRating(classInfo.classId).toFixed(1));
-  }, [classInfo]);
+    const loadFeedback = async () => {
+      try {
+        setLoadingFeedback(true);
+        const [summary, reviewPage] = await Promise.all([
+          reviewService.getClassReviewSummary(classId),
+          reviewService.getClassReviews(classId, 0, 20),
+        ]);
+        setReviewSummary(summary);
+        setClassReviews(reviewPage.data || []);
+      } catch {
+        setReviewSummary({ averageRating: 0, totalReviews: 0 });
+        setClassReviews([]);
+      } finally {
+        setLoadingFeedback(false);
+      }
+    };
+
+    void loadFeedback();
+  }, [classId]);
+
+  const rating = useMemo(() => {
+    return Number((reviewSummary?.averageRating || 0).toFixed(1));
+  }, [reviewSummary]);
+
+  const totalReviews = useMemo(() => {
+    return reviewSummary?.totalReviews ?? classReviews.length;
+  }, [reviewSummary, classReviews.length]);
 
   const registeredStudents = useMemo(() => {
     return classEnrollments;
@@ -894,33 +923,14 @@ const TeacherClassManagePage = () => {
   };
 
   const feedbackList = useMemo<ClassroomFeedback[]>(() => {
-    if (!classInfo) {
-      return [];
-    }
-
-    if (registeredStudents.length === 0) {
-      return [];
-    }
-
-    return registeredStudents.slice(0, 8).map((enrollment, index) => {
-      const classScore = getClassRating(classInfo.classId);
-      const adjusted = Math.max(
-        3.2,
-        Math.min(5, classScore - (index % 3) * 0.2),
-      );
-
-      return {
-        id: `${classInfo.classId}-fb-${enrollment.studentId}`,
-        studentName: enrollment.studentName || "Học sinh",
-        rating: Number(adjusted.toFixed(1)),
-        comment:
-          index % 2 === 0
-            ? "Giảng viên hỗ trợ nhiệt tình, nội dung dễ theo dõi và thực hành tốt."
-            : "Lộ trình học rõ ràng, mong lớp có thêm bài tập nâng cao mỗi tuần.",
-        createdAt: new Date(Date.now() - index * 86400000).toISOString(),
-      };
-    });
-  }, [classInfo, registeredStudents]);
+    return classReviews.map((review) => ({
+      id: review.id,
+      studentName: review.userName || "Học sinh",
+      rating: Number((review.rating || 0).toFixed(1)),
+      comment: review.comment || "",
+      createdAt: review.createdAt,
+    }));
+  }, [classReviews]);
 
   const handleStartOnlineClass = async () => {
     if (!classId) {
@@ -1602,6 +1612,40 @@ const TeacherClassManagePage = () => {
     }
   };
 
+  const handleDeleteClass = async () => {
+    if (!classId) {
+      return;
+    }
+
+    const walletBalance = Number(classWallet?.balance || 0);
+    if (walletBalance !== 0) {
+      toast.error("Chỉ có thể xóa lớp khi ví lớp bằng 0.");
+      return;
+    }
+
+    setShowDeleteClassModal(true);
+  };
+
+  const handleConfirmDeleteClass = async () => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setDeletingClass(true);
+      await classRoomService.deleteClass(classId);
+      setShowDeleteClassModal(false);
+      toast.success("Đã xóa lớp học thành công.");
+      navigate("/classes");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể xóa lớp học.";
+      toast.error(message);
+    } finally {
+      setDeletingClass(false);
+    }
+  };
+
   const classWalletEndDate = classWallet?.endDate
     ? new Date(classWallet.endDate)
     : null;
@@ -1613,6 +1657,8 @@ const TeacherClassManagePage = () => {
   const classWalletFeePercent = Number(classWallet?.feePercent || 0);
   const classWalletFeeAmount = Number(classWallet?.feeAmount || 0);
   const classWalletReceivableAmount = Number(classWallet?.receivableAmount || 0);
+  const canDeleteClass =
+    !loadingClassWallet && Number(classWallet?.balance || 0) === 0 && !deletingClass;
 
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
@@ -1669,6 +1715,7 @@ const TeacherClassManagePage = () => {
                 {rating}/5
               </span>
             </div>
+            <div className="mt-1 text-xs text-slate-500">{totalReviews} đánh giá</div>
             <div className="mt-2 text-xs text-slate-500">
               Ví lớp: {loadingClassWallet
                 ? "Đang tải..."
@@ -1879,7 +1926,7 @@ const TeacherClassManagePage = () => {
                 </div>
               </div>
 
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={
@@ -1892,6 +1939,19 @@ const TeacherClassManagePage = () => {
                   {showEditClassForm
                     ? "Đóng chỉnh sửa"
                     : "Chỉnh sửa thông tin lớp"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClass}
+                  disabled={!canDeleteClass}
+                  className="rounded-xl bg-rose-600 text-white px-4 py-2 text-sm font-semibold hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  title={
+                    canDeleteClass
+                      ? "Xóa lớp học"
+                      : "Chỉ xóa được khi số dư ví lớp bằng 0"
+                  }
+                >
+                  {deletingClass ? "Đang xóa..." : "Xóa lớp"}
                 </button>
               </div>
             </div>
@@ -3184,6 +3244,9 @@ const TeacherClassManagePage = () => {
           <h2 className="text-lg font-semibold text-slate-900">
             Feedback lớp học
           </h2>
+          {loadingFeedback ? (
+            <p className="text-slate-500 mt-3">Đang tải feedback...</p>
+          ) : null}
           {feedbackList.length === 0 ? (
             <p className="text-slate-500 mt-3">
               Chưa có feedback cho lớp học này.
@@ -3241,6 +3304,42 @@ const TeacherClassManagePage = () => {
                 </div>
               ) : null}
               <div ref={jitsiContainerRef} className="w-full h-[70vh] min-h-[420px]" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showDeleteClassModal ? (
+        <div className="fixed inset-0 z-50 bg-black/40 p-4 flex items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl overflow-hidden">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h3 className="text-base font-semibold text-slate-900">Xác nhận xóa lớp học</h3>
+            </div>
+            <div className="px-5 py-4 space-y-2">
+              <p className="text-sm text-slate-700">
+                Bạn có chắc muốn xóa lớp này?
+              </p>
+              <p className="text-sm text-slate-500">
+                Thao tác sẽ xóa luôn nhóm chat và dữ liệu liên quan của lớp.
+              </p>
+            </div>
+            <div className="px-5 pb-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteClassModal(false)}
+                disabled={deletingClass}
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteClass}
+                disabled={deletingClass}
+                className="rounded-xl bg-rose-600 text-white px-4 py-2 text-sm font-semibold hover:bg-rose-700 disabled:opacity-60"
+              >
+                {deletingClass ? "Đang xóa..." : "Xác nhận xóa"}
+              </button>
             </div>
           </div>
         </div>

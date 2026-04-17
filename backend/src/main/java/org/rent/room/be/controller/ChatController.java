@@ -60,7 +60,8 @@ public class ChatController {
     @GetMapping("/history/{conversationId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<MessageResponse>>> getHistory(@PathVariable UUID conversationId) {
-        List<MessageResponse> result = chatService.getMessagesByConversation(conversationId);
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        List<MessageResponse> result = chatService.getMessagesByConversation(conversationId, currentUserId);
         return ResponseEntity.ok(ApiResponse.<List<MessageResponse>>builder()
                 .result(result)
                 .build());
@@ -69,7 +70,8 @@ public class ChatController {
     @GetMapping("/conversation/{conversationId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<ConversationResponse>> getConversation(@PathVariable UUID conversationId) {
-        ConversationResponse result = chatService.getConversationById(conversationId);
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        ConversationResponse result = chatService.getConversationById(conversationId, currentUserId);
         return ResponseEntity.ok(ApiResponse.<ConversationResponse>builder()
                 .result(result)
                 .build());
@@ -90,8 +92,12 @@ public class ChatController {
     public ResponseEntity<ApiResponse<Void>> markConversationAsRead(
             @PathVariable UUID conversationId,
             @RequestParam UUID userId) {
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        if (!currentUserId.equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
 
-        chatService.markAllMessagesInConversationAsRead(conversationId, userId);
+        chatService.markAllMessagesInConversationAsRead(conversationId, currentUserId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .message("Conversation marked as read")
                 .build());

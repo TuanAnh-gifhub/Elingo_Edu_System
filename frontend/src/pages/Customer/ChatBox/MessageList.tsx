@@ -14,6 +14,7 @@ interface MessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   showBackground?: boolean;
   currentUserId: string | null;
+  conversationType?: "DIRECT" | "CLASS_GROUP";
   isDarkMode?: boolean;
 }
 
@@ -28,8 +29,11 @@ const MessageList = ({
   messages,
   messagesEndRef,
   currentUserId,
+  conversationType,
   isDarkMode = false,
 }: MessageListProps) => {
+  const isGroupConversation = conversationType === "CLASS_GROUP";
+
   const groupConsecutiveMessages = (msgs: Message[]): MessageGroup[] => {
     const grouped: MessageGroup[] = [];
     if (msgs.length === 0) return grouped;
@@ -92,6 +96,11 @@ const MessageList = ({
                 isMe ? "items-end" : "items-start"
               }`}
             >
+              {!isMe && isGroupConversation ? (
+                <p className="mb-1 px-1 text-xs font-semibold text-slate-500">
+                  {group.messages[0]?.senderName || "Thành viên"}
+                </p>
+              ) : null}
               <div className="flex flex-col w-full">
                 {group.messages.map((message, idx) => {
                   const parsed = parseMessageContent(message.content) as any;

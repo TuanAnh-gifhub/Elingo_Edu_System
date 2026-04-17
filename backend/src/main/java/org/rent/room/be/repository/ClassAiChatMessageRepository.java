@@ -11,5 +11,7 @@ import java.util.UUID;
 public interface ClassAiChatMessageRepository extends JpaRepository<ClassAiChatMessage, UUID> {
 
     List<ClassAiChatMessage> findByClassRoomClassIdAndStudentUserIdOrderByCreatedAtAsc(UUID classId, UUID studentId);
+
+    void deleteByClassRoom_ClassId(UUID classId);
 }
 

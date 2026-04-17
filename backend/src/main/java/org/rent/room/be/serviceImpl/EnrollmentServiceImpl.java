@@ -33,6 +33,7 @@ import org.rent.room.be.repository.WalletRepository;
 import org.rent.room.be.repository.WalletTransactionRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.service.EnrollmentService;
+import org.rent.room.be.service.ChatService;
 import org.rent.room.be.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final UserService userService;
+    private final ChatService chatService;
     private final EnrollmentMapper enrollmentMapper;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -156,6 +158,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         classRoom.setCurrentStudents(currentStudents + 1);
         classRoomRepository.save(classRoom);
+        chatService.joinUserToClassGroupConversation(classId, student.getUserId());
 
         return enrollmentMapper.toResponse(savedEnrollment);
     }

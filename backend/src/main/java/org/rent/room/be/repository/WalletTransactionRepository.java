@@ -43,6 +43,13 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
             String metadata
     );
 
+    List<WalletTransaction> findByTypeAndStatusAndCreatedAtBetween(
+            WalletTxType type,
+            WalletTxStatus status,
+            LocalDateTime from,
+            LocalDateTime to
+    );
+
     boolean existsByBookingIdAndType(UUID bookingId, WalletTxType type);
 
     @Query("""

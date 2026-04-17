@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.rent.room.be.base.ApiResponse;
 import org.rent.room.be.dto.request.enrollment.CreateEnrollmentRequest;
+import org.rent.room.be.dto.request.enrollment.UpdateQuizScoreColumnsRequest;
+import org.rent.room.be.dto.response.enrollment.ClassQuizScoreMatrixResponse;
 import org.rent.room.be.dto.response.enrollment.EnrollmentResponse;
 import org.rent.room.be.service.EnrollmentService;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +80,37 @@ public class EnrollmentController {
                         .code(200)
                         .message("Get class enrollments successfully")
                         .result(enrollments)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
+    @GetMapping("/classes/{classId}/quiz-score-matrix")
+    public ResponseEntity<ApiResponse<ClassQuizScoreMatrixResponse>> getClassQuizScoreMatrix(
+            @PathVariable UUID classId
+    ) {
+        ClassQuizScoreMatrixResponse response = enrollmentService.getClassQuizScoreMatrix(classId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassQuizScoreMatrixResponse>builder()
+                        .code(200)
+                        .message("Get class quiz score matrix successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PutMapping("/classes/{classId}/quiz-score-columns")
+    public ResponseEntity<ApiResponse<ClassQuizScoreMatrixResponse>> updateClassQuizScoreColumns(
+            @PathVariable UUID classId,
+            @RequestBody UpdateQuizScoreColumnsRequest request
+    ) {
+        ClassQuizScoreMatrixResponse response = enrollmentService.updateClassQuizScoreColumns(classId, request);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassQuizScoreMatrixResponse>builder()
+                        .code(200)
+                        .message("Update class quiz score columns successfully")
+                        .result(response)
                         .build()
         );
     }

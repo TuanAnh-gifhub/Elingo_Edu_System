@@ -12,6 +12,7 @@ import org.rent.room.be.dto.request.classroom.UpdateClassOnlineStatusRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
 import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
 import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletFinanceSummaryResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
 import org.rent.room.be.security.SecurityUtils;
@@ -238,6 +239,36 @@ public class ClassRoomController {
                 ApiResponse.<List<ClassWalletTransactionResponse>>builder()
                         .code(200)
                         .message("Get class wallet transactions successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{classId}/admin/wallet/finance-summary")
+    public ResponseEntity<ApiResponse<ClassWalletFinanceSummaryResponse>> getClassWalletFinanceSummaryForAdmin(
+            @PathVariable UUID classId
+    ) {
+        ClassWalletFinanceSummaryResponse response = classRoomService.getClassWalletFinanceSummaryForAdmin(classId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletFinanceSummaryResponse>builder()
+                        .code(200)
+                        .message("Get class wallet finance summary successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{classId}/admin/wallet/transactions")
+    public ResponseEntity<ApiResponse<List<ClassWalletTransactionResponse>>> getClassWalletTransactionsForAdmin(
+            @PathVariable UUID classId
+    ) {
+        List<ClassWalletTransactionResponse> response = classRoomService.getClassWalletTransactionsForAdmin(classId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<ClassWalletTransactionResponse>>builder()
+                        .code(200)
+                        .message("Get class wallet transactions for admin successfully")
                         .result(response)
                         .build()
         );

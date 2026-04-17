@@ -33,7 +33,11 @@ import {
 } from "../../../services/recordings/meetingRecordingService";
 import { reviewService, type ReviewSummaryDto } from "../../../services/reviews/reviewService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
-import type { EnrollmentResponse } from "../../../services/classes/enrollmentService";
+import type {
+  EnrollmentResponse,
+  QuizScoreColumn,
+  StudentQuizScoreRow,
+} from "../../../services/classes/enrollmentService";
 import {
   classAiService,
   type ClassAiHistoryMessageResponse,
@@ -283,6 +287,9 @@ const StudentClassLearningPage = () => {
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
+  const [scoreColumns, setScoreColumns] = useState<QuizScoreColumn[]>([]);
+  const [studentScoreRows, setStudentScoreRows] = useState<StudentQuizScoreRow[]>([]);
+  const [loadingScoreMatrix, setLoadingScoreMatrix] = useState(true);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummaryDto | null>(null);
   const [attemptsByQuizId, setAttemptsByQuizId] = useState<
     Record<string, QuizAttemptSummary[]>
@@ -477,6 +484,38 @@ const StudentClassLearningPage = () => {
 
     loadClassStudents();
   }, [classId]);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadScoreMatrix = async () => {
+      try {
+        setLoadingScoreMatrix(true);
+        const matrix = await enrollmentService.getClassQuizScoreMatrix(classId);
+        setScoreColumns(matrix.columns || []);
+        setStudentScoreRows(matrix.rows || []);
+      } catch {
+        setScoreColumns([]);
+        setStudentScoreRows([]);
+      } finally {
+        setLoadingScoreMatrix(false);
+      }
+    };
+
+    void loadScoreMatrix();
+  }, [classId]);
+
+  const studentScoreRowByStudentId = useMemo(() => {
+    const map = new Map<string, StudentQuizScoreRow>();
+    studentScoreRows.forEach((row) => {
+      if (row.studentId) {
+        map.set(row.studentId, row);
+      }
+    });
+    return map;
+  }, [studentScoreRows]);
 
   useEffect(() => {
     if (!classId) {
@@ -1098,6 +1137,8 @@ const StudentClassLearningPage = () => {
           <h2 className="text-lg font-semibold text-slate-900">Danh sách học sinh lớp</h2>
           {loadingStudents ? (
             <p className="text-slate-500 mt-3">Đang tải danh sách học sinh...</p>
+          ) : loadingScoreMatrix ? (
+            <p className="text-slate-500 mt-3">Đang tải bảng điểm quiz...</p>
           ) : classEnrollments.length === 0 ? (
             <p className="text-slate-500 mt-3">Chưa có học sinh nào trong lớp.</p>
           ) : (
@@ -1108,6 +1149,11 @@ const StudentClassLearningPage = () => {
                     <th className="pb-2">STT</th>
                     <th className="pb-2">Tên học sinh</th>
                     <th className="pb-2">Thời gian nhập học</th>
+                    {scoreColumns.map((column) => (
+                      <th key={column.columnId} className="pb-2">
+                        {column.columnName}
+                      </th>
+                    ))}
                     <th className="pb-2">Trạng thái</th>
                   </tr>
                 </thead>
@@ -1128,6 +1174,19 @@ const StudentClassLearningPage = () => {
                             ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
                             : "-"}
                       </td>
+                      {scoreColumns.map((column) => {
+                        const scoreRow = studentScoreRowByStudentId.get(
+                          enrollment.studentId,
+                        );
+                        const scoreValue = scoreRow?.quizScores?.[column.columnId];
+                        return (
+                          <td key={column.columnId} className="py-3 pr-2 text-slate-700">
+                            {typeof scoreValue === "number"
+                              ? Number(scoreValue).toFixed(2)
+                              : "-"}
+                          </td>
+                        );
+                      })}
                       <td className="py-3">
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
                           Đang học

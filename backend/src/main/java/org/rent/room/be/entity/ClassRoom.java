@@ -68,6 +68,9 @@ public class ClassRoom extends BaseEntity {
     @Column(name = "class_wallet_claimed_at")
     LocalDateTime classWalletClaimedAt;
 
+    @Column(name = "quiz_score_columns_json", columnDefinition = "TEXT")
+    String quizScoreColumnsJson;
+
     @Column(name = "online_open")
     Boolean onlineOpen;
 

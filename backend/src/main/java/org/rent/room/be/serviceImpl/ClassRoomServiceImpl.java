@@ -1,5 +1,7 @@
 package org.rent.room.be.serviceImpl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.constant.WalletStatus;
@@ -9,6 +11,7 @@ import org.rent.room.be.dto.request.classroom.CreateClassRoomRequest;
 import org.rent.room.be.dto.request.classroom.UpdateClassRoomRequest;
 import org.rent.room.be.dto.response.classroom.ClassLiveStatusEventResponse;
 import org.rent.room.be.dto.response.classroom.ClassRoomResponse;
+import org.rent.room.be.dto.response.classroom.ClassWalletFinanceSummaryResponse;
 import org.rent.room.be.dto.response.classroom.ClassWalletTransactionResponse;
 import org.rent.room.be.dto.response.classroom.ClassWalletResponse;
 import org.rent.room.be.dto.response.classroom.OnlineClassAccessResponse;
@@ -69,6 +72,7 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ROOM_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     @Transactional
@@ -288,17 +292,84 @@ public class ClassRoomServiceImpl implements ClassRoomService {
 
         validateTeacherOwnership(classRoom, currentTeacherId);
 
+        return buildClassWalletTransactions(classRoom);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ClassWalletFinanceSummaryResponse getClassWalletFinanceSummaryForAdmin(UUID classId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        BigDecimal classWalletBalance = safeAmount(classRoom.getClassWalletBalance());
+        BigDecimal feePercent = getCurrentClassWalletFeePercent();
+        BigDecimal platformUpcomingProfit = calculateFeeAmount(classWalletBalance, feePercent);
+        BigDecimal teacherUpcomingReceivable = classWalletBalance.subtract(platformUpcomingProfit).max(BigDecimal.ZERO);
+
+        List<WalletTransaction> claimTransactions = walletRepository.findByUser_UserId(classRoom.getTeacher().getUserId())
+                .map(teacherWallet -> walletTransactionRepository.findByWalletAndTypeAndMetadataContainingOrderByCreatedAtDesc(
+                        teacherWallet,
+                        WalletTxType.BOOKING_INCOME,
+                        classRoom.getClassId().toString()
+                ))
+                .orElseGet(ArrayList::new);
+
+        BigDecimal platformReceivedProfit = BigDecimal.ZERO;
+        BigDecimal teacherReceivedAmount = BigDecimal.ZERO;
+        for (WalletTransaction claimTx : claimTransactions) {
+            BigDecimal feeAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "feeAmount");
+            BigDecimal receivableAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "receivableAmount");
+            if (feeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                BigDecimal grossAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "grossAmount");
+                feeAmount = calculateFeeAmount(grossAmount, feePercent);
+            }
+            if (receivableAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                receivableAmount = safeAmount(claimTx.getAmount());
+            }
+
+            platformReceivedProfit = platformReceivedProfit.add(feeAmount);
+            teacherReceivedAmount = teacherReceivedAmount.add(receivableAmount);
+        }
+
+        return ClassWalletFinanceSummaryResponse.builder()
+                .classId(classRoom.getClassId())
+                .classWalletBalance(classWalletBalance)
+                .platformUpcomingProfit(platformUpcomingProfit)
+                .platformReceivedProfit(platformReceivedProfit)
+                .teacherUpcomingReceivable(teacherUpcomingReceivable)
+                .teacherReceivedAmount(teacherReceivedAmount)
+                .feePercent(feePercent)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassWalletTransactionResponse> getClassWalletTransactionsForAdmin(UUID classId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        return buildClassWalletTransactions(classRoom);
+    }
+
+    private List<ClassWalletTransactionResponse> buildClassWalletTransactions(ClassRoom classRoom) {
+        BigDecimal feePercent = getCurrentClassWalletFeePercent();
+
         List<ClassWalletTransactionResponse> transactions = new ArrayList<>();
 
-        List<Enrollment> enrollments = enrollmentRepository.findByClassIdOrderByEnrollmentDateAsc(classId);
+        List<Enrollment> enrollments = enrollmentRepository.findByClassIdOrderByEnrollmentDateAsc(classRoom.getClassId());
         for (Enrollment enrollment : enrollments) {
             BigDecimal amount = enrollment.getPaymentAmount() == null
                     ? BigDecimal.ZERO
                     : enrollment.getPaymentAmount();
+            BigDecimal feeAmount = calculateFeeAmount(amount, feePercent);
+            BigDecimal receivableAmount = amount.subtract(feeAmount).max(BigDecimal.ZERO);
             transactions.add(ClassWalletTransactionResponse.builder()
                     .transactionId(enrollment.getEnrollmentId())
                     .transactionType("CLASS_WALLET_IN")
                     .amount(amount)
+                    .grossAmount(amount)
+                    .feeAmount(feeAmount)
+                    .receivableAmount(receivableAmount)
                     .transactionTime(enrollment.getEnrollmentDate())
                     .studentName(enrollment.getStudent() != null ? enrollment.getStudent().getUserName() : null)
                     .description("Học sinh nhập học - tiền vào ví lớp")
@@ -315,10 +386,27 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                     );
 
             for (WalletTransaction claimTx : claimTransactions) {
+                BigDecimal receivableAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "receivableAmount");
+                BigDecimal grossAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "grossAmount");
+                BigDecimal feeAmount = extractDecimalFromMetadata(claimTx.getMetadata(), "feeAmount");
+
+                if (receivableAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    receivableAmount = safeAmount(claimTx.getAmount());
+                }
+                if (grossAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    grossAmount = receivableAmount;
+                }
+                if (feeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    feeAmount = grossAmount.subtract(receivableAmount).max(BigDecimal.ZERO);
+                }
+
                 transactions.add(ClassWalletTransactionResponse.builder()
                         .transactionId(claimTx.getWalletTransactionId())
                         .transactionType("CLASS_WALLET_OUT")
-                        .amount(claimTx.getAmount() == null ? BigDecimal.ZERO : claimTx.getAmount())
+                        .amount(receivableAmount)
+                        .grossAmount(grossAmount)
+                        .feeAmount(feeAmount)
+                        .receivableAmount(receivableAmount)
                         .transactionTime(claimTx.getCreatedAt())
                         .studentName(null)
                         .description("Giáo viên nhận tiền từ ví lớp")
@@ -332,6 +420,26 @@ public class ClassRoomServiceImpl implements ClassRoomService {
         ));
 
         return transactions;
+    }
+
+    private BigDecimal extractDecimalFromMetadata(String metadata, String key) {
+        if (metadata == null || metadata.isBlank() || key == null || key.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(metadata);
+            if (!root.hasNonNull(key)) {
+                return BigDecimal.ZERO;
+            }
+            return safeAmount(root.get(key).decimalValue());
+        } catch (Exception ex) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private BigDecimal safeAmount(BigDecimal amount) {
+        return amount == null ? BigDecimal.ZERO : amount;
     }
 
     @Override

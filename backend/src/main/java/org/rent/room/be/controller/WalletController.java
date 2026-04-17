@@ -15,6 +15,8 @@ import org.rent.room.be.dto.request.wallet.UpdateWalletFreezeRequest;
 import org.rent.room.be.dto.response.wallet.AdminWalletStatusResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
+import org.rent.room.be.dto.response.wallet.AdminDepositTrendResultResponse;
+import org.rent.room.be.dto.response.wallet.AdminPlatformIncomeTrendResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWithdrawRequestItemResponse;
 import org.rent.room.be.dto.response.wallet.ClassWalletFeeConfigResponse;
@@ -314,6 +316,40 @@ public class WalletController {
                 ApiResponse.<AdminDepositTransactionSummaryResponse>builder()
                         .code(200)
                         .message("Get deposit transaction summary successfully")
+                        .result(result)
+                        .build()
+        );
+    }
+
+    @GetMapping("/admin/deposit-trend")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminDepositTrendResultResponse>> getAdminDepositTrend(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate
+    ) {
+        AdminDepositTrendResultResponse result =
+                walletAdminQueryService.getAdminDepositTrend(fromDate, toDate);
+        return ResponseEntity.ok(
+                ApiResponse.<AdminDepositTrendResultResponse>builder()
+                        .code(200)
+                        .message("Get deposit trend successfully")
+                        .result(result)
+                        .build()
+        );
+    }
+
+    @GetMapping("/admin/income-trend")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminPlatformIncomeTrendResponse>> getAdminPlatformIncomeTrend(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate
+    ) {
+        AdminPlatformIncomeTrendResponse result =
+                walletAdminQueryService.getAdminPlatformIncomeTrend(fromDate, toDate);
+        return ResponseEntity.ok(
+                ApiResponse.<AdminPlatformIncomeTrendResponse>builder()
+                        .code(200)
+                        .message("Get platform income trend successfully")
                         .result(result)
                         .build()
         );

@@ -7,6 +7,7 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.constant.WalletStatus;
 import org.rent.room.be.constant.WalletTxStatus;
 import org.rent.room.be.constant.WalletTxType;
+import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 import org.rent.room.be.entity.Wallet;
@@ -23,10 +24,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -94,6 +95,25 @@ public class WalletAdminQueryServiceImpl implements WalletAdminQueryService {
                 .pageSize(txPage.getSize())
                 .totalElements(txPage.getTotalElements())
                 .data(txPage.getContent().stream().map(this::toAdminTransactionItem).toList())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminDepositTransactionSummaryResponse getAdminDepositTransactionSummary(String fromDate, String toDate) {
+        LocalDateTime from = parseDateOrDefault(fromDate, LocalDate.now().minusMonths(1).atStartOfDay());
+        LocalDateTime to = parseDateOrDefault(toDate, LocalDateTime.now());
+
+        List<Object[]> summaryRows = walletTransactionRepository
+                .summarizeByTypeAndCreatedAtBetween(WalletTxType.DEPOSIT, from, to);
+        Object[] summary = summaryRows.isEmpty() ? new Object[0] : summaryRows.get(0);
+
+        return AdminDepositTransactionSummaryResponse.builder()
+                .totalDeposits(toLong(summary, 0))
+                .completedDeposits(toLong(summary, 1))
+                .failedDeposits(toLong(summary, 2))
+                .pendingDeposits(toLong(summary, 3))
+                .cancelledDeposits(toLong(summary, 4))
                 .build();
     }
 
@@ -227,6 +247,13 @@ public class WalletAdminQueryServiceImpl implements WalletAdminQueryService {
                 return defaultValue;
             }
         }
+    }
+
+    private long toLong(Object[] source, int index) {
+        if (source == null || index >= source.length || source[index] == null) {
+            return 0L;
+        }
+        return ((Number) source[index]).longValue();
     }
 }
 

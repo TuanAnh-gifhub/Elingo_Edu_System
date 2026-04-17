@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   classRoomService,
   type ClassRoomDto,
+  type ClassWalletFinanceSummaryDto,
+  type ClassWalletTransactionDto,
 } from "../../../services/classes/classRoomService";
 import {
   enrollmentService,
@@ -12,12 +14,25 @@ type ErrorWithResponse = { response?: { data?: { message?: string } } };
 
 type StudentsByClassId = Record<string, EnrollmentResponse[]>;
 type StudentsLoadingByClassId = Record<string, boolean>;
+type FinanceByClassId = Record<string, ClassWalletFinanceSummaryDto | null>;
+type FinanceLoadingByClassId = Record<string, boolean>;
+type TransactionsByClassId = Record<string, ClassWalletTransactionDto[]>;
+type TransactionsLoadingByClassId = Record<string, boolean>;
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("vi-VN");
+};
+
+const formatCurrency = (value?: number) => {
+  const amount = Number(value || 0);
+  return amount.toLocaleString("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  });
 };
 
 const AdminClassManagementPage = () => {
@@ -30,6 +45,13 @@ const AdminClassManagementPage = () => {
     useState<StudentsByClassId>({});
   const [studentsLoadingByClassId, setStudentsLoadingByClassId] =
     useState<StudentsLoadingByClassId>({});
+  const [financeByClassId, setFinanceByClassId] = useState<FinanceByClassId>({});
+  const [financeLoadingByClassId, setFinanceLoadingByClassId] =
+    useState<FinanceLoadingByClassId>({});
+  const [transactionsByClassId, setTransactionsByClassId] =
+    useState<TransactionsByClassId>({});
+  const [transactionsLoadingByClassId, setTransactionsLoadingByClassId] =
+    useState<TransactionsLoadingByClassId>({});
   const [openClassId, setOpenClassId] = useState<string | null>(null);
 
   const loadClasses = async () => {
@@ -42,6 +64,9 @@ const AdminClassManagementPage = () => {
       });
       setClasses(response.data || []);
       setOpenClassId(null);
+      setStudentsByClassId({});
+      setFinanceByClassId({});
+      setTransactionsByClassId({});
     } catch (e: unknown) {
       const err = e as ErrorWithResponse;
       setError(err?.response?.data?.message || "Không thể tải danh sách lớp học.");
@@ -88,19 +113,47 @@ const AdminClassManagementPage = () => {
 
     setOpenClassId(classId);
 
-    if (studentsByClassId[classId]) {
-      return;
+    if (!studentsByClassId[classId]) {
+      setStudentsLoadingByClassId((current) => ({ ...current, [classId]: true }));
+      try {
+        const students = await enrollmentService.getEnrollmentsByClassForAdmin(classId);
+        setStudentsByClassId((current) => ({ ...current, [classId]: students }));
+      } catch {
+        setStudentsByClassId((current) => ({ ...current, [classId]: [] }));
+      } finally {
+        setStudentsLoadingByClassId((current) => ({ ...current, [classId]: false }));
+      }
     }
 
-    setStudentsLoadingByClassId((current) => ({ ...current, [classId]: true }));
+    if (!financeByClassId[classId]) {
+      setFinanceLoadingByClassId((current) => ({ ...current, [classId]: true }));
+      try {
+        const finance = await classRoomService.getClassWalletFinanceSummaryForAdmin(classId);
+        setFinanceByClassId((current) => ({ ...current, [classId]: finance }));
+      } catch {
+        setFinanceByClassId((current) => ({ ...current, [classId]: null }));
+      } finally {
+        setFinanceLoadingByClassId((current) => ({ ...current, [classId]: false }));
+      }
+    }
 
-    try {
-      const students = await enrollmentService.getEnrollmentsByClassForAdmin(classId);
-      setStudentsByClassId((current) => ({ ...current, [classId]: students }));
-    } catch {
-      setStudentsByClassId((current) => ({ ...current, [classId]: [] }));
-    } finally {
-      setStudentsLoadingByClassId((current) => ({ ...current, [classId]: false }));
+    if (!transactionsByClassId[classId]) {
+      setTransactionsLoadingByClassId((current) => ({ ...current, [classId]: true }));
+      try {
+        const transactions =
+          await classRoomService.getClassWalletTransactionsForAdmin(classId);
+        setTransactionsByClassId((current) => ({
+          ...current,
+          [classId]: transactions,
+        }));
+      } catch {
+        setTransactionsByClassId((current) => ({ ...current, [classId]: [] }));
+      } finally {
+        setTransactionsLoadingByClassId((current) => ({
+          ...current,
+          [classId]: false,
+        }));
+      }
     }
   };
 
@@ -194,6 +247,11 @@ const AdminClassManagementPage = () => {
               const classId = item.classId;
               const students = studentsByClassId[classId] || [];
               const loadingStudents = studentsLoadingByClassId[classId] || false;
+              const finance = financeByClassId[classId];
+              const loadingFinance = financeLoadingByClassId[classId] || false;
+              const transactions = transactionsByClassId[classId] || [];
+              const loadingTransactions =
+                transactionsLoadingByClassId[classId] || false;
 
               return (
                 <article key={classId} className="rounded-xl border border-slate-200 p-4">
@@ -215,6 +273,55 @@ const AdminClassManagementPage = () => {
                       {openClassId === classId ? "Ẩn học sinh" : "Xem học sinh"}
                     </button>
                   </div>
+
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 text-sm">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                      <div className="text-slate-500 text-xs">Số dư ví lớp</div>
+                      <div className="font-semibold text-slate-900">
+                        {loadingFinance
+                          ? "Đang tải..."
+                          : formatCurrency(finance?.classWalletBalance)}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
+                      <div className="text-amber-700 text-xs">Lợi nhuận nền tảng sắp thu</div>
+                      <div className="font-semibold text-amber-800">
+                        {loadingFinance
+                          ? "Đang tải..."
+                          : formatCurrency(finance?.platformUpcomingProfit)}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
+                      <div className="text-amber-700 text-xs">Lợi nhuận nền tảng đã thu</div>
+                      <div className="font-semibold text-amber-800">
+                        {loadingFinance
+                          ? "Đang tải..."
+                          : formatCurrency(finance?.platformReceivedProfit)}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                      <div className="text-emerald-700 text-xs">Giáo viên sắp nhận</div>
+                      <div className="font-semibold text-emerald-800">
+                        {loadingFinance
+                          ? "Đang tải..."
+                          : formatCurrency(finance?.teacherUpcomingReceivable)}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                      <div className="text-emerald-700 text-xs">Giáo viên đã nhận</div>
+                      <div className="font-semibold text-emerald-800">
+                        {loadingFinance
+                          ? "Đang tải..."
+                          : formatCurrency(finance?.teacherReceivedAmount)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {!loadingFinance && finance ? (
+                    <div className="mt-2 text-xs text-slate-500">
+                      Tỉ lệ phí hiện tại: {finance.feePercent ?? 0}%
+                    </div>
+                  ) : null}
 
                   {openClassId === classId ? (
                     <div className="mt-3 border-t border-slate-100 pt-3">
@@ -239,6 +346,68 @@ const AdminClassManagementPage = () => {
                           ))}
                         </div>
                       ) : null}
+
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-slate-900 mb-2">
+                          Lịch sử giao dịch ví lớp
+                        </h4>
+
+                        {loadingTransactions ? (
+                          <p className="text-sm text-slate-500">Đang tải lịch sử giao dịch...</p>
+                        ) : null}
+
+                        {!loadingTransactions && transactions.length === 0 ? (
+                          <p className="text-sm text-slate-500">Chưa có giao dịch ví lớp.</p>
+                        ) : null}
+
+                        {!loadingTransactions && transactions.length > 0 ? (
+                          <div className="overflow-x-auto rounded-lg border border-slate-200">
+                            <table className="min-w-full text-sm">
+                              <thead className="bg-slate-50 text-slate-600">
+                                <tr>
+                                  <th className="px-3 py-2 text-left">Thời gian</th>
+                                  <th className="px-3 py-2 text-left">Loại</th>
+                                  <th className="px-3 py-2 text-left">Số tiền</th>
+                                  <th className="px-3 py-2 text-left">Phí</th>
+                                  <th className="px-3 py-2 text-left">Giáo viên nhận</th>
+                                  <th className="px-3 py-2 text-left">Mô tả</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {transactions.map((transaction) => (
+                                  <tr
+                                    key={transaction.transactionId}
+                                    className="border-t border-slate-100"
+                                  >
+                                    <td className="px-3 py-2 text-slate-600">
+                                      {formatDateTime(transaction.transactionTime)}
+                                    </td>
+                                    <td className="px-3 py-2 font-medium text-slate-800">
+                                      {transaction.transactionType === "CLASS_WALLET_IN"
+                                        ? "Nạp vào ví lớp"
+                                        : "Rút từ ví lớp"}
+                                    </td>
+                                    <td className="px-3 py-2 text-slate-700">
+                                      {formatCurrency(transaction.grossAmount ?? transaction.amount)}
+                                    </td>
+                                    <td className="px-3 py-2 text-amber-700">
+                                      {formatCurrency(transaction.feeAmount)}
+                                    </td>
+                                    <td className="px-3 py-2 text-emerald-700">
+                                      {formatCurrency(
+                                        transaction.receivableAmount ?? transaction.amount,
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2 text-slate-600">
+                                      {transaction.description || "-"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   ) : null}
                 </article>

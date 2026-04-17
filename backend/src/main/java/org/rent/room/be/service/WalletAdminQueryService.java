@@ -2,6 +2,8 @@ package org.rent.room.be.service;
 
 import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
+import org.rent.room.be.dto.response.wallet.AdminDepositTrendResultResponse;
+import org.rent.room.be.dto.response.wallet.AdminPlatformIncomeTrendResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 
@@ -24,5 +26,9 @@ public interface WalletAdminQueryService {
     );
 
     AdminDepositTransactionSummaryResponse getAdminDepositTransactionSummary(String fromDate, String toDate);
+
+    AdminDepositTrendResultResponse getAdminDepositTrend(String fromDate, String toDate);
+
+    AdminPlatformIncomeTrendResponse getAdminPlatformIncomeTrend(String fromDate, String toDate);
 }
 

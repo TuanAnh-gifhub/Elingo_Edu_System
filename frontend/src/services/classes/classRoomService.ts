@@ -49,9 +49,22 @@ export interface ClassWalletTransactionDto {
   transactionId: string;
   transactionType: "CLASS_WALLET_IN" | "CLASS_WALLET_OUT" | string;
   amount: number;
+  grossAmount?: number;
+  feeAmount?: number;
+  receivableAmount?: number;
   transactionTime?: string;
   studentName?: string;
   description?: string;
+}
+
+export interface ClassWalletFinanceSummaryDto {
+  classId: string;
+  classWalletBalance: number;
+  platformUpcomingProfit: number;
+  platformReceivedProfit: number;
+  teacherUpcomingReceivable: number;
+  teacherReceivedAmount: number;
+  feePercent?: number;
 }
 
 export interface CreateClassRoomRequest {
@@ -176,6 +189,20 @@ export const classRoomService = {
     classId: string,
   ): Promise<ClassWalletTransactionDto[]> {
     const res = await api.get(`/classes/${classId}/wallet/transactions`);
+    return (res.data.result || []) as ClassWalletTransactionDto[];
+  },
+
+  async getClassWalletFinanceSummaryForAdmin(
+    classId: string,
+  ): Promise<ClassWalletFinanceSummaryDto> {
+    const res = await api.get(`/classes/${classId}/admin/wallet/finance-summary`);
+    return res.data.result as ClassWalletFinanceSummaryDto;
+  },
+
+  async getClassWalletTransactionsForAdmin(
+    classId: string,
+  ): Promise<ClassWalletTransactionDto[]> {
+    const res = await api.get(`/classes/${classId}/admin/wallet/transactions`);
     return (res.data.result || []) as ClassWalletTransactionDto[];
   },
 

@@ -21,4 +21,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> 
     );
 
     List<QuizAttempt> findByStudent_UserIdAndQuiz_QuizIdIn(UUID studentId, Collection<UUID> quizIds);
+
+    List<QuizAttempt> findByQuiz_QuizIdInAndStudent_UserIdInOrderBySubmittedAtAsc(
+            Collection<UUID> quizIds,
+            Collection<UUID> studentIds
+    );
 }

@@ -24,6 +24,10 @@ import {
 import {
   enrollmentService,
   type EnrollmentResponse,
+  type QuizScoreAttemptRule,
+  type QuizScoreColumn,
+  type StudentQuizScoreRow,
+  type UpdateQuizScoreColumnRequest,
 } from "../../../services/classes/enrollmentService";
 import {
   courseService,
@@ -509,6 +513,15 @@ const TeacherClassManagePage = () => {
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [quizzes, setQuizzes] = useState<QuizDto[]>([]);
   const [classEnrollments, setClassEnrollments] = useState<EnrollmentResponse[]>([]);
+  const [scoreColumns, setScoreColumns] = useState<QuizScoreColumn[]>([]);
+  const [studentScoreRows, setStudentScoreRows] = useState<StudentQuizScoreRow[]>([]);
+  const [loadingScoreMatrix, setLoadingScoreMatrix] = useState(true);
+  const [savingScoreColumns, setSavingScoreColumns] = useState(false);
+  const [newScoreQuizId, setNewScoreQuizId] = useState("");
+  const [newScoreColumnName, setNewScoreColumnName] = useState("");
+  const [newScoreAttemptRule, setNewScoreAttemptRule] =
+    useState<QuizScoreAttemptRule>("LATEST");
+  const [newScoreAttemptNumber, setNewScoreAttemptNumber] = useState(1);
   const [showEditClassForm, setShowEditClassForm] = useState(false);
   const [editClassForm, setEditClassForm] = useState<EditClassForm>(
     INITIAL_EDIT_CLASS_FORM,
@@ -755,6 +768,28 @@ const TeacherClassManagePage = () => {
     loadStudents();
   }, [classId]);
 
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    const loadScoreMatrix = async () => {
+      try {
+        setLoadingScoreMatrix(true);
+        const matrix = await enrollmentService.getClassQuizScoreMatrix(classId);
+        setScoreColumns(matrix.columns || []);
+        setStudentScoreRows(matrix.rows || []);
+      } catch {
+        setScoreColumns([]);
+        setStudentScoreRows([]);
+      } finally {
+        setLoadingScoreMatrix(false);
+      }
+    };
+
+    void loadScoreMatrix();
+  }, [classId]);
+
   const rating = useMemo(() => {
     if (!classInfo) {
       return 0;
@@ -766,6 +801,97 @@ const TeacherClassManagePage = () => {
   const registeredStudents = useMemo(() => {
     return classEnrollments;
   }, [classEnrollments]);
+
+  const quizzesOfClass = useMemo(() => {
+    const lessonIds = new Set(courses.map((course) => course.courseId));
+    return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
+  }, [courses, quizzes]);
+
+  useEffect(() => {
+    if (!newScoreQuizId && quizzesOfClass.length > 0) {
+      setNewScoreQuizId(quizzesOfClass[0].quizId);
+    }
+  }, [newScoreQuizId, quizzesOfClass]);
+
+  const studentScoreRowByStudentId = useMemo(() => {
+    const map = new Map<string, StudentQuizScoreRow>();
+    studentScoreRows.forEach((row) => {
+      if (row.studentId) {
+        map.set(row.studentId, row);
+      }
+    });
+    return map;
+  }, [studentScoreRows]);
+
+  const saveScoreColumns = async (columns: UpdateQuizScoreColumnRequest[]) => {
+    if (!classId) {
+      return;
+    }
+
+    try {
+      setSavingScoreColumns(true);
+      const matrix = await enrollmentService.updateClassQuizScoreColumns(classId, columns);
+      setScoreColumns(matrix.columns || []);
+      setStudentScoreRows(matrix.rows || []);
+      toast.success("Đã cập nhật cột điểm quiz.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật cột điểm quiz.";
+      toast.error(message);
+    } finally {
+      setSavingScoreColumns(false);
+    }
+  };
+
+  const handleAddScoreColumn = async () => {
+    if (!newScoreQuizId) {
+      toast.error("Vui lòng chọn quiz để thêm cột điểm.");
+      return;
+    }
+
+    if (newScoreAttemptRule === "ATTEMPT_NUMBER" && newScoreAttemptNumber < 1) {
+      toast.error("Lần làm phải lớn hơn hoặc bằng 1.");
+      return;
+    }
+
+    const nextColumns: UpdateQuizScoreColumnRequest[] = [
+      ...scoreColumns.map((column) => ({
+        columnId: column.columnId,
+        quizId: column.quizId,
+        columnName: column.columnName,
+        attemptRule: column.attemptRule,
+        attemptNumber: column.attemptNumber,
+      })),
+      {
+        quizId: newScoreQuizId,
+        columnName: newScoreColumnName.trim() || undefined,
+        attemptRule: newScoreAttemptRule,
+        attemptNumber:
+          newScoreAttemptRule === "ATTEMPT_NUMBER" ? newScoreAttemptNumber : undefined,
+      },
+    ];
+
+    await saveScoreColumns(nextColumns);
+    setNewScoreColumnName("");
+    setNewScoreAttemptRule("LATEST");
+    setNewScoreAttemptNumber(1);
+  };
+
+  const handleRemoveScoreColumn = async (columnId: string) => {
+    const nextColumns: UpdateQuizScoreColumnRequest[] = scoreColumns
+      .filter((column) => column.columnId !== columnId)
+      .map((column) => ({
+        columnId: column.columnId,
+        quizId: column.quizId,
+        columnName: column.columnName,
+        attemptRule: column.attemptRule,
+        attemptNumber: column.attemptNumber,
+      }));
+
+    await saveScoreColumns(nextColumns);
+  };
 
   const feedbackList = useMemo<ClassroomFeedback[]>(() => {
     if (!classInfo) {
@@ -795,11 +921,6 @@ const TeacherClassManagePage = () => {
       };
     });
   }, [classInfo, registeredStudents]);
-
-  const quizzesOfClass = useMemo(() => {
-    const lessonIds = new Set(courses.map((course) => course.courseId));
-    return quizzes.filter((quiz) => lessonIds.has(quiz.courseId));
-  }, [courses, quizzes]);
 
   const handleStartOnlineClass = async () => {
     if (!classId) {
@@ -2812,10 +2933,100 @@ const TeacherClassManagePage = () => {
           <h2 className="text-lg font-semibold text-slate-900">
             Học sinh đã đăng ký
           </h2>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-semibold text-slate-800">Cột điểm quiz tuỳ chỉnh</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Giáo viên chọn quiz và lần làm để thêm cột điểm vào bảng học sinh.
+            </p>
+
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+              <select
+                value={newScoreQuizId}
+                onChange={(event) => setNewScoreQuizId(event.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                {quizzesOfClass.length === 0 ? (
+                  <option value="">Chưa có quiz</option>
+                ) : null}
+                {quizzesOfClass.map((quiz) => (
+                  <option key={quiz.quizId} value={quiz.quizId}>
+                    {quiz.title}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={newScoreAttemptRule}
+                onChange={(event) =>
+                  setNewScoreAttemptRule(event.target.value as QuizScoreAttemptRule)
+                }
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="LATEST">Lần gần nhất</option>
+                <option value="HIGHEST">Điểm cao nhất</option>
+                <option value="ATTEMPT_NUMBER">Lần làm cụ thể</option>
+              </select>
+
+              <input
+                type="number"
+                min={1}
+                value={newScoreAttemptNumber}
+                onChange={(event) =>
+                  setNewScoreAttemptNumber(Number(event.target.value) || 1)
+                }
+                disabled={newScoreAttemptRule !== "ATTEMPT_NUMBER"}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"
+                placeholder="Lần làm"
+              />
+
+              <input
+                type="text"
+                value={newScoreColumnName}
+                onChange={(event) => setNewScoreColumnName(event.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="Tên cột (tuỳ chọn)"
+              />
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddScoreColumn}
+                disabled={savingScoreColumns || quizzesOfClass.length === 0}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {savingScoreColumns ? "Đang lưu..." : "Thêm cột điểm"}
+              </button>
+            </div>
+
+            {scoreColumns.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {scoreColumns.map((column) => (
+                  <div
+                    key={column.columnId}
+                    className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs"
+                  >
+                    <span className="font-semibold text-cyan-800">{column.columnName}</span>
+                    <button
+                      type="button"
+                      onClick={() => void handleRemoveScoreColumn(column.columnId)}
+                      disabled={savingScoreColumns}
+                      className="text-rose-600 hover:underline disabled:opacity-60"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
           {loadingStudents ? (
             <p className="text-slate-500 mt-3">
               Đang tải danh sách học sinh...
             </p>
+          ) : loadingScoreMatrix ? (
+            <p className="text-slate-500 mt-3">Đang tải bảng điểm quiz...</p>
           ) : registeredStudents.length === 0 ? (
             <p className="text-slate-500 mt-3">
               Hiện chưa có học sinh đăng ký.
@@ -2828,6 +3039,11 @@ const TeacherClassManagePage = () => {
                     <th className="pb-2">STT</th>
                     <th className="pb-2">Tên học sinh</th>
                     <th className="pb-2">Thời gian nhập học</th>
+                    {scoreColumns.map((column) => (
+                      <th key={column.columnId} className="pb-2">
+                        {column.columnName}
+                      </th>
+                    ))}
                     <th className="pb-2">Trạng thái</th>
                   </tr>
                 </thead>
@@ -2850,6 +3066,19 @@ const TeacherClassManagePage = () => {
                             ? new Date(enrollment.createdAt).toLocaleString("vi-VN")
                             : "-"}
                       </td>
+                      {scoreColumns.map((column) => {
+                        const scoreRow = studentScoreRowByStudentId.get(
+                          enrollment.studentId,
+                        );
+                        const scoreValue = scoreRow?.quizScores?.[column.columnId];
+                        return (
+                          <td key={column.columnId} className="py-3 pr-2 text-slate-700">
+                            {typeof scoreValue === "number"
+                              ? Number(scoreValue).toFixed(2)
+                              : "-"}
+                          </td>
+                        );
+                      })}
                       <td className="py-3">
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
                           Đang học

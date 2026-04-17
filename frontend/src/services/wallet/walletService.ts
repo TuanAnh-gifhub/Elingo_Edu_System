@@ -187,6 +187,38 @@ export type AdminDepositTransactionSummaryResponse = {
   cancelledDeposits: number;
 };
 
+export type AdminPlatformIncomeBucketResponse = {
+  period: string;
+  subscriptionIncome: number;
+  commissionIncome: number;
+  totalIncome: number;
+};
+
+export type AdminPlatformIncomeTrendResponse = {
+  fromDate: string;
+  toDate: string;
+  totalSubscriptionIncome: number;
+  totalCommissionIncome: number;
+  totalIncome: number;
+  daily: AdminPlatformIncomeBucketResponse[];
+  monthly: AdminPlatformIncomeBucketResponse[];
+};
+
+export type AdminDepositTrendBucketResponse = {
+  period: string;
+  totalAmount: number;
+  depositingUsers: number;
+};
+
+export type AdminDepositTrendResultResponse = {
+  fromDate: string;
+  toDate: string;
+  totalAmount: number;
+  totalDepositingUsers: number;
+  daily: AdminDepositTrendBucketResponse[];
+  monthly: AdminDepositTrendBucketResponse[];
+};
+
 export type UpsertCommissionConfigPayload = {
   rate: number;
   note?: string;
@@ -367,6 +399,18 @@ export const walletService = {
   getAdminDepositTransactionSummary: (params?: { fromDate?: string; toDate?: string }) =>
     api.get<ApiResponse<AdminDepositTransactionSummaryResponse>>(
       "/wallet/admin/transactions/deposit-summary",
+      { params },
+    ),
+
+  getAdminPlatformIncomeTrend: (params?: { fromDate?: string; toDate?: string }) =>
+    api.get<ApiResponse<AdminPlatformIncomeTrendResponse>>(
+      "/wallet/admin/income-trend",
+      { params },
+    ),
+
+  getAdminDepositTrend: (params?: { fromDate?: string; toDate?: string }) =>
+    api.get<ApiResponse<AdminDepositTrendResultResponse>>(
+      "/wallet/admin/deposit-trend",
       { params },
     ),
 

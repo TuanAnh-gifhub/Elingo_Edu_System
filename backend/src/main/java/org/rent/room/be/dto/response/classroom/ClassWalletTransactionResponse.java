@@ -18,6 +18,9 @@ public class ClassWalletTransactionResponse {
     UUID transactionId;
     String transactionType;
     BigDecimal amount;
+    BigDecimal grossAmount;
+    BigDecimal feeAmount;
+    BigDecimal receivableAmount;
     LocalDateTime transactionTime;
     String studentName;
     String description;

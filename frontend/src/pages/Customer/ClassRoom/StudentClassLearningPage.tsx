@@ -34,11 +34,20 @@ import {
 import { reviewService, type ReviewSummaryDto } from "../../../services/reviews/reviewService";
 import { enrollmentService } from "../../../services/classes/enrollmentService";
 import type { EnrollmentResponse } from "../../../services/classes/enrollmentService";
+import {
+  classAiService,
+  type ClassAiHistoryMessageResponse,
+} from "../../../services/classes/classAiService";
 import RichTextContent from "../../../components/common/RichTextContent";
 import { createJitsiRoom, type JitsiApi } from "../../../utils/jitsiHelper";
 import websocketService from "../../../services/chats/websocketService";
 
-type StudentTab = "overview" | "courses" | "quizzes" | "students" | "online";
+type StudentTab = "overview" | "courses" | "quizzes" | "students" | "online" | "ai";
+
+interface AiChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
 
 interface QuizStatusEvent {
   classId: string;
@@ -54,6 +63,9 @@ interface ClassLiveStatusEvent {
   classId: string;
   onlineOpen: boolean;
 }
+
+const DEFAULT_AI_MESSAGE =
+  "Chào bạn, tôi là AI trợ giảng của lớp học này. Bạn có thể hỏi về chủ đề lớp, bài học, tài liệu và quiz đã làm.";
 
 const getExtension = (fileName: string): string => {
   const dotIndex = fileName.lastIndexOf(".");
@@ -241,8 +253,18 @@ const StudentClassLearningPage = () => {
   const [loadingRecordings, setLoadingRecordings] = useState(false);
   const [recordingSearch, setRecordingSearch] = useState("");
   const [onlineClassAccess, setOnlineClassAccess] = useState<OnlineClassAccessDto | null>(null);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([
+    {
+      role: "assistant",
+      content: DEFAULT_AI_MESSAGE,
+    },
+  ]);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<JitsiApi | null>(null);
+  const aiChatScrollRef = useRef<HTMLDivElement | null>(null);
+  const aiMessageEndRef = useRef<HTMLDivElement | null>(null);
 
   const loadRecordings = useCallback(async () => {
     if (!classId || !canUseMeetingRecording) {
@@ -426,6 +448,50 @@ const StudentClassLearningPage = () => {
     void loadReviewSummary();
   }, [classId]);
 
+  useEffect(() => {
+    if (!classId || !classInfo) {
+      return;
+    }
+
+    const mapHistoryMessage = (
+      item: ClassAiHistoryMessageResponse,
+    ): AiChatMessage | null => {
+      if (item.role !== "user" && item.role !== "assistant") {
+        return null;
+      }
+
+      const content = (item.content || "").trim();
+      if (!content) {
+        return null;
+      }
+
+      return {
+        role: item.role,
+        content,
+      };
+    };
+
+    const loadAiHistory = async () => {
+      try {
+        const history = await classAiService.getHistory(classId);
+        const normalized = history
+          .map(mapHistoryMessage)
+          .filter((item): item is AiChatMessage => item !== null);
+
+        if (normalized.length > 0) {
+          setAiMessages(normalized);
+          return;
+        }
+
+        setAiMessages([{ role: "assistant", content: DEFAULT_AI_MESSAGE }]);
+      } catch {
+        setAiMessages([{ role: "assistant", content: DEFAULT_AI_MESSAGE }]);
+      }
+    };
+
+    void loadAiHistory();
+  }, [classId, classInfo]);
+
   const quizzesOfClass = useMemo(() => {
     const courseIds = new Set(courses.map((course) => course.courseId));
     return quizzes.filter((quiz) => courseIds.has(quiz.courseId));
@@ -603,50 +669,93 @@ const StudentClassLearningPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (!showOnlineClassModal || !onlineClassAccess || !jitsiContainerRef.current) {
+  const handleSendAiMessage = async () => {
+    const message = aiInput.trim();
+    if (!message || !classId || aiLoading) {
       return;
     }
 
-    const mountJitsi = async () => {
-      try {
-        jitsiApiRef.current = await createJitsiRoom({
-          roomName: onlineClassAccess.roomName,
-          roomPassword: onlineClassAccess.roomPassword,
-          jwt: onlineClassAccess.jwt,
-          parentNode: jitsiContainerRef.current as HTMLElement,
-          isModerator: false,
-          canUseRecording: canUseMeetingRecording,
-          onRecordingEvent: (status) => {
-            if (status === "ready" || status === "processing") {
-              void loadRecordings();
-            }
-          },
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Không thể mở lớp học trực tuyến.";
-        toast.error(message);
-        setShowOnlineClassModal(false);
-      } finally {
-        setOpeningOnlineClass(false);
-      }
-    };
+    setAiMessages((prev) => [...prev, { role: "user", content: message }]);
+    setAiInput("");
 
-    mountJitsi();
+    try {
+      setAiLoading(true);
+      const response = await classAiService.chat(classId, message);
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            response.answer ||
+            "Tôi chỉ có thể trả lời những nội dung liên quan đến chủ đề lớp học này.",
+        },
+      ]);
+    } catch (error) {
+      const messageError =
+        error instanceof Error
+          ? error.message
+          : "AI local đang tạm thời không khả dụng. Bạn thử lại sau.";
+      setAiMessages((prev) => [...prev, { role: "assistant", content: messageError }]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
-    return () => {
-      if (jitsiApiRef.current?.dispose) {
-        jitsiApiRef.current.dispose();
-      }
-      jitsiApiRef.current = null;
-      if (jitsiContainerRef.current) {
-        jitsiContainerRef.current.innerHTML = "";
-      }
-    };
+  useEffect(() => {
+    if (showOnlineClassModal && onlineClassAccess && jitsiContainerRef.current) {
+      const mountJitsi = async () => {
+        try {
+          jitsiApiRef.current = await createJitsiRoom({
+            roomName: onlineClassAccess.roomName,
+            roomPassword: onlineClassAccess.roomPassword,
+            jwt: onlineClassAccess.jwt,
+            parentNode: jitsiContainerRef.current as HTMLElement,
+            isModerator: false,
+            canUseRecording: canUseMeetingRecording,
+            onRecordingEvent: (status) => {
+              if (status === "ready" || status === "processing") {
+                void loadRecordings();
+              }
+            },
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Không thể mở lớp học trực tuyến.";
+          toast.error(message);
+          setShowOnlineClassModal(false);
+        } finally {
+          setOpeningOnlineClass(false);
+        }
+      };
+
+      mountJitsi();
+
+      return () => {
+        if (jitsiApiRef.current?.dispose) {
+          jitsiApiRef.current.dispose();
+        }
+        jitsiApiRef.current = null;
+        if (jitsiContainerRef.current) {
+          jitsiContainerRef.current.innerHTML = "";
+        }
+      };
+    }
   }, [showOnlineClassModal, onlineClassAccess, canUseMeetingRecording, loadRecordings]);
+
+  useEffect(() => {
+    if (activeTab !== "ai") {
+      return;
+    }
+
+    const scrollToBottom = () => {
+      aiMessageEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    };
+
+    const frame = window.requestAnimationFrame(scrollToBottom);
+    return () => window.cancelAnimationFrame(frame);
+  }, [aiMessages, aiLoading, activeTab]);
 
   if (!classId) {
     return <div className="max-w-6xl mx-auto p-6">Thiếu classId trên URL.</div>;
@@ -709,6 +818,7 @@ const StudentClassLearningPage = () => {
           { key: "quizzes", label: "Quiz" },
           { key: "students", label: "Học sinh" },
           { key: "online", label: "Lớp trực tuyến" },
+          { key: "ai", label: "AI trợ giảng" },
         ].map((item) => (
           <button
             key={item.key}
@@ -1079,6 +1189,88 @@ const StudentClassLearningPage = () => {
                 ? "Tham gia lớp học trực tuyến"
                 : "Giáo viên chưa mở lớp"}
           </button>
+        </section>
+      ) : null}
+
+      {activeTab === "ai" ? (
+        <section className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50/70 via-white to-cyan-50/70 p-5 md:p-6 shadow-sm space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">AI trợ giảng</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                AI chỉ trả lời các câu hỏi liên quan đến lớp học, bài học, tài liệu và quiz đã học.
+              </p>
+            </div>
+            <span className="inline-flex w-fit items-center rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+              Hỗ trợ 24/7
+            </span>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/90 p-3 md:p-4 shadow-inner">
+            <div
+              ref={aiChatScrollRef}
+              className="h-[430px] overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/80 p-3 md:p-4 space-y-3"
+            >
+              {aiMessages.map((item, index) => (
+                <div
+                  key={`${item.role}-${index}`}
+                  className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`max-w-[88%] md:max-w-[78%] space-y-1 ${item.role === "user" ? "items-end" : "items-start"}`}>
+                    <p className={`text-[11px] font-semibold ${item.role === "user" ? "text-blue-600 text-right" : "text-slate-500"}`}>
+                      {item.role === "user" ? "Bạn" : "AI trợ giảng"}
+                    </p>
+                    <div
+                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                        item.role === "user"
+                          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
+                          : "border border-slate-200 bg-white text-slate-700"
+                      }`}
+                    >
+                      {item.content}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {aiLoading ? (
+                <div className="flex justify-start">
+                  <div className="max-w-[88%] md:max-w-[78%] space-y-1">
+                    <p className="text-[11px] font-semibold text-slate-500">AI trợ giảng</p>
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 shadow-sm">
+                      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-cyan-500" />
+                      <span>AI đang suy nghĩ...</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <div ref={aiMessageEndRef} />
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <textarea
+                 value={aiInput}
+                 onChange={(event) => setAiInput(event.target.value)}
+                 onKeyDown={(event) => {
+                   if (event.key === "Enter" && !event.shiftKey) {
+                     event.preventDefault();
+                     void handleSendAiMessage();
+                   }
+                 }}
+                 placeholder="Nhập câu hỏi liên quan đến bài học..."
+                 rows={2}
+                 className="flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+               />
+              <button
+                type="button"
+                onClick={() => void handleSendAiMessage()}
+                disabled={aiLoading || !aiInput.trim()}
+                className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Gửi
+              </button>
+            </div>
+          </div>
         </section>
       ) : null}
 

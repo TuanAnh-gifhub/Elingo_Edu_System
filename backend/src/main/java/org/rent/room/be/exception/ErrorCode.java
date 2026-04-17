@@ -35,6 +35,8 @@ public enum ErrorCode {
     CLASS_ONLINE_NOT_OPEN(4009, "Lớp học trực tuyến chưa được giáo viên mở", HttpStatus.FORBIDDEN),
     CLASS_WALLET_EMPTY(4010, "Ví lớp hiện không có tiền để nhận", HttpStatus.BAD_REQUEST),
     CLASS_WALLET_CLAIM_NOT_AVAILABLE(4011, "Chỉ nhận tiền sau khi lớp học đã kết thúc", HttpStatus.BAD_REQUEST),
+    CLASS_AI_ACCESS_DENIED(4012, "Bạn không có quyền dùng AI trợ giảng của lớp này", HttpStatus.FORBIDDEN),
+    CLASS_AI_UNAVAILABLE(4013, "AI trợ giảng hiện tạm thời không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),

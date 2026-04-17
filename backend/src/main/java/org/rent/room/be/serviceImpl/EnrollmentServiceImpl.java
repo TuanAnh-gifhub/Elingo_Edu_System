@@ -45,7 +45,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Transactional
     public EnrollmentResponse createEnrollment(CreateEnrollmentRequest request) {
         User student = userService.getCurrentUserEntity();
-        if (!isStudent(student)) {
+        if (!isLearner(student)) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
@@ -162,10 +162,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
         if ("TEACHER".equalsIgnoreCase(roleName)) {
-            if (classRoom.getTeacher() == null
-                    || classRoom.getTeacher().getUserId() == null
-                    || !classRoom.getTeacher().getUserId().equals(currentUser.getUserId())) {
-                throw new AppException(ErrorCode.FORBIDDEN);
+            boolean isOwner = classRoom.getTeacher() != null
+                    && classRoom.getTeacher().getUserId() != null
+                    && classRoom.getTeacher().getUserId().equals(currentUser.getUserId());
+            if (!isOwner) {
+                boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
+                        currentUser.getUserId(),
+                        classId
+                );
+                if (!enrolled) {
+                    throw new AppException(ErrorCode.FORBIDDEN);
+                }
             }
         } else if ("STUDENT".equalsIgnoreCase(roleName)) {
             boolean enrolled = enrollmentRepository.existsByStudent_UserIdAndEnrolledClass_ClassId(
@@ -184,9 +191,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         );
     }
 
-    private boolean isStudent(User user) {
+    private boolean isLearner(User user) {
+        if (user.getRole() == null || user.getRole().getRoleName() == null) {
+            return false;
+        }
+
+        String roleName = user.getRole().getRoleName();
         return user.getRole() != null
-                && user.getRole().getRoleName() != null
-                && "STUDENT".equalsIgnoreCase(user.getRole().getRoleName());
+                && ("STUDENT".equalsIgnoreCase(roleName) || "TEACHER".equalsIgnoreCase(roleName));
     }
 }

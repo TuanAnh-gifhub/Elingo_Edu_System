@@ -28,7 +28,7 @@ import java.util.UUID;
 public class ClassAiController {
     ClassAiServiceImpl classAiService;
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
     @GetMapping("/{classId}/ai/history")
     public ResponseEntity<ApiResponse<List<ClassAiHistoryMessageResponse>>> history(@PathVariable UUID classId) {
         UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
@@ -42,7 +42,7 @@ public class ClassAiController {
         );
     }
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
     @PostMapping("/{classId}/ai/chat")
     public ResponseEntity<ApiResponse<ClassAiChatResponse>> chat(
             @PathVariable UUID classId,

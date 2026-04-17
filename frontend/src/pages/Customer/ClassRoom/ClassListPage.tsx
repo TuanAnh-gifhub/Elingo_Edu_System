@@ -288,7 +288,7 @@ const ClassListPage = () => {
   }, [createScheduleDays, createScheduleStartTime, createScheduleEndTime]);
 
   useEffect(() => {
-    if (isTeacher || !user?.userId) {
+    if (!user?.userId) {
       setEnrolledClassIds([]);
       return;
     }
@@ -303,7 +303,7 @@ const ClassListPage = () => {
     };
 
     loadMyEnrollments();
-  }, [isTeacher, user?.userId]);
+  }, [user?.userId]);
 
   const loadClasses = useCallback(
     async (

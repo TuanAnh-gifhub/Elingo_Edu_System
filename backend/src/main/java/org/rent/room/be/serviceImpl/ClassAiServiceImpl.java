@@ -84,7 +84,7 @@ public class ClassAiServiceImpl implements ClassAiService {
     private final OllamaProperties ollamaProperties;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ClassAiChatResponse chatWithClassAssistant(UUID classId, UUID studentId, String message) {
         ClassRoom classRoom = loadAuthorizedClassRoom(classId, studentId);
         User student = userRepository.findById(studentId)

@@ -226,8 +226,7 @@ export const classRoomService = {
     return Boolean(res.data.result);
   },
 
-  async deleteClass(classId: string): Promise<string> {
-    const res = await api.delete(`/classes/${classId}`);
-    return res.data.result as string;
+  async deleteClass(classId: string): Promise<void> {
+    await api.delete(`/classes/${classId}`);
   },
 };

@@ -2,17 +2,20 @@ package org.rent.room.be.serviceImpl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.rent.room.be.constant.ConversationType;
 import org.rent.room.be.constant.MessageStatus;
 import org.rent.room.be.dto.request.chat.MessageRequest;
 import org.rent.room.be.dto.response.chat.ConversationResponse;
 import org.rent.room.be.dto.response.chat.MessageResponse;
 import org.rent.room.be.dto.response.chat.ReadReceiptResponse;
+import org.rent.room.be.entity.ClassRoom;
 import org.rent.room.be.entity.Conversation;
 import org.rent.room.be.entity.Message;
 import org.rent.room.be.entity.User;
 import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.mapper.ChatMapper;
+import org.rent.room.be.repository.ClassRoomRepository;
 import org.rent.room.be.repository.ConversationRepository;
 import org.rent.room.be.repository.MessageRepository;
 import org.rent.room.be.service.ChatService;
@@ -24,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +40,7 @@ public class ChatServiceImpl implements ChatService {
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
+    private final ClassRoomRepository classRoomRepository;
     private final ChatMapper chatMapper;
     private final UserService userService;
     private final UploadService uploadService;
@@ -43,24 +48,17 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     @Override
     public void saveMessage(MessageRequest request, UUID currentUserId) {
-        if (currentUserId.equals(request.getRecipientId())) {
-            throw new RuntimeException("Cannot send message to yourself");
+        User sender = userService.findByUserId(currentUserId);
+        Conversation conversation = resolveConversationForSending(request, sender);
+
+        if (conversation.getConversationType() == ConversationType.CLASS_GROUP) {
+            Message saved = buildAndSaveMessage(request.getContent(), null, sender, null, conversation);
+            broadcastMessageToConversation(chatMapper.toMessageResponse(saved), conversation);
+            return;
         }
 
-        User sender = userService.findByUserId(currentUserId);
-        User recipient = userService.findByUserId(request.getRecipientId());
-        Conversation conversation = getOrCreateConversation(sender, recipient);
-
-        Message newMessage = Message.builder()
-                .messageBody(request.getContent())
-                .sender(sender)
-                .recipient(recipient)
-                .conversation(conversation)
-                .status(MessageStatus.SENT)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        Message saved = messageRepository.save(newMessage);
+        User recipient = resolveDirectRecipient(request, sender, conversation);
+        Message saved = buildAndSaveMessage(request.getContent(), null, sender, recipient, conversation);
         broadcastMessage(chatMapper.toMessageResponse(saved), sender.getEmail(), recipient.getEmail());
     }
 
@@ -74,10 +72,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<MessageResponse> getMessagesByConversation(UUID conversationId) {
-        if (!conversationRepository.existsById(conversationId)) {
-            throw new RuntimeException("Conversation not found");
-        }
+    public List<MessageResponse> getMessagesByConversation(UUID conversationId, UUID currentUserId) {
+        conversationRepository.findByConversationIdAndParticipant(conversationId, currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
 
         return messageRepository.findByConversationConversationIdOrderByCreatedAtAsc(conversationId)
                 .stream()
@@ -86,9 +83,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ConversationResponse getConversationById(UUID conversationId) {
-        Conversation conv = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+    public ConversationResponse getConversationById(UUID conversationId, UUID currentUserId) {
+        Conversation conv = conversationRepository.findByConversationIdAndParticipant(conversationId, currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
         return toConversationResponseWithPreview(conv);
     }
 
@@ -108,6 +105,13 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     @Override
     public void markAllMessagesInConversationAsRead(UUID conversationId, UUID userId) {
+        Conversation conversation = conversationRepository.findByConversationIdAndParticipant(conversationId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
+
+        if (conversation.getConversationType() == ConversationType.CLASS_GROUP) {
+            return;
+        }
+
         List<Message> unreadMessages = messageRepository
                 .findByConversationConversationIdAndRecipientUserIdAndStatusNot(conversationId, userId, MessageStatus.READ);
 
@@ -133,11 +137,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public MessageResponse saveMessageWithFile(MessageRequest request, UUID currentUserId, MultipartFile file) throws IOException {
         User sender = userService.findByUserId(currentUserId);
-        User recipient = userService.findByUserId(request.getRecipientId());
-
-        if (sender.getUserId().equals(recipient.getUserId())) {
-            throw new RuntimeException("Cannot send message to yourself");
-        }
+        Conversation conversation = resolveConversationForSending(request, sender);
 
         String imageUrl = null;
         if (file != null && !file.isEmpty()) {
@@ -145,22 +145,19 @@ public class ChatServiceImpl implements ChatService {
             imageUrl = uploadResult.get("secure_url").toString();
         }
 
-        Conversation conversation = getOrCreateConversation(sender, recipient);
+        User recipient = null;
+        if (conversation.getConversationType() == ConversationType.DIRECT) {
+            recipient = resolveDirectRecipient(request, sender, conversation);
+        }
 
-        Message newMessage = Message.builder()
-                .messageBody(request.getContent())
-                .imageUrl(imageUrl)
-                .sender(sender)
-                .recipient(recipient)
-                .conversation(conversation)
-                .status(MessageStatus.SENT)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        Message saved = messageRepository.save(newMessage);
+        Message saved = buildAndSaveMessage(request.getContent(), imageUrl, sender, recipient, conversation);
         MessageResponse response = chatMapper.toMessageResponse(saved);
 
-        broadcastMessage(response, sender.getEmail(), recipient.getEmail());
+        if (conversation.getConversationType() == ConversationType.CLASS_GROUP) {
+            broadcastMessageToConversation(response, conversation);
+        } else {
+            broadcastMessage(response, sender.getEmail(), recipient.getEmail());
+        }
 
         return response;
     }
@@ -179,6 +176,84 @@ public class ChatServiceImpl implements ChatService {
         conversationRepository.save(conversation);
     }
 
+    @Override
+    @Transactional
+    public void createClassGroupConversation(UUID classId, String className, UUID teacherId) {
+        Conversation existing = conversationRepository
+                .findByClassRoom_ClassIdAndConversationType(classId, ConversationType.CLASS_GROUP)
+                .orElse(null);
+
+        if (existing != null) {
+            if (existing.getParticipantUserIds() == null) {
+                existing.setParticipantUserIds(new HashSet<>());
+            }
+            existing.getParticipantUserIds().add(teacherId);
+            existing.getHiddenByUserIds().remove(teacherId);
+            if (className != null && !className.isBlank()) {
+                existing.setConversationTitle(className.trim());
+            }
+            existing.setUpdatedAt(LocalDateTime.now());
+            conversationRepository.save(existing);
+            return;
+        }
+
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+        User teacher = userService.findByUserId(teacherId);
+
+        Conversation groupConversation = Conversation.builder()
+                .conversationTitle((className == null || className.isBlank()) ? "Lop hoc" : className.trim())
+                .conversationType(ConversationType.CLASS_GROUP)
+                .classRoom(classRoom)
+                .user1(teacher)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        groupConversation.getParticipantUserIds().add(teacherId);
+
+        conversationRepository.save(groupConversation);
+    }
+
+    @Override
+    @Transactional
+    public void joinUserToClassGroupConversation(UUID classId, UUID userId) {
+        Conversation conversation = conversationRepository
+                .findByClassRoom_ClassIdAndConversationType(classId, ConversationType.CLASS_GROUP)
+                .orElseGet(() -> {
+                    ClassRoom classRoom = classRoomRepository.findById(classId)
+                            .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+                    User teacher = classRoom.getTeacher();
+                    if (teacher == null || teacher.getUserId() == null) {
+                        throw new AppException(ErrorCode.FORBIDDEN);
+                    }
+
+                    Conversation created = Conversation.builder()
+                            .conversationTitle(classRoom.getClassName())
+                            .conversationType(ConversationType.CLASS_GROUP)
+                            .classRoom(classRoom)
+                            .user1(teacher)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    created.getParticipantUserIds().add(teacher.getUserId());
+                    return created;
+                });
+
+        if (conversation.getParticipantUserIds() == null) {
+            conversation.setParticipantUserIds(new HashSet<>());
+        }
+        conversation.getParticipantUserIds().add(userId);
+        conversation.getHiddenByUserIds().remove(userId);
+        conversation.setUpdatedAt(LocalDateTime.now());
+        conversationRepository.save(conversation);
+    }
+
+    @Override
+    @Transactional
+    public void deleteClassGroupConversation(UUID classId) {
+        conversationRepository.deleteByClassRoom_ClassIdAndConversationType(classId, ConversationType.CLASS_GROUP);
+    }
+
     private Conversation getOrCreateConversation(User sender, User recipient) {
         Conversation conversation = conversationRepository
                 .findBetweenUsers(sender.getUserId(), recipient.getUserId())
@@ -187,10 +262,21 @@ public class ChatServiceImpl implements ChatService {
                     return Conversation.builder()
                             .user1(senderIsUser1 ? sender : recipient)
                             .user2(senderIsUser1 ? recipient : sender)
+                            .conversationType(ConversationType.DIRECT)
                             .conversationTitle(sender.getUserName() + " & " + recipient.getUserName())
                             .createdAt(LocalDateTime.now())
                             .build();
                 });
+
+        if (conversation.getConversationType() == null) {
+            conversation.setConversationType(ConversationType.DIRECT);
+        }
+
+        if (conversation.getParticipantUserIds() == null) {
+            conversation.setParticipantUserIds(new HashSet<>());
+        }
+        conversation.getParticipantUserIds().add(sender.getUserId());
+        conversation.getParticipantUserIds().add(recipient.getUserId());
 
         if (conversation.getHiddenByUserIds() != null) {
             conversation.getHiddenByUserIds().remove(sender.getUserId());
@@ -214,8 +300,114 @@ public class ChatServiceImpl implements ChatService {
         );
     }
 
+    private void broadcastMessageToConversation(MessageResponse response, Conversation conversation) {
+        Set<UUID> participantIds = conversation.getParticipantUserIds();
+        if (participantIds == null || participantIds.isEmpty()) {
+            return;
+        }
+
+        for (UUID participantId : participantIds) {
+            User participant = userService.findByUserId(participantId);
+            messagingTemplate.convertAndSendToUser(
+                    participant.getEmail(),
+                    "/queue/messages",
+                    response
+            );
+        }
+    }
+
+    private Conversation resolveConversationForSending(MessageRequest request, User sender) {
+        if (request.getConversationId() != null) {
+            Conversation conversation = conversationRepository
+                    .findByConversationIdAndParticipant(request.getConversationId(), sender.getUserId())
+                    .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
+
+            conversation.getHiddenByUserIds().remove(sender.getUserId());
+            conversation.setUpdatedAt(LocalDateTime.now());
+            return conversationRepository.save(conversation);
+        }
+
+        if (request.getRecipientId() == null) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        if (sender.getUserId().equals(request.getRecipientId())) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        User recipient = userService.findByUserId(request.getRecipientId());
+        return getOrCreateConversation(sender, recipient);
+    }
+
+    private User resolveDirectRecipient(MessageRequest request, User sender, Conversation conversation) {
+        UUID recipientId = request.getRecipientId();
+        if (recipientId != null) {
+            if (sender.getUserId().equals(recipientId)) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+
+            if (conversation.getUser1() == null || conversation.getUser2() == null) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+
+            UUID user1Id = conversation.getUser1().getUserId();
+            UUID user2Id = conversation.getUser2().getUserId();
+            boolean senderInConversation = sender.getUserId().equals(user1Id) || sender.getUserId().equals(user2Id);
+            boolean recipientInConversation = recipientId.equals(user1Id) || recipientId.equals(user2Id);
+
+            if (!senderInConversation || !recipientInConversation) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+
+            return userService.findByUserId(recipientId);
+        }
+
+        if (conversation.getUser1() == null || conversation.getUser2() == null) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        if (conversation.getUser1().getUserId().equals(sender.getUserId())) {
+            return conversation.getUser2();
+        }
+        if (conversation.getUser2().getUserId().equals(sender.getUserId())) {
+            return conversation.getUser1();
+        }
+
+        throw new AppException(ErrorCode.FORBIDDEN);
+    }
+
+    private Message buildAndSaveMessage(
+            String content,
+            String imageUrl,
+            User sender,
+            User recipient,
+            Conversation conversation
+    ) {
+        Message newMessage = Message.builder()
+                .messageBody(content)
+                .imageUrl(imageUrl)
+                .sender(sender)
+                .recipient(recipient)
+                .conversation(conversation)
+                .status(MessageStatus.SENT)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return messageRepository.save(newMessage);
+    }
+
     private ConversationResponse toConversationResponseWithPreview(Conversation conversation) {
         ConversationResponse response = chatMapper.toConversationResponse(conversation);
+
+        if (response.getConversationType() == null) {
+            response.setConversationType(ConversationType.DIRECT);
+        }
+
+        if ((response.getConversationTitle() == null || response.getConversationTitle().isBlank())
+                && conversation.getClassRoom() != null
+                && conversation.getClassRoom().getClassName() != null) {
+            response.setConversationTitle(conversation.getClassRoom().getClassName());
+        }
 
         Message previewMessage = messageRepository
                 .findTopByConversationConversationIdOrderByCreatedAtDesc(conversation.getConversationId())

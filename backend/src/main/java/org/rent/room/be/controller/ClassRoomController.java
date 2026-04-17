@@ -295,11 +295,12 @@ public class ClassRoomController {
     public ResponseEntity<ApiResponse<Void>> deleteClass(
             @PathVariable UUID classId
     ) {
-        classRoomService.softDeleteClass(classId);
+        UUID currentUserId = SecurityUtils.requireCurrentUser().getUserId();
+        classRoomService.softDeleteClass(classId, currentUserId);
         return ResponseEntity.ok(
             ApiResponse.<Void>builder()
                     .code(200)
-                    .message("Delete class successfully (soft delete)")
+                    .message("Delete class successfully")
                     .build()
         );
     }

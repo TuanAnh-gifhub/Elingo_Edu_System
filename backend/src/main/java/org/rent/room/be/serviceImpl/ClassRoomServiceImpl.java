@@ -29,11 +29,16 @@ import org.rent.room.be.repository.ClassRoomRepository;
 import org.rent.room.be.repository.ClassFavoriteRepository;
 import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.PlatformCommissionConfigRepository;
+import org.rent.room.be.repository.QuizAttemptRepository;
+import org.rent.room.be.repository.ReviewRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.repository.WalletRepository;
 import org.rent.room.be.repository.WalletTransactionRepository;
+import org.rent.room.be.repository.ClassMeetingRecordingRepository;
+import org.rent.room.be.repository.ClassAiChatMessageRepository;
 import org.rent.room.be.security.JitsiTokenService;
 import org.rent.room.be.service.ClassRoomService;
+import org.rent.room.be.service.ChatService;
 import org.rent.room.be.service.WalletService;
 import org.rent.room.be.specification.ClassRoomSpecification;
 import org.springframework.data.domain.Page;
@@ -62,7 +67,12 @@ public class ClassRoomServiceImpl implements ClassRoomService {
     private final ClassFavoriteRepository classFavoriteRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ReviewRepository reviewRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
+    private final ClassMeetingRecordingRepository classMeetingRecordingRepository;
+    private final ClassAiChatMessageRepository classAiChatMessageRepository;
     private final ClassRoomMapper classRoomMapper;
+    private final ChatService chatService;
     private final WalletService walletService;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
@@ -96,7 +106,9 @@ public class ClassRoomServiceImpl implements ClassRoomService {
                 .onlineOpen(false)
                 .build();
 
-        return classRoomMapper.toResponse(classRoomRepository.save(classRoom));
+        ClassRoom savedClass = classRoomRepository.save(classRoom);
+        chatService.createClassGroupConversation(savedClass.getClassId(), savedClass.getClassName(), currentTeacherId);
+        return classRoomMapper.toResponse(savedClass);
     }
 
     @Override
@@ -542,12 +554,33 @@ public class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
-    public void softDeleteClass(UUID classId) {
+    public void softDeleteClass(UUID classId, UUID currentUserId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-        classRoom.setActive(false);
-        classRoomRepository.save(classRoom);
+        User actor = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String roleName = actor.getRole() != null ? actor.getRole().getRoleName() : null;
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(roleName);
+        if (!isAdmin) {
+            validateTeacherOwnership(classRoom, currentUserId);
+        }
+
+        BigDecimal walletBalance = classRoom.getClassWalletBalance() == null
+                ? BigDecimal.ZERO
+                : classRoom.getClassWalletBalance();
+        if (walletBalance.compareTo(BigDecimal.ZERO) != 0) {
+            throw new AppException(ErrorCode.CLASS_WALLET_NOT_ZERO);
+        }
+
+        chatService.deleteClassGroupConversation(classId);
+        classFavoriteRepository.deleteByClassRoom_ClassId(classId);
+        reviewRepository.deleteByClassRoom_ClassId(classId);
+        classMeetingRecordingRepository.deleteByClassRoom_ClassId(classId);
+        classAiChatMessageRepository.deleteByClassRoom_ClassId(classId);
+        quizAttemptRepository.deleteByQuiz_Course_ClassRoom_ClassId(classId);
+        enrollmentRepository.deleteByEnrolledClass_ClassId(classId);
+        classRoomRepository.delete(classRoom);
     }
 
     private String generateRandomCode(int length) {

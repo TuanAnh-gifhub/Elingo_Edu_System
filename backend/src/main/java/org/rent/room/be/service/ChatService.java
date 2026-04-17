@@ -16,9 +16,9 @@ public interface ChatService {
 
     List<ConversationResponse> getUserConversations(UUID userId);
 
-    List<MessageResponse> getMessagesByConversation(UUID conversationId);
+    List<MessageResponse> getMessagesByConversation(UUID conversationId, UUID currentUserId);
 
-    ConversationResponse getConversationById(UUID conversationId);
+    ConversationResponse getConversationById(UUID conversationId, UUID currentUserId);
 
     ConversationResponse getOrCreateDirectConversation(UUID currentUserId, UUID recipientId);
 
@@ -28,5 +28,11 @@ public interface ChatService {
     MessageResponse saveMessageWithFile(MessageRequest request, UUID currentUserId, MultipartFile file) throws IOException;
 
     void deleteConversationForCurrentUser(UUID conversationId, UUID currentUserId);
+
+    void createClassGroupConversation(UUID classId, String className, UUID teacherId);
+
+    void joinUserToClassGroupConversation(UUID classId, UUID userId);
+
+    void deleteClassGroupConversation(UUID classId);
 }
 

@@ -55,6 +55,6 @@ public interface ClassRoomService {
 
     boolean isFavoriteClass(UUID classId, UUID currentUserId);
 
-    void softDeleteClass(UUID classId);
+    void softDeleteClass(UUID classId, UUID currentUserId);
 }
 

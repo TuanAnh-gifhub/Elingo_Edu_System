@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.rent.room.be.base.BaseEntity;
+import org.rent.room.be.constant.ConversationType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,11 @@ public class Conversation extends BaseEntity {
     @Column(name = "conversation_title", length = 200)
     String conversationTitle;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "conversation_type", nullable = false, length = 30)
+    @Builder.Default
+    ConversationType conversationType = ConversationType.DIRECT;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user1", referencedColumnName = "user_id")
     User user1;
@@ -36,6 +42,19 @@ public class Conversation extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user2", referencedColumnName = "user_id")
     User user2;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id", referencedColumnName = "class_id")
+    ClassRoom classRoom;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "conversation_participants",
+            joinColumns = @JoinColumn(name = "conversation_id")
+    )
+    @Column(name = "user_id", nullable = false)
+    @Builder.Default
+    Set<UUID> participantUserIds = new HashSet<>();
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<Message> messages;

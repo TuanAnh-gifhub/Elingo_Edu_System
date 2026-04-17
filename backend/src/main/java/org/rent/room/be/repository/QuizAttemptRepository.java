@@ -26,4 +26,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> 
             Collection<UUID> quizIds,
             Collection<UUID> studentIds
     );
+
+    void deleteByQuiz_Course_ClassRoom_ClassId(UUID classId);
 }

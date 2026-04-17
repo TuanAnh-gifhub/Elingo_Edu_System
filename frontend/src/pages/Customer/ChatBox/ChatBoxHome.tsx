@@ -47,6 +47,7 @@ const ChatBoxHome = () => {
                 messages={chatLogic.messages}
                 messagesEndRef={chatLogic.messagesEndRef}
                 currentUserId={currentUserId}
+                conversationType={chatLogic.selectedChat?.conversationType}
               />
             </div>
             <MessageInput 

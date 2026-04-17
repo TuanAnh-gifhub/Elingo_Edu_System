@@ -10,6 +10,7 @@ import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.rent.room.be.constant.SubscriptionStatus;
 import org.rent.room.be.dto.response.ai.ClassAiChatResponse;
 import org.rent.room.be.dto.response.ai.ClassAiHistoryMessageResponse;
 import org.rent.room.be.entity.ClassAiChatMessage;
@@ -20,6 +21,7 @@ import org.rent.room.be.entity.QuestionOption;
 import org.rent.room.be.entity.Quiz;
 import org.rent.room.be.entity.QuizAttempt;
 import org.rent.room.be.entity.User;
+import org.rent.room.be.entity.UserSubscription;
 import org.rent.room.be.exception.AppException;
 import org.rent.room.be.exception.ErrorCode;
 import org.rent.room.be.properties.OllamaProperties;
@@ -30,6 +32,7 @@ import org.rent.room.be.repository.EnrollmentRepository;
 import org.rent.room.be.repository.QuestionRepository;
 import org.rent.room.be.repository.QuizAttemptRepository;
 import org.rent.room.be.repository.QuizRepository;
+import org.rent.room.be.repository.UserSubscriptionRepository;
 import org.rent.room.be.repository.UserRepository;
 import org.rent.room.be.service.ClassAiService;
 import org.springframework.http.MediaType;
@@ -80,6 +83,7 @@ public class ClassAiServiceImpl implements ClassAiService {
     private final QuestionRepository questionRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final UserRepository userRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
     private final WebClient.Builder webClientBuilder;
     private final OllamaProperties ollamaProperties;
 
@@ -89,6 +93,8 @@ public class ClassAiServiceImpl implements ClassAiService {
         ClassRoom classRoom = loadAuthorizedClassRoom(classId, studentId);
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        validateClassAiSubscription(student);
 
         List<Course> courses = courseRepository.findByClassRoom_ClassIdOrderByOrderIndexAsc(classId);
         List<UUID> courseIds = courses.stream().map(Course::getCourseId).toList();
@@ -118,6 +124,9 @@ public class ClassAiServiceImpl implements ClassAiService {
     @Transactional(readOnly = true)
     public List<ClassAiHistoryMessageResponse> getChatHistory(UUID classId, UUID studentId) {
         loadAuthorizedClassRoom(classId, studentId);
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        validateClassAiSubscription(student);
         return classAiChatMessageRepository
                 .findByClassRoomClassIdAndStudentUserIdOrderByCreatedAtAsc(classId, studentId)
                 .stream()
@@ -127,6 +136,20 @@ public class ClassAiServiceImpl implements ClassAiService {
                         .createdAt(item.getCreatedAt())
                         .build())
                 .toList();
+    }
+
+    private void validateClassAiSubscription(User student) {
+        if (!hasActiveSubscription(student)) {
+            throw new AppException(ErrorCode.CLASS_AI_SUBSCRIPTION_REQUIRED);
+        }
+    }
+
+    private boolean hasActiveSubscription(User user) {
+        return userSubscriptionRepository
+                .findFirstByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE)
+                .map(UserSubscription::getEndDate)
+                .filter(endDate -> endDate != null && !endDate.isBefore(java.time.LocalDateTime.now()))
+                .isPresent();
     }
 
     private ClassRoom loadAuthorizedClassRoom(UUID classId, UUID studentId) {

@@ -15,7 +15,7 @@ export interface Chat extends Omit<ConversationResponse, "conversationId"> {
   name: string;
   time: string;
   avatar: string;
-  otherPerson: UserChatResponse;
+  otherPerson: UserChatResponse | null;
 }
 
 interface ChatListProps {
@@ -119,9 +119,12 @@ const ChatList = ({
 
   const transformedConversations: Chat[] = conversations
     .map((conv) => {
+      const isGroup = conv.conversationType === "CLASS_GROUP";
       const otherPerson =
         conv.user1?.userId === currentUserId ? conv.user2 : conv.user1;
-      const displayUserName = otherPerson?.userName || "Người dùng hệ thống";
+      const displayUserName = isGroup
+        ? conv.conversationTitle || "Nhóm lớp"
+        : otherPerson?.userName || "Người dùng hệ thống";
       const validConversationId = conv.conversationId || ""; // Fallback nếu null
 
       return {
@@ -136,9 +139,9 @@ const ChatList = ({
             })
           : "",
         avatar:
-          otherPerson?.avatar ||
+          (isGroup ? undefined : otherPerson?.avatar) ||
           generateAvatarSVG(displayUserName, otherPerson?.userId),
-        otherPerson: otherPerson,
+        otherPerson: isGroup ? null : (otherPerson ?? null),
       };
     })
     .sort(

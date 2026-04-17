@@ -35,6 +35,8 @@ public enum ErrorCode {
     CLASS_ONLINE_NOT_OPEN(4009, "Lớp học trực tuyến chưa được giáo viên mở", HttpStatus.FORBIDDEN),
     CLASS_WALLET_EMPTY(4010, "Ví lớp hiện không có tiền để nhận", HttpStatus.BAD_REQUEST),
     CLASS_WALLET_CLAIM_NOT_AVAILABLE(4011, "Chỉ nhận tiền sau khi lớp học đã kết thúc", HttpStatus.BAD_REQUEST),
+    CLASS_AI_ACCESS_DENIED(4012, "Bạn không có quyền dùng AI trợ giảng của lớp này", HttpStatus.FORBIDDEN),
+    CLASS_AI_UNAVAILABLE(4013, "AI trợ giảng hiện tạm thời không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
 
     // Course
     COURSE_NOT_FOUND(4002, "Course not found", HttpStatus.NOT_FOUND),
@@ -88,6 +90,7 @@ public enum ErrorCode {
     SUBSCRIPTION_PACKAGE_NOT_FOUND(7101, "Không tìm thấy gói đăng ký", HttpStatus.NOT_FOUND),
     SUBSCRIPTION_PACKAGE_INACTIVE(7102, "Gói đăng ký này không còn hoạt động", HttpStatus.BAD_REQUEST),
     SUBSCRIPTION_ALREADY_ACTIVE(7103, "Bạn đang sử dụng gói này. Vui lòng chờ hết hạn để mua lại", HttpStatus.BAD_REQUEST),
+    RECORDING_SUBSCRIPTION_REQUIRED(7104, "Bạn cần phải mua gói để sử dụng tính năng này", HttpStatus.FORBIDDEN),
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR), // Lỗi 500 không xác định
     INVALID_KEY(8888, "Invalid message key", HttpStatus.BAD_REQUEST), // Lỗi validate chung

@@ -10,16 +10,19 @@ import org.rent.room.be.base.PageResponse;
 import org.rent.room.be.dto.request.wallet.AdminWithdrawRejectRequest;
 import org.rent.room.be.dto.request.wallet.CreateDepositLinkRequest;
 import org.rent.room.be.dto.request.wallet.CreateWithdrawRequest;
+import org.rent.room.be.dto.request.wallet.UpdateClassWalletFeeRequest;
 import org.rent.room.be.dto.request.wallet.UpdateWalletFreezeRequest;
 import org.rent.room.be.dto.response.wallet.AdminWalletStatusResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWithdrawRequestItemResponse;
+import org.rent.room.be.dto.response.wallet.ClassWalletFeeConfigResponse;
 import org.rent.room.be.dto.response.wallet.DepositLinkResponse;
 import org.rent.room.be.dto.response.wallet.WalletInfoResponse;
 import org.rent.room.be.dto.response.wallet.WalletTransactionItemResponse;
 import org.rent.room.be.dto.response.wallet.WithdrawRequestItemResponse;
+import org.rent.room.be.security.SecurityUtils;
 import org.rent.room.be.service.WalletAdminService;
 import org.rent.room.be.service.WalletAdminQueryService;
 import org.rent.room.be.service.WalletDepositService;
@@ -219,6 +222,35 @@ public class WalletController {
                 ApiResponse.<AdminWalletStatusResponse>builder()
                         .code(200)
                         .message("Update wallet freeze status successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/admin/class-wallet-fee")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ClassWalletFeeConfigResponse>> getClassWalletFeeConfig() {
+        ClassWalletFeeConfigResponse response = walletAdminService.getClassWalletFeeConfig();
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletFeeConfigResponse>builder()
+                        .code(200)
+                        .message("Get class wallet fee config successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PutMapping("/admin/class-wallet-fee")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ClassWalletFeeConfigResponse>> updateClassWalletFeeConfig(
+            @Valid @RequestBody UpdateClassWalletFeeRequest request
+    ) {
+        UUID adminId = SecurityUtils.requireCurrentUser().getUserId();
+        ClassWalletFeeConfigResponse response = walletAdminService.updateClassWalletFeeConfig(request, adminId);
+        return ResponseEntity.ok(
+                ApiResponse.<ClassWalletFeeConfigResponse>builder()
+                        .code(200)
+                        .message("Update class wallet fee config successfully")
                         .result(response)
                         .build()
         );

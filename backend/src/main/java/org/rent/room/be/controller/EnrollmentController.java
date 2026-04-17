@@ -24,7 +24,7 @@ public class EnrollmentController {
 
     EnrollmentService enrollmentService;
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
     @PostMapping
     public ResponseEntity<ApiResponse<EnrollmentResponse>> createEnrollment(
             @RequestBody CreateEnrollmentRequest request
@@ -39,7 +39,7 @@ public class EnrollmentController {
         );
     }
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<Boolean>> checkEnrollment(
             @RequestParam UUID classId
@@ -54,7 +54,7 @@ public class EnrollmentController {
         );
     }
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getMyEnrollments() {
         List<EnrollmentResponse> enrollments = enrollmentService.getMyEnrollments();

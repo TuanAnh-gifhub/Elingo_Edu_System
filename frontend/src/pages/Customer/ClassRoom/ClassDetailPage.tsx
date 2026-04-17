@@ -15,7 +15,10 @@ import { enrollmentService } from "../../../services/classes/enrollmentService";
 import { walletService } from "../../../services/wallet/walletService";
 import { useAuth } from "../../../context/AuthContext";
 
-const isStudentRole = (role?: string) => role?.toUpperCase().includes("STUDENT");
+const isLearnerRole = (role?: string) => {
+  const normalizedRole = role?.toUpperCase() || "";
+  return normalizedRole.includes("STUDENT") || normalizedRole.includes("TEACHER");
+};
 
 const formatClassDateTime = (dateValue?: string): string => {
   if (!dateValue) {
@@ -55,7 +58,7 @@ const ClassDetailPage = () => {
   );
   const [recentReviews, setRecentReviews] = useState<ReviewDto[]>([]);
 
-  const isStudent = useMemo(() => isStudentRole(user?.role), [user?.role]);
+  const isLearner = useMemo(() => isLearnerRole(user?.role), [user?.role]);
   const hasClassEnded = useMemo(() => {
     if (!clazz?.endDate) {
       return false;
@@ -88,7 +91,7 @@ const ClassDetailPage = () => {
   }, [classId]);
 
   useEffect(() => {
-    if (!classId || !isStudent || !user?.userId) {
+    if (!classId || !isLearner || !user?.userId) {
       setIsEnrolled(false);
       return;
     }
@@ -106,7 +109,7 @@ const ClassDetailPage = () => {
     };
 
     checkEnrollment();
-  }, [classId, isStudent, user?.userId]);
+  }, [classId, isLearner, user?.userId]);
 
 useEffect(() => {
     if (hasClassEnded) {
@@ -237,7 +240,7 @@ useEffect(() => {
             <p className="text-2xl font-bold text-cyan-700">
               {Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ
             </p>
-            {isStudent ? (
+            {isLearner ? (
               isEnrolled ? (
                 <div className="space-y-2">
                   <button
@@ -313,10 +316,10 @@ useEffect(() => {
         : `Vào lớp với giá ${Number(clazz.price || 0).toLocaleString("vi-VN")} VNĐ`}
   </button>
 
-  <p className="text-xs text-slate-500 text-center">Đăng nhập tài khoản học sinh để nhập học lớp này.</p>
+  <p className="text-xs text-slate-500 text-center">Đăng nhập tài khoản học viên để nhập học lớp này.</p>
 </div>
             )}
-            {isStudent && !isEnrolled && hasClassEnded ? (
+            {isLearner && !isEnrolled && hasClassEnded ? (
               <p className="text-xs text-rose-600">Lớp đã kết thúc nên không thể thanh toán để nhập học.</p>
             ) : null}
           </div>

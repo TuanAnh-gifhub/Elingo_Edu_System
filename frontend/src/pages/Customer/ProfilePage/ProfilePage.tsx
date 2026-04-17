@@ -89,6 +89,8 @@ const ProfilePage = () => {
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
     user.userName || "User",
   )}&background=4da6ff&color=fff&size=256`;
+  const normalizedRole = (user.role || "").toUpperCase();
+  const isTeacherAccount = normalizedRole.includes("TEACHER");
 
   const shouldShowTeacherDetails =
     user.role?.toUpperCase() === "TEACHER" || Boolean(verificationRequest);
@@ -216,13 +218,15 @@ const ProfilePage = () => {
                 <FiCreditCard className="h-4 w-4" />
                 Đi tới ví
               </Link>
-              <Link
-                to="/teacher-verification"
-                className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
-              >
-                <FiShield className="h-4 w-4" />
-                Xác minh giáo viên
-              </Link>
+              {!isTeacherAccount ? (
+                <Link
+                  to="/teacher-verification"
+                  className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+                >
+                  <FiShield className="h-4 w-4" />
+                  Xác minh giáo viên
+                </Link>
+              ) : null}
             </div>
 
             {verificationRequest ? (

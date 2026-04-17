@@ -45,6 +45,7 @@ public class SecurityConfig {
             "/payments/payos/webhook",
                 "/files/**",
             "/api/v1/files/**",
+            "/recordings/webhooks/**",
             "/users/teachers/public",
             "/users/public/**",
             "/packages/active",

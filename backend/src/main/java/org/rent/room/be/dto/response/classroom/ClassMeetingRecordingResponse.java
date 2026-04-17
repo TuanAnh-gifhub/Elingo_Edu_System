@@ -3,7 +3,6 @@ package org.rent.room.be.dto.response.classroom;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,15 +12,16 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ClassWalletResponse {
+public class ClassMeetingRecordingResponse {
 
+    UUID recordingId;
     UUID classId;
-    BigDecimal balance;
-    BigDecimal feePercent;
-    BigDecimal feeAmount;
-    BigDecimal receivableAmount;
-    boolean claimable;
-    LocalDateTime endDate;
-    LocalDateTime claimedAt;
+    String roomName;
+    String title;
+    String recordingUrl;
+    String status;
+    LocalDateTime startedAt;
+    LocalDateTime endedAt;
+    Long durationSeconds;
+    LocalDateTime createdAt;
 }
-

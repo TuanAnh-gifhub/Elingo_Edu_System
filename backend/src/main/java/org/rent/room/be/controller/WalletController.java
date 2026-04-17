@@ -13,6 +13,7 @@ import org.rent.room.be.dto.request.wallet.CreateWithdrawRequest;
 import org.rent.room.be.dto.request.wallet.UpdateWalletFreezeRequest;
 import org.rent.room.be.dto.response.wallet.AdminWalletStatusResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
+import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWithdrawRequestItemResponse;
 import org.rent.room.be.dto.response.wallet.DepositLinkResponse;
@@ -264,6 +265,23 @@ public class WalletController {
                 ApiResponse.<PageResponse<AdminWalletTransactionItemResponse>>builder()
                         .code(200)
                         .message("Get wallet transactions successfully")
+                        .result(result)
+                        .build()
+        );
+    }
+
+    @GetMapping("/admin/transactions/deposit-summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminDepositTransactionSummaryResponse>> getAdminDepositTransactionSummary(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate
+    ) {
+        AdminDepositTransactionSummaryResponse result =
+                walletAdminQueryService.getAdminDepositTransactionSummary(fromDate, toDate);
+        return ResponseEntity.ok(
+                ApiResponse.<AdminDepositTransactionSummaryResponse>builder()
+                        .code(200)
+                        .message("Get deposit transaction summary successfully")
                         .result(result)
                         .build()
         );

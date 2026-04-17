@@ -179,6 +179,14 @@ export type AdminWalletTransactionItemResponse = {
 export type AdminWalletTransactionPageResponse =
   PageResponse<AdminWalletTransactionItemResponse>;
 
+export type AdminDepositTransactionSummaryResponse = {
+  totalDeposits: number;
+  completedDeposits: number;
+  failedDeposits: number;
+  pendingDeposits: number;
+  cancelledDeposits: number;
+};
+
 export type UpsertCommissionConfigPayload = {
   rate: number;
   note?: string;
@@ -342,6 +350,12 @@ export const walletService = {
       {
         params: { page, limit, ...params },
       },
+    ),
+
+  getAdminDepositTransactionSummary: (params?: { fromDate?: string; toDate?: string }) =>
+    api.get<ApiResponse<AdminDepositTransactionSummaryResponse>>(
+      "/wallet/admin/transactions/deposit-summary",
+      { params },
     ),
 
   getAdminCommissionConfigs: () =>

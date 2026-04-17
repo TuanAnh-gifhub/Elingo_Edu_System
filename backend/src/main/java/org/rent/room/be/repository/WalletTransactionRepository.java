@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,5 +44,22 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
     );
 
     boolean existsByBookingIdAndType(UUID bookingId, WalletTxType type);
+
+    @Query("""
+            select
+                count(wt),
+                sum(case when wt.status = org.rent.room.be.constant.WalletTxStatus.COMPLETED then 1 else 0 end),
+                sum(case when wt.status = org.rent.room.be.constant.WalletTxStatus.FAILED then 1 else 0 end),
+                sum(case when wt.status = org.rent.room.be.constant.WalletTxStatus.PENDING then 1 else 0 end),
+                sum(case when wt.status = org.rent.room.be.constant.WalletTxStatus.CANCELLED then 1 else 0 end)
+            from WalletTransaction wt
+            where wt.type = :type
+              and wt.createdAt between :from and :to
+            """)
+    List<Object[]> summarizeByTypeAndCreatedAtBetween(
+            @Param("type") WalletTxType type,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }
 

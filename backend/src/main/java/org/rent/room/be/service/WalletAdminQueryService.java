@@ -1,6 +1,7 @@
 package org.rent.room.be.service;
 
 import org.rent.room.be.base.PageResponse;
+import org.rent.room.be.dto.response.wallet.AdminDepositTransactionSummaryResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletItemResponse;
 import org.rent.room.be.dto.response.wallet.AdminWalletTransactionItemResponse;
 
@@ -21,5 +22,7 @@ public interface WalletAdminQueryService {
             UUID userId,
             UUID walletId
     );
+
+    AdminDepositTransactionSummaryResponse getAdminDepositTransactionSummary(String fromDate, String toDate);
 }
 

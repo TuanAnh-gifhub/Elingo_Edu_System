@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: BE
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 300MB
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  mongodb:
+    uri: ${SPRING_DATA_MONGODB_URI}
+    auto-index-creation: true
+
+server:
+  # Dùng 8080 mặc định khi chạy local nếu SERVER_PORT chưa được set
+  port: ${SERVER_PORT:8080}
+  servlet:
+    # Mặc định context-path là "/" nếu SERVER_SERVLET_CONTEXT_PATH chưa được set
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/}
+
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
+
+cors:
+  urls: ${CORS_URL}
+
+jwt:
+  # Nếu không có biến môi trường, dùng giá trị mặc định để chạy local
+  secret-key: ${JWT_SECRET_KEY:YXQtYmFzZTY0LXNpbXBsZS1zZWNyZXQtdGVzdC1rZXktMzJi}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000} # 15 phút
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 ngày
+
+app:
+  cookie:
+    secure: false
+
+google:
+  client:
+    id: ${GOOGLE_ID}
+    secret: ${GOOGLE_SECRET}
+    uri: ${GOOGLE_URI}
+
+token_reset_password_expire_seconds: 900
+
+file:
+  upload-dir: ./uploads
+
+payos:
+  client-id: ${PAYOS_CLIENT_ID:}
+  api-key: ${PAYOS_API_KEY:}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:}
+  base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/deposit-result}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/deposit-result}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+  folder: ${CLOUDINARY_FOLDER:}
+
+jitsi:
+  jaas:
+    app-id: ${JITSI_JAAS_APP_ID:vpaas-magic-cookie-65ee15fba0084777ade13da38e810287}
+    kid: ${JITSI_JAAS_KID:}
+    private-key-pem: ${JITSI_JAAS_PRIVATE_KEY_PEM:}
+    token-ttl-seconds: ${JITSI_JAAS_TOKEN_TTL_SECONDS:180}
+    webhook-secret: ${JITSI_JAAS_WEBHOOK_SECRET:}
+
+ollama:
+  base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+  model: ${OLLAMA_MODEL:qwen2.5:7b}
+  timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:60}
+

@@ -1,0 +1,173 @@
+import React, { useState } from "react";
+import { Layout, Menu, type MenuProps } from "antd";
+import { Link, useLocation } from "react-router-dom";
+import {
+  AppstoreOutlined,
+  TeamOutlined,
+  DollarOutlined,
+  LogoutOutlined,
+  StarOutlined,
+  SafetyOutlined,
+  CrownOutlined,
+  MessageOutlined,
+} from "@ant-design/icons";
+
+const { Sider } = Layout;
+
+type MenuItem = Required<MenuProps>["items"][number];
+
+function getItem(
+  label: React.ReactNode,
+  key: React.Key,
+  icon?: React.ReactNode,
+  children?: MenuItem[],
+): MenuItem {
+  return {
+    key,
+    icon,
+    children,
+    label,
+  } as MenuItem;
+}
+
+interface SidebarProps {
+  collapsed: boolean;
+  toggleCollapsed: () => void;
+  handleLogout: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
+  collapsed,
+  handleLogout,
+}) => {
+  const location = useLocation();
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
+
+  const onOpenChange: MenuProps["onOpenChange"] = (keys) => {
+    setOpenKeys(keys);
+  };
+
+  // --- CẤU HÌNH MENU CHO THUÊ PHÒNG ---
+  const items: MenuItem[] = [
+    // 1. Tổng quan
+    getItem(<Link to="/admin">Dashboard</Link>, "/admin", <AppstoreOutlined />),
+
+    getItem(
+      <Link to="/admin/classes">Quản lý lớp học</Link>,
+      "/admin/classes",
+      <AppstoreOutlined />,
+    ),
+
+
+    // 4. Khách hàng
+    getItem(
+      <Link to="/admin/customers">Khách hàng</Link>,
+      "/admin/customers",
+      <TeamOutlined />,
+    ),
+
+    getItem(
+      <Link to="/admin/teacher-verification">Xác minh giáo viên</Link>,
+      "/admin/teacher-verification",
+      <SafetyOutlined />,
+    ),
+
+    // 5. Tài chính
+    getItem("Tài chính & Hóa đơn", "sub_finance", <DollarOutlined />, [
+      getItem(
+        <Link to="/admin/transactions">Quản lý rút tiền</Link>,
+        "/admin/transactions",
+      ),
+      getItem(
+        <Link to="/admin/transaction-history">Lịch sử giao dịch</Link>,
+        "/admin/transaction-history",
+      ),
+      getItem(
+        <Link to="/admin/wallet-overview">Tổng quan ví hệ thống</Link>,
+        "/admin/wallet-overview",
+      ),
+      getItem(
+        <Link to="/admin/commission-config">Cấu hình Commission</Link>,
+        "/admin/commission-config",
+      ),
+      getItem(
+        <Link to="/admin/wallet-freeze">Khóa/Mở khóa ví</Link>,
+        "/admin/wallet-freeze",
+      ),
+    ]),
+
+    getItem(
+      <Link to="/admin/reviews">Đánh giá từ khách</Link>,
+      "/admin/reviews",
+      <StarOutlined />,
+    ),
+
+    // Quản lý gói đăng ký
+    getItem(
+      <Link to="/admin/packages">Gói đăng ký</Link>,
+      "/admin/packages",
+      <CrownOutlined />,
+    ),
+
+    // Quản lý bài viết cộng đồng
+    getItem(
+      <Link to="/admin/community-posts">Bài viết cộng đồng</Link>,
+      "/admin/community-posts",
+      <MessageOutlined />,
+    ),
+
+    // Logout
+    getItem("Đăng xuất", "logout", <LogoutOutlined />),
+  ];
+
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    if (e.key === "logout") {
+      handleLogout();
+    }
+  };
+
+  return (
+    <Sider
+      trigger={null}
+      collapsible
+      collapsed={collapsed}
+      width={260}
+      theme="light"
+      className="shadow-md z-20"
+      style={{
+        borderRight: "1px solid #f0f0f0",
+      }}
+    >
+      {/* Logo Section */}
+      <div
+        className="h-16 flex items-center justify-center border-b transition-colors border-gray-200 bg-white"
+      >
+        <div className="flex items-center gap-2 overflow-hidden px-4">
+          <div className="min-w-[32px] h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+            E
+          </div>
+          {!collapsed && (
+            <div className="font-bold text-xl tracking-tight whitespace-nowrap transition-opacity duration-300 text-gray-800">
+              Elingo
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar py-2">
+        <Menu
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          openKeys={openKeys}
+          onOpenChange={onOpenChange}
+          items={items}
+          onClick={handleMenuClick}
+          theme="light"
+          style={{ border: "none", background: "transparent" }}
+        />
+      </div>
+    </Sider>
+  );
+};
+
+export default Sidebar;

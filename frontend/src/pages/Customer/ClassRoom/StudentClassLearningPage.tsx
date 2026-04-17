@@ -64,6 +64,54 @@ interface ClassLiveStatusEvent {
   onlineOpen: boolean;
 }
 
+type LessonCardColorVariant = {
+  card: string;
+  badge: string;
+  badgeText: string;
+};
+
+const LESSON_CARD_COLOR_VARIANTS: LessonCardColorVariant[] = [
+  {
+    card: "rounded-2xl border border-fuchsia-100 bg-linear-to-br from-rose-50 via-white to-cyan-50 p-4 shadow-sm",
+    badge:
+      "inline-flex items-center gap-2 rounded-full bg-linear-to-r from-fuchsia-100 to-cyan-100 border border-fuchsia-200 px-2.5 py-1 mb-2",
+    badgeText: "text-[10px] font-semibold tracking-wide text-fuchsia-700 uppercase",
+  },
+  {
+    card: "rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 via-white to-lime-50 p-4 shadow-sm",
+    badge:
+      "inline-flex items-center gap-2 rounded-full bg-linear-to-r from-emerald-100 to-lime-100 border border-emerald-200 px-2.5 py-1 mb-2",
+    badgeText: "text-[10px] font-semibold tracking-wide text-emerald-700 uppercase",
+  },
+  {
+    card: "rounded-2xl border border-violet-100 bg-linear-to-br from-violet-50 via-white to-indigo-50 p-4 shadow-sm",
+    badge:
+      "inline-flex items-center gap-2 rounded-full bg-linear-to-r from-violet-100 to-indigo-100 border border-violet-200 px-2.5 py-1 mb-2",
+    badgeText: "text-[10px] font-semibold tracking-wide text-violet-700 uppercase",
+  },
+  {
+    card: "rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm",
+    badge:
+      "inline-flex items-center gap-2 rounded-full bg-linear-to-r from-amber-100 to-orange-100 border border-amber-200 px-2.5 py-1 mb-2",
+    badgeText: "text-[10px] font-semibold tracking-wide text-amber-700 uppercase",
+  },
+  {
+    card: "rounded-2xl border border-sky-100 bg-linear-to-br from-sky-50 via-white to-blue-50 p-4 shadow-sm",
+    badge:
+      "inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-sky-200 px-2.5 py-1 mb-2",
+    badgeText: "text-[10px] font-semibold tracking-wide text-sky-700 uppercase",
+  },
+];
+
+const getStableLessonColorVariant = (courseId: string): LessonCardColorVariant => {
+  let hash = 0;
+  for (let index = 0; index < courseId.length; index += 1) {
+    hash = (hash * 31 + courseId.charCodeAt(index)) >>> 0;
+  }
+
+  return LESSON_CARD_COLOR_VARIANTS[hash % LESSON_CARD_COLOR_VARIANTS.length];
+};
+
 const DEFAULT_AI_MESSAGE =
   "Chào bạn, tôi là AI trợ giảng của lớp học này. Bạn có thể hỏi về chủ đề lớp, bài học, tài liệu và quiz đã làm.";
 
@@ -865,16 +913,17 @@ const StudentClassLearningPage = () => {
             <div className="mt-4 space-y-3">
               {courses.map((course) => {
                 const isExpanded = expandedCourseIds.has(course.courseId);
+                const lessonColorVariant = getStableLessonColorVariant(course.courseId);
 
                 return (
                   <article
                     key={course.courseId}
-                    className="rounded-2xl border border-fuchsia-100 bg-linear-to-br from-rose-50 via-white to-cyan-50 p-4 shadow-sm"
+                    className={lessonColorVariant.card}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-fuchsia-100 to-cyan-100 border border-fuchsia-200 px-2.5 py-1 mb-2">
-                          <span className="text-[10px] font-semibold tracking-wide text-fuchsia-700 uppercase">
+                        <div className={lessonColorVariant.badge}>
+                          <span className={lessonColorVariant.badgeText}>
                             Bài {course.orderIndex}
                           </span>
                         </div>
